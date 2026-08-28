@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%2032%2032%22%3E%3Crect%20width=%2232%22%20height=%2232%22%20rx=%227%22%20fill=%22%230A0A0C%22/%3E%3Ccircle%20cx=%2216%22%20cy=%2216%22%20r=%227%22%20fill=%22%23FF2D82%22/%3E%3Ccircle%20cx=%2216%22%20cy=%2216%22%20r=%2211.5%22%20fill=%22none%22%20stroke=%22%23FF9A7A%22%20stroke-width=%221.5%22%20opacity=%22.6%22/%3E%3C/svg%3E">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0A0A0C">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARGO — CANDIDATE WALL</title>
+<link rel="stylesheet" href="shared/assets/fonts/pretendard.css"><link rel="stylesheet" href="shared/assets/fonts/geistmono.css">
+
+<!-- 랜딩과 같은 스킨(색·폰트·버튼·커서)을 공유한다 -->
+<link rel="stylesheet" href="shared/pd-skin.css?v=1787909885">
+<link rel="stylesheet" href="shared/argo-driftwall.css?v=1787909885">
+<link rel="stylesheet" href="shared/argo-track.css?v=1787909885"><link rel="stylesheet" href="shared/argo-operator.css?v=1787909885"><link rel="stylesheet" href="shared/argo-warn.css?v=1787909885">
+
+<style id="wall-page">
+/* ── 스크롤 없는 단일 화면 ───────────────────────────────────────────── */
+html,body{height:100%;overflow:hidden}
+body{background:var(--ink);margin:0}
+
+.wall-stage{position:fixed;inset:0;z-index:1}
+.wall-stage .drift-wall{width:100%;height:100%}
+
+/* 사진이 너무 어두웠던 문제(마스크 페이드 · --dw-dim · 오버레이 3중)의 해제는
+   shared/argo-driftwall.css 로 옮겼다 — index 의 갤러리 씬(s10)도 같은 톤을 써야 해서다.
+   페이드는 아래 ArgoDriftWall.create 의 fade 프롭이 맡는다. */
+
+/* 위아래 비네트 — 있던 그림자를 훨씬 옅게 */
+.wall-vig{
+  position:fixed;inset:0;z-index:10;pointer-events:none;
+  background:
+    linear-gradient(to bottom, rgba(9,9,11,.40), rgba(9,9,11,0) 22%,
+                               rgba(9,9,11,0) 78%, rgba(9,9,11,.48));
+}
+
+/* 하단 카운터 — 남기는 유일한 문구 */
+/* 안내는 화면 상단 중앙. 하단 카운터(영문)는 원래 자리를 지킨다. */
+.wall-hint{
+  position:fixed;left:0;right:0;top:30px;z-index:20;text-align:center;pointer-events:none;
+  margin:0;font-family:var(--f-kr);font-size:13px;
+  color:rgba(255,255,255,.72);text-shadow:0 2px 14px rgba(0,0,0,.95);
+}
+/* 하단 기록 수 — 서체·굵기·자간은 원래대로 두고 크기만 11px → 17px 로 키웠다. */
+.wall-meta{
+  position:fixed;left:0;right:0;bottom:26px;z-index:20;text-align:center;pointer-events:none;
+  font-family:var(--f-mono,'IBM Plex Mono',monospace);
+  font-size:17px;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.62);
+  text-shadow:0 2px 14px rgba(0,0,0,.9);
+}
+.wall-meta b{color:var(--pink,#FF2D82);font-weight:600}
+
+/* 닫기 버튼 : 랜딩의 .pd-close 와 같은 자리 */
+.wall-close{position:fixed;top:22px;right:26px;z-index:60}
+
+/* 호버한 타일 위에 얹히는 RippleDistortion 캔버스 */
+.wall-ripple{position:absolute;inset:0;z-index:3;pointer-events:none;border-radius:inherit;overflow:hidden}
+.wall-ripple canvas{display:block;width:100%;height:100%}
+</style>
+<script src="shared/argo-operator.js?v=1787909885"></script><script src="shared/argo-warn.js?v=1787909885"></script><script src="shared/argo-track.js?v=1787909885"></script>
+<script src="shared/argo-reveal.js?v=1787909885"></script>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute;pointer-events:none" aria-hidden="true"><filter id="dw-duotone" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="0 0.361 1 1"/><feFuncG type="table" tableValues="0 0.106 0.302 0.839"/><feFuncB type="table" tableValues="0 0.478 0.580 0.910"/></feComponentTransfer></filter></svg>
+
+<div class="wall-stage"><div id="wall"></div></div>
+<div class="wall-vig" aria-hidden="true"></div>
+
+<p class="wall-hint">사진 위에 마우스를 올리고 천천히 움직여 보세요.</p>
+<div class="wall-meta">
+  지원자 기록 <b id="wall-count">0</b> · 아카이브 <span id="wall-fill">0</span>
+</div>
+<button class="pd-close wall-close" type="button" id="wallClose" data-cursor="CLOSE" aria-label="닫기">✕</button>
+
+<!-- ARGO 공용 커스텀 커서 (argo-cursor.js 가 이 세 요소를 찾는다) -->
+<div class="pd-cursor" aria-hidden="true"></div>
+<div class="pd-cursor-ring" aria-hidden="true"></div>
+<div class="pd-cursor-label" aria-hidden="true"></div>
+
+<script src="shared/argo-date.js?v=1787909885"></script>
+<script src="shared/argo-nav.js?v=1787909885"></script>
+<script src="shared/argo-cursor.js?v=1787909885"></script>
+<script src="shared/argo-ripple.js?v=1787909885"></script>
+<script src="shared/argo-driftwall.js?v=1787909885"></script>
+<script>
+(function(){
+  'use strict';
+
+  /* ── 벽 용량 ────────────────────────────────────────────────────────────
+     원본 DriftWall 은 items 를 열에 라운드로빈으로 나눠 담고 각 열을 무한 반복시킨다.
+     "갤러리를 다 채우면 가장 오래된 것부터 하나씩 교체" 를 만족시키려면 벽이 고정
+     슬롯 수를 가져야 한다 → SLOTS 개만 보여주고 최신순으로 채운다. 넘치는 과거 컷은
+     자연히 밀려난다(FIFO). */
+  var COLUMNS = 7;                   /* 세로 줄 5 → 7 */
+  var PER_COL = 7;
+  var SLOTS   = COLUMNS * PER_COL;   /* 49칸 */
+
+  /* 빈칸을 메울 우주 사진 — NASA 퍼블릭 도메인 41장.
+     글자·다이어그램·모자이크 결손이 있는 컷은 걸러냈고, 남은 것을 전부 같은
+     그라디언트 맵으로 톤을 맞췄다 — 어두운~중간톤은 무채색, 밝은 쪽만 골드/앰버.
+     외부 CDN 을 쓰면 전시장 네트워크가 끊겼을 때 벽이 통째로 비어 버리므로 로컬에 둔다. */
+  var SPACE = [];
+  for (var s = 1; s <= 61; s++) {
+    SPACE.push({ image: 'assets/space/space-' + (s < 10 ? '0' : '') + s + '.jpg', title: 'ARGO ARCHIVE' });
+  }
+
+  /* Fisher–Yates */
+  function shuffle(a){
+    for (var i=a.length-1; i>0; i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; }
+    return a;
+  }
+
+  /* 촬영 일시 캡션 : '2068.08.08  14:07'
+     연도는 작중 시점(2068)으로 고정하고 월·일·시각만 한국 시간 기준 실제 값을 쓴다.
+     규칙은 shared/argo-date.js 한 곳에 있다 — 예전엔 여기서 실제 연도(2026)를 찍어
+     화면 다른 곳의 2068 과 어긋났다. */
+  function stamp(ms){ return window.ArgoDate ? ArgoDate.stamp(ms) : ''; }
+
+  /* 슬롯을 '중앙에서 가까운 순' 으로 정렬한다.
+     DriftWall 은 items[i] 를 열 i%COLUMNS · 행 floor(i/COLUMNS) 에 놓는다.
+     그래서 슬롯 i 의 격자 좌표를 알 수 있고, 중앙(가운데 열·가운데 행)에서의
+     거리로 정렬해 두면 "최신 컷이 중앙, 오래될수록 바깥" 배치가 된다.
+     열은 서로 다른 속도로 흐르므로 시간이 지나면 행 위치는 어긋나지만,
+     처음 배치와 갱신 직후에는 의도대로 가운데가 가장 새 컷이다. */
+  var SLOT_ORDER = (function(){
+    var cx=(COLUMNS-1)/2, cy=(PER_COL-1)/2, out=[];
+    for (var i=0;i<SLOTS;i++){
+      var c=i%COLUMNS, r=Math.floor(i/COLUMNS);
+      /* 타일이 가로로 길어(330×218) 화면상 거리는 세로 쪽이 더 촘촘하다 → 가중치 보정 */
+      var dx=(c-cx)*0.72, dy=(r-cy);
+      out.push({ i:i, d:Math.sqrt(dx*dx+dy*dy) });
+    }
+    out.sort(function(a,b){ return a.d-b.d || a.i-b.i; });
+    return out.map(function(o){ return o.i; });
+  })();
+
+  /* ── 촬영 컷 읽기 ───────────────────────────────────────────────────────
+     argo-scan.js 가 쓰는 두 키를 모두 읽는다. argoWebcamGallery 는 걷어낸
+     독립 촬영 페이지가 쓰던 키인데, 이미 찍혀 있던 컷을 버리지 않으려고 계속 읽는다. */
+  var KEYS = ['argoCandidateGallery','argoWebcamGallery'];
+
+  function readCaptures(){
+    var all=[];
+    KEYS.forEach(function(k){
+      var list;
+      try{ var raw=localStorage.getItem(k); list=raw?JSON.parse(raw):[]; }catch(e){ return; }
+      if(!Array.isArray(list))return;
+      list.forEach(function(r){
+        if(!r||typeof r!=='object')return;
+        var url=r.remote||r.u;             /* Storage 원본이 있으면 그걸, 없으면 로컬 썸네일 */
+        if(!url)return;
+        all.push({ image:url, title:'CANDIDATE', t:r.t||0, id:r.id||url.slice(-24),
+                   caption:stamp(r.t) });
+      });
+    });
+    var seen=Object.create(null), out=[];
+    all.sort(function(a,b){ return b.t-a.t; });      /* 최신순 — 넘치면 뒤(오래된 것)가 잘린다 */
+    all.forEach(function(r){ if(seen[r.id])return; seen[r.id]=1; out.push(r); });
+    return out;
+  }
+
+  /* 최신 촬영 컷 SLOTS 장까지 + 모자란 만큼 우주 사진.
+     우주 사진은 매번 섞고, 마지막에 전체를 한 번 더 섞어 촬영 컷이 벽 곳곳에 흩어지게 한다. */
+  function buildItems(){
+    var caps=readCaptures().slice(0, SLOTS);        /* 이미 최신순 */
+    var fillers=[];
+    var pool=shuffle(SPACE.slice());
+    for(var i=0; caps.length+fillers.length<SLOTS; i++){
+      if(i && i%pool.length===0) pool=shuffle(SPACE.slice());   /* 한 바퀴 돌 때마다 다시 섞는다 */
+      fillers.push(pool[i%pool.length]);
+    }
+    /* 중앙에 가까운 슬롯부터 최신 컷을 앉히고, 남는 바깥 슬롯을 우주 사진으로 채운다.
+       (예전에는 전체를 섞었는데, "새 사진은 중앙부터" 규칙과 맞지 않아 바꿨다) */
+    var ordered=caps.concat(fillers);
+    var items=new Array(SLOTS);
+    SLOT_ORDER.forEach(function(slot, rank){ items[slot]=ordered[rank]; });
+    return { items:items, capCount:caps.length };
+  }
+
+  var built=buildItems();
+
+  var wall=ArgoDriftWall.create(document.getElementById('wall'), {
+    items: built.items,
+    columns: COLUMNS,
+    /* 화면을 가득 채우도록 타일을 키웠다 (원본 200×132 → 330×218) */
+    tileWidth:330, tileHeight:218, gap:20, radius:16,
+    tilt:16, turn:-14, roll:0, perspective:1200, depth:120,
+    speed:42, direction:'up', variance:0.45, parallax:0.6,
+    lift:0,                    /* 호버 리프트 제거 — 연출은 아래 RippleDistortion 이 맡는다 */
+    fade:0.18,                 /* 가장자리 페이드 완화 (원본 0.6 은 너무 어두웠다) */
+    dim:0.92, grayscale:false, overlayColor:'#0b0b0d',
+    pauseOnHover:true,         /* 호버하면 벽 전체가 멈춘다 */
+    onHover: onTileHover,
+    /* [추적 전용] 연출 없음 — 이벤트만 남긴다 */
+    onTile: function(item,id){
+      try{ if(window.ArgoTrack) ArgoTrack.act('gallery_item_opened',{page:'photo_wall',button_id:String(id||'')}); }catch(e){}
+    }
+  });
+
+  /* ── 호버 : RippleDistortion ────────────────────────────────────────────
+     타일마다 WebGL 컨텍스트를 만들 수는 없으니(수십~수백 장) 인스턴스는 하나만 두고,
+     커서가 올라간 타일의 .drift-wall__inner 안으로 마운트를 옮겨 다닌다.
+     타일 안에 들어가 있으므로 벽의 3D 변환을 그대로 물려받는다.
+     좌표는 마운트의 화면 투영 bbox 로 계산되어 회전만큼 살짝 기울지만,
+     파동이 부드러운 원이라 눈으로는 커서를 그대로 따라온다. */
+  var rippleMount=document.createElement('span');
+  rippleMount.className='wall-ripple';
+  rippleMount.setAttribute('aria-hidden','true');
+  var ripple=null, rippleTile=null;
+
+  function onTileHover(tile){
+    if(tile===rippleTile) return;
+    rippleTile=tile;
+    if(!tile){ if(rippleMount.parentNode) rippleMount.remove(); if(ripple) ripple.clearWaves(); return; }
+    var inner=tile.querySelector('.drift-wall__inner');
+    var img=tile.querySelector('img');
+    if(!inner||!img) return;
+    inner.appendChild(rippleMount);
+    if(!ripple){
+      ripple=ArgoRipple.create(rippleMount,{
+        image:img,
+        brushSize:130, strength:0.17, swirl:1, rings:3,
+        spread:5, fade:2.2, spacing:10,
+        dispersion:0.3,
+        /* 호버 색 구성 —
+             메인 : 붉은끼. 파동이 지나간 자리를 코랄로 물들인다(uTint).
+                    사진 자체에도 같은 양(R×1.072)이 이미 깔려 있어서, 호버하면
+                    그 위에 한 겹 더 얹혀 확실히 붉어진다.
+             포인트 : 하늘민트. 물결 마루의 스페큘러(uHighlight)에만 찍혀서
+                    번지지 않고 가장자리에 반짝이는 점으로 남는다. */
+        tint:'#FF2D82', tintAmount:0.14, grayscale:false,
+        glint:0.5, highlightColor:'#FF2D82',
+        quality:'medium', trigger:'hover', alpha:1
+      });
+      if(!ripple) return;                    /* WebGL 이 없으면 조용히 벽만 남는다 */
+    } else {
+      ripple.setImage(img);
+    }
+  }
+
+  function paintMeta(n){
+    document.getElementById('wall-count').textContent=String(n);
+    document.getElementById('wall-fill').textContent=String(Math.max(0,SLOTS-n));
+  }
+  paintMeta(built.capCount);
+
+  /* ── 갱신 ───────────────────────────────────────────────────────────────
+     다른 탭에서 촬영하면 storage 이벤트가, 같은 탭이면 argo:capture 가 온다.
+     조용히 늘어나는 경우(전시용 키오스크 다른 창)를 대비해 주기 폴링도 얹되,
+     촬영 컷 수가 실제로 바뀌었을 때만 다시 만든다 — 매번 섞으면 벽이 계속 뒤집힌다. */
+  var lastCapCount=built.capCount;
+  var lastCapKey=readCaptures().slice(0,SLOTS).map(function(i){return i.id;}).join('|');
+  function refresh(){
+    var caps=readCaptures().slice(0,SLOTS);
+    var key=caps.map(function(i){return i.id;}).join('|');
+    if(key===lastCapKey)return;
+    lastCapKey=key;
+    var b=buildItems();
+    wall.setItems(b.items);
+    onTileHover(null);
+    paintMeta(b.capCount);
+  }
+  addEventListener('storage', function(e){ if(KEYS.indexOf(e.key)>=0) refresh(); });
+  addEventListener('argo:capture', refresh);
+  setInterval(refresh, 4000);
+
+  /* ── 닫기 ─────────────────────────────────────────────────────────────── */
+  document.getElementById('wallClose').addEventListener('click', function(){
+    var url='index.html';
+    /* [원복] 원래의 기본 전환(메타볼 로더)으로 되돌렸다. */
+    if(window.argoGoto) window.argoGoto(url); else location.href=url;
+  });
+  addEventListener('keydown', function(e){ if(e.key==='Escape') document.getElementById('wallClose').click(); });
+})();
+</script>
+</body>
+</html>

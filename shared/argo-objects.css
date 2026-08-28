@@ -1,0 +1,95 @@
+/* =============================================================================
+   ARGO · OBJECTS REWORK — styles.css 끝에 append (소스 순서로 override)
+   ① DNA 캡슐 섹션  ② 레드 → 핑크/코랄 액센트  ③ 링/오라 잔여 제거
+   전부 #mars-page 스코프 → 다른 씬엔 영향 없음.
+   ============================================================================= */
+
+/* ── ② 핑크·코랄 액센트 토큰 ─────────────────────────────────────────────── */
+#mars-page{
+  --ms-coral:#FF9A7A; --ms-coral-lt:#FF9A7A;
+  --ms-pink:#FF3D68; --ms-pink-hot:#FF3D68; --ms-rose:#FF3D68;
+  --ms-grad:linear-gradient(102deg,#FF9A7A 0%,#FF3D68 42%,#FF2D82 76%,#FF9A7A 100%);
+  --ms-grad-pink:linear-gradient(100deg,#FF9A7A,#FF3D68 70%);
+}
+#mars-page .ms-bigtitle,
+#mars-page .ms-cards-head .l,
+#mars-page .ms-tf-title,
+#mars-page .ms-cta-headline{
+  background:var(--ms-grad) !important;
+  -webkit-background-clip:text !important; background-clip:text !important;
+  -webkit-text-fill-color:transparent !important; color:transparent !important;
+}
+#mars-page .ms-card{ border-color:rgba(255,154,122,.22) !important; }
+#mars-page .ms-card::before{ content:""; position:absolute; left:0; top:0; bottom:0; width:3px; }
+#mars-page .ms-card[data-ci="0"]::before{ background:var(--ms-coral); }
+#mars-page .ms-card[data-ci="1"]::before{ background:var(--ms-coral-lt); }
+#mars-page .ms-card[data-ci="2"]::before{ background:var(--ms-orange,#FF9A7A); }
+#mars-page .ms-card[data-ci="3"]::before{ background:var(--ms-rose); }
+#mars-page .ms-card[data-ci="4"]::before{ background:var(--ms-pink); }
+#mars-page .ms-card[data-ci="5"]::before{ background:var(--ms-red,#FF2D82); }
+#mars-page .ms-cta-btn{
+  background:linear-gradient(100deg,#FF9A7A,#FF9A7A 40%,#FF3D68 100%) !important;
+  color:#0B0B0B !important;
+  box-shadow:0 18px 50px rgba(255,45,130,.45), inset 0 1px 0 rgba(255,255,255,.5) !important;
+}
+
+/* ── ③ 화성 옆 링/오라/스캔링 잔여 제거 (오브제 자체만 보이게) ──────────────── */
+#mars-page .ms-orb-aura,
+#mars-page .ms-orb-ring,
+#mars-page .ms-orb-scan-ring,
+#mars-page .ms-orb-atm,
+#mars-page .ms-orb-overlay,
+#mars-page .ms-orb-wrap::before{ display:none !important; }
+
+/* ── ① DNA 캡슐 섹션 ─────────────────────────────────────────────────────── */
+#mars-page .ms-dna-zone{
+  position:relative; min-height:170vh; padding:14vh 6vw 14vh;
+  display:flex; flex-direction:column; align-items:center;
+  background:
+    radial-gradient(80% 50% at 50% 18%, rgba(255,39,195,.10), transparent 60%),
+    linear-gradient(180deg, transparent, rgba(10,10,10,.6) 20%, var(--space-black,#080808) 50%);
+}
+#mars-page .ms-dna-head{ text-align:center; max-width:620px; z-index:3; }
+#mars-page .ms-dna-feed{
+  display:inline-flex; align-items:center; gap:8px;
+  font-family:var(--mono); font-size:10px; letter-spacing:.3em; text-transform:uppercase;
+  color:var(--ms-pink-hot);
+}
+#mars-page .ms-dna-feed::before{
+  content:""; width:7px; height:7px; border-radius:50%;
+  background:var(--ms-pink-hot); box-shadow:0 0 10px var(--ms-pink-hot);
+  animation:msDnaPulse 1.4s infinite;
+}
+@keyframes msDnaPulse{ 0%,100%{opacity:1} 50%{opacity:.35} }
+#mars-page .ms-dna-title{
+  margin-top:14px; font-family:var(--disp); font-weight:800;
+  font-size:clamp(34px,6vw,76px); line-height:.96; letter-spacing:.01em;
+  background:var(--ms-grad); -webkit-background-clip:text; background-clip:text;
+  -webkit-text-fill-color:transparent; color:transparent;
+}
+#mars-page .ms-dna-desc{
+  margin-top:16px; font-family:var(--kr); font-weight:300;
+  font-size:14px; line-height:1.85; color:var(--ms-ink,#D4FAFF);
+}
+#mars-page .ms-dna-sticky{
+  position:sticky; top:0; height:100vh; width:100%;
+  display:flex; align-items:center; justify-content:center;
+}
+#mars-page .ms-dna-stage{
+  width:min(78vmin,640px); height:88vmin; opacity:0;
+  will-change:transform,opacity; transform-origin:center center;
+  filter:drop-shadow(0 30px 90px rgba(255,45,130,.22));
+}
+#mars-page #ms-dna-model{
+  width:100%; height:100%; background:transparent; --poster-color:transparent;
+}
+#mars-page .ms-dna-coord{
+  position:absolute; font-family:var(--mono); font-size:10px; letter-spacing:.22em;
+  color:rgba(255,154,122,.45); text-transform:uppercase; z-index:3;
+}
+#mars-page .ms-dna-coord.tl{ top:24px; left:26px; }
+#mars-page .ms-dna-coord.br{ bottom:24px; right:26px; }
+
+@media (prefers-reduced-motion:reduce){
+  #mars-page .ms-dna-stage{ transform:none !important; opacity:1 !important; }
+}

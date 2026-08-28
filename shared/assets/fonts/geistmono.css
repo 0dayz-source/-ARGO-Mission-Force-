@@ -1,0 +1,17 @@
+/* Geist Mono — 가변 폰트(wght 100~900) 로만 + 이탤릭 두 벌.
+   원본: ~/Desktop/Fonts/Geist_Mono 의 VariableFont_wght, OFL 라이선스.
+   woff2 로 변환해 로컬에서 서빙한다(외부 CDN 없음). */
+@font-face{
+  font-family:'Geist Mono';
+  font-style:normal;
+  font-weight:100 900;
+  font-display:swap;
+  src:url('geistmono/GeistMono-Variable.woff2') format('woff2-variations');
+}
+@font-face{
+  font-family:'Geist Mono';
+  font-style:italic;
+  font-weight:100 900;
+  font-display:swap;
+  src:url('geistmono/GeistMono-Italic-Variable.woff2') format('woff2-variations');
+}

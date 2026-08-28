@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cp index.html /tmp/index.backup.html)",
+      "Bash(python3 build.py)",
+      "Read(//tmp/**)",
+      "Bash(cp pages/01-main.html /tmp/01-main.backup.html)",
+      "Bash(cp _shell.html /tmp/_shell.backup.html)",
+      "Bash(cp \"11-planet-detail.html\" /tmp/11-planet-detail.backup.html)",
+      "Bash(python3 -)",
+      "Bash(node --check /tmp/inline_check.js)",
+      "Bash(awk 'length\\($0\\)<400 {print NR\": \"length\\($0\\)}' shared/app.js)",
+      "Bash(awk '{print NR\"\\\\t\"length\\($0\\)}' shared/app.js)",
+      "Bash(sort -k2 -rn)",
+      "Bash(awk 'NR>=1249 && NR<=7427 && length\\($0\\)<300 {print NR\": \"$0}' 11-planet-detail.html)",
+      "Bash(awk 'length\\($0\\)<300 && \\(/<script/ || /<\\\\/script>/ || /<\\\\/body>/ || /<\\\\/html>/\\) {print NR\": \"substr\\($0,1,120\\)}' 11-planet-detail.html)",
+      "Bash(python3 -c ' *)",
+      "Bash(grep -v \"^.\\\\{300,\\\\}\")",
+      "Bash(sort -k9)"
+    ]
+  }
+}

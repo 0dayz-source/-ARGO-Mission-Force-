@@ -1,0 +1,26 @@
+# ── 배포에 필요한 것만 올린다 (사용자 선택) ──────────────────────────────
+# 여기 적힌 것들은 사이트 구동에 필요 없다. 로컬에는 그대로 남아 있다.
+
+# macOS
+.DS_Store
+._*
+
+# 작업 백업
+backup/
+
+# 소스·빌드 도구 (index.html 은 이걸로 만든 결과물이라 사이트에는 필요 없다)
+pages/
+_shell.html
+build.py
+
+# 개발용
+_warn-preview.html
+수정요청-가이드.txt
+
+# 서버측 — 브라우저가 받아갈 이유가 없다
+shared/*.sql
+supabase/
+
+# 에디터
+.vscode/
+.idea/

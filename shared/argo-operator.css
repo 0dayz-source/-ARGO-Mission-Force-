@@ -1,0 +1,349 @@
+/* =====================================================================
+   TFSC OPERATOR · 07 — 스크롤 연동 안내 인터페이스
+   ref. string-tune.fiddle.digital 의 '스크롤 도중 등장하는 안내' 구조만 참고.
+        캐릭터·디자인은 복제하지 않는다 — ARGO 기관의 항법 AI 로 다시 짰다.
+
+   상담 챗봇이 아니다. 스크롤 위치에 따라 미리 쓰인 안내가 뜨고, 사용자는
+   언제든 닫고 계속 볼 수 있다(스크롤을 막는 모달이 아니다).
+
+   [배치] 오른쪽 하단. 기존 HUD·스크롤 안내·CTA 를 가리지 않도록
+   safe-area 를 더해 띄운다.
+   ===================================================================== */
+
+.op-root{
+  position:fixed; z-index:2147482500;
+  right:max(22px, env(safe-area-inset-right));
+  bottom:calc(max(18px, env(safe-area-inset-bottom)) + 20px);   /* 캐릭터 아래 라벨 자리 */
+  /* [배치 변경] 예전엔 세로 스택이라 말풍선이 캐릭터 '바로 위' 에 붙었다.
+     말풍선은 캐릭터가 말하는 것이므로 대각선 왼쪽 위에 놓고 꼬리로 이어 준다.
+     캐릭터를 기준점으로 두고 패널만 절대배치한다. */
+  display:block;
+  pointer-events:none;                 /* 자식만 받는다 — 배경 조작을 막지 않는다 */
+  font-family:var(--f-mono, ui-monospace, monospace);
+}
+.op-root *{box-sizing:border-box}
+
+/* ── 안내 캐릭터 ──────────────────────────────────────────────────────
+   [교체] 예전엔 WebGL 로 빛줄기를 흘리는 원형 오브(Strands)였다.
+   ref. string-tune.fiddle.digital — 안내를 건네는 '캐릭터' 가 제자리에서
+   계속 미세하게 움직이는 인상. 픽셀아트 3프레임(idle/float/scan)을 돌린다.
+   스프라이트라 크로스페이드 없이 딱딱 끊어 넘긴다(보간하면 픽셀이 뭉갠다). */
+.op-guide{
+  position:relative; display:block; flex-shrink:0;
+  /* [요청] 28×45px. 새 아트의 viewBox 는 12×18(=2:3)이라 28×45(=0.62)와 비율이
+     다르지만, SVG 기본 preserveAspectRatio 가 안쪽에 맞춰 넣으므로
+     그림이 찌그러지지 않고 28×42 로 들어가 세로 가운데 정렬된다. */
+  width:28px; height:45px;
+  padding:0; border:0; background:transparent;
+  cursor:pointer; pointer-events:auto;
+  transition:transform .4s cubic-bezier(.16,1,.3,1);
+}
+.op-guide:hover{transform:scale(1.06)}
+.op-guide:focus-visible{outline:2px solid #FF9A7A;outline-offset:6px;border-radius:10px}
+
+.op-guide-stage{
+  position:absolute; inset:0; display:block;
+  /* 캐릭터가 제자리에서 위아래로 부유한다 — 프레임 전환과 주기를 어긋나게 둬서
+     같은 동작이 기계적으로 반복되는 느낌을 줄인다. */
+  animation:opBob 3.7s ease-in-out infinite;
+  filter:drop-shadow(0 0 7px rgba(255,45,130,.42)) drop-shadow(0 3px 8px rgba(0,0,0,.55));
+}
+@keyframes opBob{
+  0%,100%{transform:translateY(0)}
+  50%    {transform:translateY(-3px)}
+}
+.op-f{
+  position:absolute; inset:0; width:100%; height:100%;
+  display:block; opacity:0;
+  /* [요청] 좌우 반전 — 캐릭터가 말풍선(왼쪽 위)을 바라보게 한다 */
+  transform:scaleX(-1);
+  image-rendering:pixelated;          /* 픽셀아트 — 확대해도 뭉개지지 않게 */
+  user-select:none; pointer-events:none;
+}
+/* [요청 순서] 1 → 2 → 3 → 2 → (다시 1) 왕복.
+   idle → transmit → authorize → transmit 4박자로 한 바퀴이므로
+   반복하면 1-2-3-2-1-2-3-2… 가 된다. 하드 컷이라 구간 끝에서 0/1 로 딱 넘어간다. */
+.op-f1{animation:opF1 2.6s steps(1,end) infinite}
+.op-f2{animation:opF2 2.6s steps(1,end) infinite}
+.op-f3{animation:opF3 2.6s steps(1,end) infinite}
+@keyframes opF1{0%{opacity:1} 25%{opacity:0} 100%{opacity:0}}
+@keyframes opF2{0%{opacity:0} 25%{opacity:1} 50%{opacity:0} 75%{opacity:1} 100%{opacity:0}}
+@keyframes opF3{0%{opacity:0} 50%{opacity:1} 75%{opacity:0} 100%{opacity:0}}
+
+/* 말하는 중 — 스캔 프레임 비중이 커지고 부유가 빨라진다 */
+.op-root.is-talking .op-guide-stage{animation-duration:1.5s}
+.op-root.is-talking .op-f1,
+.op-root.is-talking .op-f2,
+.op-root.is-talking .op-f3{animation-duration:1.1s}
+
+.op-guide-tag{
+  /* [수정] 캐릭터가 28px 로 작아지면서 라벨(9px·자간 .18em)이 캐릭터보다 훨씬 넓어졌다.
+     캐릭터 중앙에 맞추면 화면 오른쪽 밖으로 잘린다 — 오른쪽 끝에 맞춘다. */
+  position:absolute; right:0;
+  top:calc(100% + 4px);
+  font-size:9px; letter-spacing:.18em; white-space:nowrap;
+  color:rgba(212,250,255,.62); pointer-events:none;
+}
+
+/* ── 대화창 ────────────────────────────────────────────────────────── */
+.op-panel{
+  pointer-events:auto;
+  /* 캐릭터의 대각선 왼쪽 위. 오른쪽 아래 모서리가 캐릭터 머리 쪽을 향한다. */
+  position:absolute;
+  right:44px;                       /* 캐릭터 왼쪽으로 비켜난다 */
+  bottom:56px;                      /* 캐릭터 머리 위로 올라간다 */
+  transform-origin:100% 100%;       /* 접힐 때 캐릭터 쪽으로 빨려 들어간다 */
+  width:min(430px, calc(100vw - 130px));
+  padding:1px;                      /* 테두리가 새어 나올 틈 */
+  border-radius:30px;
+  /* [수정] 패널 자체를 페이드시키면 backdrop-filter 가 불투명해질 때까지
+     한 박자 늦게 붙어, 박스가 먼저 뜨고 뒤늦게 성에가 끼는 것처럼 보였다.
+     패널은 항상 그려 두고(= backdrop-filter 가 처음부터 확립된다),
+     보이고 숨기는 건 바깥 .op-root 의 슬라이드가 전담한다. */
+  opacity:1; visibility:visible;
+}
+/* 닫힘(오브만) 상태 — 패널만 접는다. backdrop-filter 는 이미 확립돼 있으므로
+   다시 열 때 성에가 늦게 끼지 않는다.
+   (이 상태는 transition 이 없어 즉시 접힌다 — 등장 모션은 .op-root 슬라이드와
+    안쪽 글자·버튼의 opRise 가 맡는다.) */
+/* [모션] 예전엔 이 상태에 transition 이 없어 말풍선이 '툭' 접혔다.
+   말풍선은 캐릭터가 하는 말이므로 캐릭터 쪽(transform-origin:100% 100%)에서
+   펼쳐지고 같은 길로 접힌다 — 들어올 때 180ms, 나갈 때 140ms(사용자가 결정을
+   내린 뒤라 시스템 반응은 더 빨라야 한다). scale 은 0.96 에서 시작한다(0 금지). */
+/* [요청] 등장·퇴장을 느리고 부드럽게, bouncy 하게. 펴질 때 460ms 로 늘리고
+   back-out 곡선을 써서 캐릭터 쪽에서 '톡' 하고 펴진다. scale 은 0.92 에서 시작
+   (0 은 금지 — 없던 것이 생기는 인상이 된다). 접힐 때는 340ms, 튀지 않는 곡선. */
+.op-panel{
+  transition:opacity .30s cubic-bezier(.23,1,.32,1),
+             transform .46s cubic-bezier(.24,1.46,.4,1);
+}
+.op-root:not(.is-open) .op-panel{
+  opacity:0; transform:translate(12px,16px) scale(.92); pointer-events:none;
+  transition-duration:.20s,.34s;
+  transition-timing-function:linear, cubic-bezier(.32,.72,0,1);
+}
+/* 테두리 — SpecularButton (ref. @react-bits/SpecularButton-JS-CSS).
+   원본처럼 캔버스를 박스보다 PAD(20px) 크게 깔아 테두리 빛이 밖으로 번지게 한다.
+   셰이더가 SDF 로 둥근 사각형 테두리만 칠하므로 글자 위를 덮지 않는다. */
+.op-spec{
+  position:absolute; inset:-20px; z-index:0;
+  pointer-events:none; display:block;
+}
+.op-spec canvas{display:block;width:100%;height:100%}
+/* WebGL2 가 없을 때 — 정적인 코랄 테두리로 되돌린다 */
+.op-spec-fallback{
+  inset:0; border-radius:inherit;
+  box-shadow:inset 0 0 0 1px rgba(255,154,122,.42),
+             0 0 22px rgba(255,45,130,.20);
+}
+
+/* 말풍선 꼬리 — 삼각형 대신 점점 작아지는 원 두 개(만화 말풍선 방식).
+   패널과 같은 유리면이라 이어 붙은 것처럼 보이고, 테두리 빛은 커서 방향을 따른다.
+   --op-ang 는 SpecularButton 쪽 pointermove 가 매번 써 넣는다(같은 광원을 공유). */
+.op-tail{
+  position:absolute; z-index:2; display:block; pointer-events:none;
+  border-radius:50%;
+  background:linear-gradient(158deg, rgba(255,255,255,.030), rgba(255,255,255,.010));
+  backdrop-filter:blur(18px) saturate(1.35) contrast(.96);
+  -webkit-backdrop-filter:blur(18px) saturate(1.35) contrast(.96);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.14), 0 6px 16px rgba(0,0,0,.24);
+}
+/* 커서 방향에서 들어오는 반짝임 — 원 테두리 한쪽만 밝아진다.
+   mask 로 가운데를 파내 '테두리에만' 걸리게 한다(패널의 rim 과 같은 결). */
+.op-tail::after{
+  content:""; position:absolute; inset:0; border-radius:inherit;
+  background:linear-gradient(var(--op-ang, 135deg),
+    rgba(255,154,122,.95) 0%, rgba(255,154,122,.22) 26%, transparent 55%);
+  padding:1.2px;
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;
+          mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          mask-composite:exclude;
+}
+/* 캐릭터 쪽(오른쪽 아래)으로 대각선으로 내려간다 */
+.op-tail-1{ right:20px; bottom:-13px; width:14px; height:14px }
+.op-tail-2{ right:8px;  bottom:-26px; width:8px;  height:8px  }
+
+/* 안쪽 본체 — 실제 유리면 */
+.op-panel-in{
+  position:relative; z-index:1;
+  border-radius:29px;
+  padding:22px 24px 18px;
+  /* [frost] 뒤가 뭉개져 비친다.
+     [수정] blur 54px 은 뒤의 별·코드가 완전히 평균값으로 뭉개져서, 알파가 아무리
+     낮아도 '균일한 짙은 회색 판' 으로 읽혔다 — 그게 불투명해 보이던 진짜 이유다.
+     흐림을 줄여 뒤 형태가 남게 하고, brightness 로 띄우던 것도 뺀다.
+     알파를 올리는 대신 흐림을 줄이는 방향이라 글자 가독성은 유지된다. */
+  background:linear-gradient(158deg, rgba(255,255,255,.026), rgba(255,255,255,.008));
+  backdrop-filter:blur(18px) saturate(1.35) contrast(.96);
+  -webkit-backdrop-filter:blur(18px) saturate(1.35) contrast(.96);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16),
+             inset 0 -1px 0 rgba(255,255,255,.04),
+             0 22px 54px rgba(0,0,0,.26);
+}
+/* 열림 여부는 이제 .op-root 가 통째로 다룬다 — 패널은 항상 보인다 */
+
+.op-msg{
+  font-family:var(--f-kr, sans-serif);
+  font-size:14.5px; line-height:1.62; letter-spacing:-.01em;
+  color:rgba(255,255,255,.94); word-break:keep-all; margin:0 0 16px;
+  text-shadow:0 1px 12px rgba(0,0,0,.55);
+}
+/* 줄(직계 span)만 블록이다. 타자 효과가 글자마다 span.op-ch 를 하나씩 심으므로
+   자손 선택자로 두면 글자가 전부 블록이 돼 한 줄에 한 자씩 세로로 쏟아진다. */
+.op-msg > span{display:block}
+.op-msg > span.op-gap{height:.62em}
+.op-msg .op-ch{display:inline}
+/* 버튼은 레퍼런스처럼 말풍선 안쪽 오른쪽 아래 */
+.op-actions{display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end}
+
+/* 버튼 위계 : primary = 진행/평가 시작, ghost = 보조(스킵·닫기) */
+.op-btn{
+  font-family:var(--f-mono, monospace);
+  font-size:10.5px; letter-spacing:.14em; cursor:pointer;
+  padding:12px 20px; border-radius:999px; border:1px solid transparent;
+  transition:background .24s, color .24s, box-shadow .24s, transform .24s cubic-bezier(.16,1,.3,1);
+}
+.op-btn:focus-visible{outline:2px solid #FF9A7A;outline-offset:2px}
+/* [글래스] 꽉 찬 코랄 판이 아니라, 코랄빛이 도는 반투명 유리.
+   배경이 비쳐야 말풍선과 같은 재질로 읽힌다. */
+.op-btn-primary{
+  background:linear-gradient(158deg, rgba(255,39,195,.30), rgba(255,45,130,.16));
+  color:#D4FAFF; font-weight:600;
+  border-color:rgba(255,154,122,.42);
+  backdrop-filter:blur(12px) saturate(1.4);
+  -webkit-backdrop-filter:blur(12px) saturate(1.4);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.22), 0 0 22px rgba(255,45,130,.20);
+}
+.op-btn-primary:hover{
+  background:linear-gradient(158deg, rgba(255,154,122,.42), rgba(255,45,130,.24));
+  border-color:rgba(255,154,122,.65);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.3), 0 0 30px rgba(255,45,130,.34);
+  transform:translateY(-1px);
+}
+.op-btn-ghost{
+  background:rgba(255,255,255,.05); color:rgba(212,250,255,.72);
+  border-color:rgba(255,255,255,.16);
+  backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.12);
+}
+.op-btn-ghost:hover{
+  background:rgba(255,255,255,.14); color:#D4FAFF;
+  border-color:rgba(255,255,255,.34);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.24), 0 6px 22px rgba(0,0,0,.35);
+  transform:translateY(-1px);
+}
+.op-btn:active{transform:translateY(0) scale(.985)}
+/* 최종 CTA — 마지막 섹션에서만 크게 */
+.op-btn-final{padding:14px 24px;font-size:11px;letter-spacing:.16em}
+
+/* 텍스트·버튼 순차 등장 */
+.op-root.is-open .op-msg{animation:opRise .62s cubic-bezier(.24,1.36,.4,1) .14s both}
+/* [수정] 예전엔 말풍선이 열리자마자 고정 지연(.20/.28/.36s)으로 떴다 —
+   글자가 아직 찍히는 중에 버튼이 먼저 나와 순서가 어긋났다.
+   이제 타자가 끝나면 JS 가 .is-typed 를 붙이고, 그때 아래에서 쓱 올라온다. */
+.op-actions > *{opacity:0; transform:translateY(16px); pointer-events:none}
+.op-root.is-typed .op-actions > *{animation:opSlideUp .68s cubic-bezier(.24,1.46,.4,1) both; pointer-events:auto}
+.op-root.is-typed .op-actions > *:nth-child(1){animation-delay:0s}
+.op-root.is-typed .op-actions > *:nth-child(2){animation-delay:.09s}
+.op-root.is-typed .op-actions > *:nth-child(3){animation-delay:.18s}
+@keyframes opSlideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes opRise{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+
+/* ── 좁은 화면 ─────────────────────────────────────────────────────── */
+@media (max-width:640px){
+  .op-root{right:14px;bottom:max(12px, env(safe-area-inset-bottom));gap:10px}
+  .op-guide{width:24px;height:38px}
+  .op-panel{right:38px;bottom:48px;width:calc(100vw - 76px)}
+  .op-panel{width:calc(100vw - 92px);padding:14px 15px 13px}
+  .op-msg{font-size:12.5px}
+  .op-guide-tag{display:none}
+}
+
+/* ── 모션 축소 ─────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion:reduce){
+  .op-guide-stage,.op-f1,.op-f2,.op-f3{animation:none}
+  .op-f1{opacity:1}
+  .op-panel{transition:opacity .2s}
+  .op-root.is-open .op-msg{animation:none}
+  .op-actions > *{opacity:1;transform:none;pointer-events:auto}
+  .op-root.is-typed .op-actions > *{animation:none}
+  .op-guide,.op-btn{transition:none}
+}
+
+
+/* ── 커스텀 커서를 안내창 위로 ────────────────────────────────────────
+   MARS 는 기본 커서를 숨기고 .pd-cursor 로 그린다(z-index 90).
+   안내창은 그보다 훨씬 위(2147482500)라 챗 위에서 커서가 사라졌다.
+   안내창이 떠 있는 동안만 커서를 그 위로 올린다. */
+body.op-active .pd-cursor,  body.op-visible .pd-cursor,
+body.op-active .pd-cursor-ring, body.op-visible .pd-cursor-ring{z-index:2147482600}
+body.op-active .pd-cursor-label, body.op-visible .pd-cursor-label{z-index:2147482601}
+/* 오브·버튼 위에서는 기본 커서도 살려 둔다(터치·보조기기 대비) */
+.op-guide,.op-btn{cursor:pointer}
+
+
+/* ── 쏙 사라지고 쏙 등장 ─────────────────────────────────────────────
+   안내가 없는 구간에서는 오브와 말풍선이 통째로 화면 아래로 내려간다.
+   ref. string-tune.fiddle.digital — 필요할 때만 올라오는 그 인상.
+   opacity 만 끄면 자리를 차지한 채 사라져 '숨었다' 는 느낌이 안 난다. */
+.op-root{
+  /* 나갈 때도 들어올 때와 같은 곡선·같은 길이. opacity 만 짧으면 다 내려가기 전에
+     먼저 사라져 '툭 꺼진' 인상이 된다. 두 속성을 맞춘다. */
+  /* 나갈 때가 딱딱하다는 지적 — 길이를 늘리고 튀지 않는 곡선으로 바꿨다.
+     cubic-bezier(.16,1,.3,1) 은 끝에서 급히 멎어 '탁' 하는 인상이 있다. */
+  /* [쫀득] 살짝 넘겼다 돌아오는 곡선. 올라올 때도 내려갈 때도 같은 감각. */
+  /* [수정] opacity 를 .55s 로 같이 끌면 올라오는 내내 투명→불투명으로 익어서,
+     '반투명 유리가 미끄러져 올라온다' 가 아니라 '없던 게 진해진다' 로 보였다.
+     등장은 슬라이드가 전담한다 — 불투명도는 앞부분에서 짧게 붙고 끝난다.
+     (완전히 빼지 않는 이유: 숨은 위치가 화면 밖을 4px 남기고 걸친다.) */
+  /* [모션] 아래에서 올라오는 서랍이므로 드로어 곡선(cubic-bezier(.32,.72,0,1))을 쓴다.
+     예전 .78s + 오버슈트(.34,1.32,.46,1)는 UI 치고 길고 끝에서 한 번 튕겼다.
+     들어올 때 420ms / 나갈 때 280ms — 나가는 쪽이 빨라야 지시에 즉답한 느낌이 난다.
+     길은 대칭이다(같은 아래 방향), 시간만 비대칭. */
+  /* [요청] 더 느리고 부드럽게, 그리고 bouncy 하게.
+     들어올 때 720ms — 끝에서 한 번 넘겼다 돌아오는 back-out 곡선(오버슈트 약 9%).
+     나갈 때 540ms — 내려가기 전 살짝 위로 당겼다 떨어지는 anticipation.
+     길은 대칭(같은 아래 방향), 시간만 비대칭이라 지시에 즉답하는 느낌은 남는다.
+     (예전 주석의 '오버슈트는 UI 치고 튄다' 판단을 사용자 요청으로 뒤집은 것 —
+      다시 밋밋하게 되돌리지 말 것.) */
+  transition:transform .72s cubic-bezier(.22,1.42,.36,1),
+             opacity .22s linear;
+}
+.op-root.is-hidden{
+  transform:translateY(calc(100% + 34px));
+  opacity:0;
+  pointer-events:none;
+  transition-property:transform,opacity;
+  transition-duration:.54s,.26s;
+  transition-timing-function:cubic-bezier(.36,-.24,.66,1), linear;
+  transition-delay:0s,.2s;   /* 다 내려가기 전에 먼저 사라지지 않게 */
+}
+.op-root.is-hidden .op-guide{pointer-events:none}
+
+@media (prefers-reduced-motion:reduce){
+  .op-root{transition:opacity .2s}
+  .op-root.is-hidden{transform:none;transition-duration:.2s}
+  .op-panel{transition:opacity .16s ease}
+  .op-root:not(.is-open) .op-panel{transform:none}
+}
+
+
+/* ── 등장 모션 ────────────────────────────────────────────────────────
+   오브가 먼저 솟고(지연 0), 패널이 살짝 늦게 따라 올라온다. */
+.op-root .op-guide{
+  transition:transform .62s cubic-bezier(.34,1.5,.5,1), opacity .4s ease;
+}
+.op-root.is-hidden .op-guide{transform:translateY(16px) scale(.86);opacity:0}
+.op-root .op-panel{transition-delay:.08s}
+.op-root.is-hidden .op-panel{transition-delay:0s}
+
+/* 타자 효과 — 커서(캐럿) 없이 글자만 하나씩 드러난다 */
+.op-msg .op-ch{opacity:0}
+.op-msg .op-ch.on{opacity:1;transition:opacity .12s linear}
+
+@media (prefers-reduced-motion:reduce){
+  .op-root .op-guide{transition:none}
+  .op-msg .op-ch{opacity:1}
+}
+

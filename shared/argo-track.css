@@ -1,0 +1,48 @@
+/* ============================================================================
+   ARGO — 세션 무활동 경고 오버레이
+   ----------------------------------------------------------------------------
+   2분 30초 무활동에서 뜨고, 의미 있는 행동이 있으면 즉시 닫힌다.
+   기존 화면을 가리지 않도록 작게, 우하단에만 띄운다(챗봇 포드와 겹치지 않게 왼쪽).
+   기존 말풍선(.op-panel-in)과 같은 유리 재질·같은 모션 곡선을 쓴다.
+   ============================================================================ */
+.argo-track-warn{
+  position:fixed; left:24px; bottom:26px; z-index:9995;
+  display:flex; align-items:center; gap:9px;
+  padding:9px 14px 9px 12px;
+  border-radius:999px;
+  font-family:var(--f-mono, 'IBM Plex Mono', ui-monospace, monospace);
+  font-size:11.5px; letter-spacing:.06em; white-space:nowrap;
+  color:rgba(255,255,255,.92);
+  background:linear-gradient(158deg, rgba(255,255,255,.030), rgba(255,255,255,.010));
+  backdrop-filter:blur(18px) saturate(1.35);
+  -webkit-backdrop-filter:blur(18px) saturate(1.35);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16),
+             inset 0 0 0 1px rgba(255,61,104,.34),
+             0 18px 44px rgba(0,0,0,.34);
+  text-shadow:0 1px 10px rgba(0,0,0,.6);
+  pointer-events:none;                 /* 관람을 막지 않는다 — 표시 전용 */
+  /* 등장/퇴장은 챗봇과 같은 감각(느리고 살짝 튀는 곡선) */
+  opacity:0; transform:translateY(14px) scale(.94);
+  transition:opacity .26s linear, transform .46s cubic-bezier(.24,1.46,.4,1);
+}
+.argo-track-warn.is-on{ opacity:1; transform:none }
+
+.argo-track-warn .atw-dot{
+  width:6px; height:6px; border-radius:50%;
+  background:#FF3D68; box-shadow:0 0 10px rgba(255,61,104,.9);
+  animation:atwPulse 1.15s ease-in-out infinite;
+}
+@keyframes atwPulse{ 0%,100%{opacity:1} 50%{opacity:.25} }
+
+.argo-track-warn .atw-n{
+  color:#FF9A7A; font-weight:600; font-variant-numeric:tabular-nums;  /* 숫자가 줄어도 폭이 안 흔들린다 */
+}
+
+@media (max-width:640px){
+  .argo-track-warn{ left:14px; right:14px; bottom:16px; justify-content:center; font-size:10.5px }
+}
+@media (prefers-reduced-motion:reduce){
+  .argo-track-warn{ transition:opacity .2s linear; transform:none }
+  .argo-track-warn.is-on{ transform:none }
+  .argo-track-warn .atw-dot{ animation:none }
+}

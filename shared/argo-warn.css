@@ -1,0 +1,141 @@
+/* =====================================================================
+   ARGO — SESSION CONTROL 무활동 경고 : OPERATOR·07 챗봇
+
+   [원칙] 말풍선·꼬리·캐릭터의 생김새를 여기서 새로 만들지 않는다.
+   shared/argo-operator.css 의 .op-panel / .op-panel-in / .op-tail / .op-guide 를
+   그대로 쓰고, 이 파일은 '화면 중앙에 세우는 것' 과 '안쪽 내용' 만 맡는다.
+   (예전엔 여기서 핑크 테두리와 어두운 배경을 따로 그려서, 기존 반투명 채팅창과
+    전혀 다른 상자가 됐다. 다시 그리지 말 것 — 출처는 argo-operator.css 하나다.)
+
+   그래서 루트에 op-root 를 함께 붙인다 — 등장/퇴장 곡선도 챗봇 것을 그대로 받는다.
+   ===================================================================== */
+
+/* ── 딤 + 정중앙 배치 (op-root 의 우하단 고정 배치를 덮는다) ──────────── */
+.aw-root.op-root{
+  /* [주의] inset:0 뒤에 right/bottom:auto 를 다시 주면 안 된다 — 네 변 고정이 풀려
+     내용 크기로 쪼그라들고 좌상단에 붙는다(실제로 그랬다). inset:0 하나면 충분하다. */
+  position:fixed; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  padding:24px;
+  pointer-events:auto;                 /* 화면 아무 데나 눌러도 연장된다 */
+  /* [요청] 배경 블러 없음 — 딤만 얹는다. 뒤 화면이 그대로 보여야
+     '전시가 멈춘 게 아니라 잠깐 물어보는 중' 으로 읽힌다. */
+  background:rgba(6,3,5,.34);
+  opacity:0; visibility:hidden;
+  transition:opacity .34s linear, visibility 0s linear .34s;
+}
+.aw-root.op-root.is-on{
+  opacity:1; visibility:visible;
+  transition:opacity .34s linear, visibility 0s linear 0s;
+}
+.aw-root.op-root.is-out{
+  opacity:0;
+  transition:opacity .18s linear, visibility 0s linear .18s;
+}
+
+/* [커서] 이 오버레이는 z-index 가 아주 높아서(op-root 2147482500) 커스텀 커서가
+   상자 뒤로 들어간다. 경고가 떠 있는 동안만 커서를 그 위로 올린다.
+   (argo-operator.css 가 챗봇에 대해 하는 것과 같은 처리 — 값만 한 칸 위) */
+body.aw-open .pd-cursor,
+body.aw-open .pd-cursor-ring{z-index:2147482600}
+body.aw-open .pd-cursor-label{z-index:2147482601}
+
+/* 말풍선 → 꼬리 → 캐릭터. 챗봇과 같은 대각선 관계를 세로로 세운 것. */
+.aw-stack{display:flex; flex-direction:column; align-items:flex-end}
+
+/* 우하단 고정용 절대배치만 풀고, 유리면·모서리·그림자는 op-panel-in 그대로 둔다 */
+.aw-root .op-panel{
+  position:relative; right:auto; bottom:auto;
+  width:clamp(340px, 38vw, 520px);
+  transform-origin:100% 100%;          /* 캐릭터 쪽에서 펴진다 — 챗봇과 같다 */
+}
+/* 캐릭터가 먼저 솟고 말풍선이 뒤따른다 (argo-operator.css 의 규칙과 같은 값) */
+.aw-root:not(.is-on) .op-guide{transform:translateY(16px) scale(.86); opacity:0}
+.aw-root .op-guide{margin-top:34px; margin-right:22px}
+.aw-root .op-guide-tag{opacity:1}
+
+/* ── 채팅창 안쪽 내용 ─────────────────────────────────────────────────── */
+.aw-label{
+  display:flex; align-items:center; gap:8px;
+  font-family:var(--f-mono, 'IBM Plex Mono', ui-monospace, monospace);
+  font-size:9px; letter-spacing:.26em; text-transform:uppercase;
+  color:rgba(255,255,255,.42);
+  margin:0 0 18px;
+}
+.aw-dot{
+  width:5px; height:5px; border-radius:50%; flex:0 0 auto;
+  background:#FF2D82; box-shadow:0 0 8px rgba(255,45,130,.85);
+  animation:awPulse 1.9s ease-in-out infinite;   /* 느린 펄스 */
+}
+@keyframes awPulse{0%,100%{opacity:1}50%{opacity:.28}}
+
+/* 다이얼 왼쪽, 글 오른쪽. 지표와 그 지표가 설명하는 문장을 붙여 둔다. */
+.aw-row{display:flex; align-items:center; gap:20px}
+.aw-row-txt{min-width:0}
+
+/* ── 자릿수 타일 카운트다운 ────────────────────────────────────────────────
+   ref. 21st.dev/r/nexus-ui/animated-countdown — 둥근 타일에 큰 숫자, 아래 라벨.
+   원본은 밝은 배경의 흰 카드다. 여기는 유리 말풍선 위라 같은 구조를
+   ARGO 재질(반투명 + 윗변 광택)로 옮긴다. 새 색은 넣지 않는다. */
+.aw-clock{display:flex; flex-direction:column; align-items:center; gap:9px; flex:0 0 auto}
+.aw-tiles{display:flex; gap:7px}
+.aw-tile{
+  position:relative; overflow:hidden;
+  width:46px; height:56px; border-radius:13px;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(255,255,255,.055);
+  border:1px solid rgba(255,255,255,.10);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.14), 0 6px 18px rgba(0,0,0,.28);
+}
+.aw-d{
+  position:absolute;
+  font-family:var(--f-mono, 'IBM Plex Mono', ui-monospace, monospace);
+  font-size:30px; font-weight:700; line-height:1;
+  letter-spacing:-.03em;                 /* 큰 글자는 자간을 좁힌다 */
+  font-variant-numeric:tabular-nums;
+  color:#FFFFFF;
+}
+/* 숫자 교체 — 아래에서 올라오고 위로 빠진다(시간이 흐르는 방향).
+   과감한 튐 없이 한 번에 안착하는 곡선(critically damped 감각). */
+.aw-d.is-in { animation:awRollIn  .42s cubic-bezier(.16,1,.3,1) both }
+.aw-d.is-out{ animation:awRollOut .42s cubic-bezier(.16,1,.3,1) both }
+@keyframes awRollIn { from{transform:translateY(104%); opacity:0} to{transform:none; opacity:1} }
+@keyframes awRollOut{ from{transform:none; opacity:1} to{transform:translateY(-104%); opacity:0} }
+
+.aw-unit{
+  font-family:var(--f-mono, 'IBM Plex Mono', ui-monospace, monospace);
+  font-size:8.5px; letter-spacing:.28em;   /* 작은 글자는 자간을 벌린다 */
+  color:rgba(255,255,255,.40);
+}
+
+/* 제목과 안내 — 유리면 위라 흐린 회색 대신 또렷한 흰색 계열을 쓴다(vibrancy) */
+.aw-title{
+  margin:0 0 8px;
+  font-family:var(--f-mono, 'IBM Plex Mono', ui-monospace, monospace);
+  font-size:13.5px; font-weight:600; letter-spacing:.1em;
+  color:#FFFFFF; text-shadow:0 1px 12px rgba(0,0,0,.55);
+}
+.aw-help{
+  margin:0;
+  font-family:var(--f-kr, sans-serif);
+  font-size:12.5px; line-height:1.62; letter-spacing:-.01em;
+  color:rgba(255,255,255,.78); word-break:keep-all;
+  text-shadow:0 1px 12px rgba(0,0,0,.55);
+}
+.aw-help b{font-weight:600; color:#FFFFFF}
+
+.aw-root .op-actions{margin-top:20px}
+
+@media (max-width:520px){
+  .aw-root .op-panel{width:100%}
+  .aw-row{gap:16px}
+  .aw-tile{width:40px; height:50px}
+  .aw-d{font-size:26px}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .aw-dot{animation:none}
+  .aw-d.is-in,.aw-d.is-out{animation:none}   /* 숫자는 굴리지 않고 그냥 바뀐다 */
+  .aw-d.is-out{display:none}
+  .aw-root:not(.is-on) .op-guide{transform:none}
+}

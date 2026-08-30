@@ -708,12 +708,17 @@
        sid    : ArgoDB.sid() 세션 아이디 — captures.session_id 와 1:1
        t      : 촬영 시각(ms)
        u      : 로컬 썸네일 dataURL (이관되면 버려도 되는 캐시)
-       remote : Storage public URL — 채워져 있으면 이미 DB 에 올라간 컷 */
+       remote : Storage public URL — 채워져 있으면 이미 DB 에 올라간 컷
+       test   : true 면 전시 전 시험 운전 중에 찍힌 임시 컷 (없으면 진짜 관람객 컷) */
   /* 확대 보기용 원본은 이 세션 동안만 메모리에 둔다.
      localStorage 에는 384px 썸네일만 저장하므로 그걸 키우면 뭉개진다.
      새로고침으로 캐시가 비면 썸네일로 폴백하고, 그때는 확대 배율을 낮춘다. */
   var FULLRES=Object.create(null);
   function bestUrl(rec){ return (rec&&FULLRES[rec.id])||(rec&&rec.u)||''; }
+
+  /* 전시 전 시험 운전 여부. 스위치의 주인은 shared/argo-track.js 의 MODE 하나다 —
+     여기서 따로 정하면 두 값이 어긋난다. ArgoTrack 이 없는 페이지에서는 시험이 아니라고 본다. */
+  function isTestRun(){ try{ return !!(window.ArgoTrack&&ArgoTrack.isTest&&ArgoTrack.isTest()); }catch(e){ return false; } }
 
   function pushToGallery(fullUrl){
     var rec={
@@ -721,6 +726,9 @@
       sid:(window.ArgoDB&&ArgoDB.sid)?ArgoDB.sid():null,
       t:Date.now(), u:'', remote:null
     };
+    /* 시험 운전 중에 찍은 컷은 임시로 표시해 둔다. 전시 시작 전에 ArgoScanClearTest() 로
+       이 표시가 붙은 것만 골라 지운다(진짜 관람객 사진과 섞이지 않게). */
+    if(isTestRun()) rec.test=true;
     FULLRES[rec.id]=fullUrl;
     makeThumb(fullUrl,function(thumb){
       rec.u=thumb;
@@ -909,6 +917,37 @@
   function stopCamera(){ if(stream){ stream.getTracks().forEach(function(t){t.stop();}); stream=null; video.srcObject=null; } }
   /* [추적] 3분 무활동 종료 시 추적 계층이 스트림을 확실히 끄기 위한 훅. UI 는 건드리지 않는다. */
   try{ window.ArgoScanStop = stopCamera; }catch(e){}
+
+  /* 시험 운전 중에 찍은 컷만 지운다 — 브라우저 콘솔에서 ArgoScanClearTest() 로 부른다.
+     두 갤러리(메인/독립 페이지)를 모두 훑고, 대표 컷이 지워진 컷을 가리키고 있으면
+     그 포인터도 함께 정리한다. 진짜 관람객 사진(test 표시가 없는 것)은 건드리지 않는다.
+     [주의] 갤러리는 페이지마다 자기 것만 로드하므로, 두 키를 여기서 직접 읽고 쓴다. */
+  try{
+    window.ArgoScanClearTest = function(){
+      var removed=0, kept=0, gone=Object.create(null);
+      ['argoCandidateGallery','argoWebcamGallery'].forEach(function(key){
+        var list; try{ list=JSON.parse(localStorage.getItem(key)||'[]'); }catch(e){ return; }
+        if(!Array.isArray(list)) return;
+        var live=list.filter(function(r){
+          if(r&&r.test){ removed++; if(r.id) gone[r.id]=1; return false; }
+          kept++; return true;
+        });
+        if(live.length===list.length) return;
+        try{
+          if(live.length) localStorage.setItem(key,JSON.stringify(live));
+          else localStorage.removeItem(key);
+        }catch(e){}
+      });
+      /* 대표 컷이 지워진 컷이면 대표도 비운다 — 안 그러면 없는 사진을 가리킨다 */
+      try{
+        var rep=localStorage.getItem(REP_KEY);
+        if(rep&&gone[rep]){ localStorage.removeItem(REP_KEY); localStorage.removeItem(STORE_KEY); }
+      }catch(e){}
+      try{ console.info('[ArgoScan] 임시 컷 '+removed+'장 삭제, 관람객 컷 '+kept+'장 유지'); }catch(e){}
+      try{ if(typeof renderGallery==='function') renderGallery(-1); }catch(e){}
+      return { removed: removed, kept: kept };
+    };
+  }catch(e){}
 
   function loadHands(){
     if(handsScriptLoaded||reduce) return;

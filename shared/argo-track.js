@@ -21,10 +21,25 @@
 (function (global) {
   'use strict';
 
+  /* ══ 전시 전 시험 운전 스위치 ══════════════════════════════════════════════
+     'test' : 지금 찍는 사진과 남는 기록은 전부 '임시' 로 등록된다.
+              · 갤러리 사진 레코드에 test:true 가 붙는다
+              · 서버 기록(sessions/events)의 kiosk_id 가 'KIOSK-01-TEST' 로 들어간다
+                → DB 를 뽑을 때  where kiosk_id not like '%-TEST'  한 줄로 걸러진다
+     'live' : 진짜 관람객. 아무 표시도 붙지 않는다.
+
+     ▶ 전시 시작 전에 반드시 'live' 로 바꾸고 python3 src/build.py 를 돌릴 것.
+       그때 쌓인 시험용 사진은 브라우저 콘솔에서 ArgoScanClearTest() 로 지운다.
+     ═══════════════════════════════════════════════════════════════════════ */
+  var MODE = 'test';
+
   var CONFIG = {
     supabaseUrl:    'https://qscaoyfkvmszyavqffwh.supabase.co',
     publishableKey: 'sb_publishable_0ZDvEEukdO4elBYXAKcDAQ_qIqRuGOY',   // publishable 전용 — secret/service_role 금지
-    kioskId:        'KIOSK-01',
+    /* 시험 운전 중에는 키오스크 이름 뒤에 -TEST 가 붙는다. 컬럼을 새로 만들지 않는 이유는
+       kiosk_id 가 sessions·events 양쪽과 분석 뷰에 이미 들어가 있어서, 이 한 글자만으로
+       모든 시험 기록이 한 번에 걸러지기 때문이다. */
+    kioskId:        MODE === 'test' ? 'KIOSK-01-TEST' : 'KIOSK-01',
     appVersion:     '1.0.0',
     /* 무활동 임계값 — 총 이용시간이 아니라 '마지막 의미 있는 행동' 기준이다.
        90초 경고 → 120초 종료. 서버(supabase/1-schema.sql 의
@@ -749,6 +764,7 @@
     /* 설정 */
     config: CONFIG,
     configured: configured,
+    isTest: function () { return MODE === 'test'; },   /* 시험 운전 중인가 — 사진 레코드가 본다 */
     /* 핵심 */
     act: act,                  /* 의미 있는 행동 — 세션 생성/유지의 유일한 입구 */
     track: track,              /* trackEvent(eventName, metadata) */

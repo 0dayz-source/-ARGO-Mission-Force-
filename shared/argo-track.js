@@ -96,7 +96,11 @@
         'Content-Type': 'application/json',
         'Prefer': 'return=minimal'
       },
-      body: JSON.stringify(rows)
+      body: JSON.stringify(rows),
+      /* [언로드 생존] 세션 종료 직후 페이지가 바로 넘어간다. keepalive 가 없으면
+         날아가던 요청이 통째로 잘리고(net::ERR_ABORTED), 실패 핸들러도 문서와 함께
+         죽어 재시도 큐에조차 못 들어간다 — 마지막 기록이 영영 사라진다. */
+      keepalive: true
     }).then(function (r) {
       if (r.ok) return true;
       if (r.status !== 409) throw new Error('http_' + r.status);
@@ -135,7 +139,8 @@
         'Authorization': 'Bearer ' + CONFIG.publishableKey,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(args || {})
+      body: JSON.stringify(args || {}),
+      keepalive: true          /* 위 post() 와 같은 이유 — end_session 이 이동에 잘리지 않게 */
     }).then(function (r) { if (!r.ok) throw new Error('http_' + r.status); return r.json(); });
   }
 
@@ -469,9 +474,16 @@
     /* 종료는 서버가 한 번만 반영한다(멱등). confidence/flags 는 여기서 건드리지 않는다 —
        flag_session 이 이미 서버 규칙대로 정해 두었다. */
     callOp('end_session', { p_session_id: s.session_id, p_end_reason: reason });
-    flush();
     ssClear();
-    resetKiosk(opts);
+    /* [마지막 기록 보장] track/callOp 는 IndexedDB 적재도 전송도 비동기다.
+       바로 화면을 넘기면 session_ended 와 end_session 이 적재되기 전에 문서가 죽는다.
+       flush 가 끝나면 곧장 이동하고, 느리면 1.2초에서 끊는다(전시장 네트워크가
+       나빠도 다음 관람객을 기다리게 하지 않는다). 그때 못 나간 것은 IndexedDB 에
+       남아 다음 로드의 boot() → flush() 가 이어서 보낸다. */
+    var moved = false;
+    var go = function () { if (moved) return; moved = true; resetKiosk(opts); };
+    setTimeout(go, 1200);
+    flush().then(go, go);
   }
 
   /* 종료 시 초기화 — 사진·시험·후보자 임시 상태, 웹캠, 오버레이, 메인 복귀 */

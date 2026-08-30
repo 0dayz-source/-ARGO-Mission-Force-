@@ -28,10 +28,10 @@ git add -A && git commit -m "..." && git push
    전시장 인터넷이 끊기면 3D 배경이 죽는다. 오프라인 전시라면 `shared/vendor/` 로
    내려받아 경로를 바꾸는 것을 권한다.
 4. **세션 타임아웃** — 90초 경고 / 120초 종료. 서버(Supabase)도 120초로 맞춰야 한다.
-   `db/migration-timeout-120s.sql` 을 SQL Editor 에서 한 번 실행.
+   `supabase/2-migration-timeout-120s.sql` 을 SQL Editor 에서 한 번 실행.
+   (`supabase/README.md` 에 확인 방법과 나머지 서버 작업이 정리돼 있다)
 
 ## 개발용
 - 로컬: `python3 -m http.server 8899` → `http://localhost:8899/`
   (`file://` 로 열면 스크립트·폰트가 안 붙는다)
-- 경고 화면 미리보기: `_trash/_warn-preview.html` 을 루트로 옮긴 뒤
-  `http://localhost:8899/_warn-preview.html` (localhost 전용)
+- 경고 화면 미리보기: `http://localhost:8899/src/preview-warning.html` (localhost 전용)

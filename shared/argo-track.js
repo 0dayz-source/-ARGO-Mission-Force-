@@ -13,7 +13,7 @@
    · Publishable(anon) 키만 브라우저에 둔다. Secret/service_role 키는 절대 여기 넣지 말 것.
 
    [ 활성화 ]
-   1) Supabase 프로젝트 SQL Editor 에 db/schema.sql 전체를 붙여넣고 RUN.
+   1) Supabase 프로젝트 SQL Editor 에 supabase/1-schema.sql 전체를 붙여넣고 RUN.
    2) 아래 CONFIG.supabaseUrl / CONFIG.publishableKey 를 채운다.
       (Settings → API → Project URL / anon public key)
    비어 있으면 전송을 시도하지 않고 큐에만 쌓으며, 콘솔 경고 한 줄 외에 아무 일도 하지 않는다.
@@ -27,7 +27,7 @@
     kioskId:        'KIOSK-01',
     appVersion:     '1.0.0',
     /* 무활동 임계값 — 총 이용시간이 아니라 '마지막 의미 있는 행동' 기준이다.
-       90초 경고 → 120초 종료. 서버(db/schema.sql 의
+       90초 경고 → 120초 종료. 서버(supabase/1-schema.sql 의
        argo_idle_timeout_seconds)도 같은 120 을 본다. 한쪽만 바꾸면 안 된다. */
     sessionTimeoutMs: 120000,
     sessionWarningMs: 90000

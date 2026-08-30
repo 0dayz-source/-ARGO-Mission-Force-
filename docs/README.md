@@ -29,10 +29,11 @@
 | `src/scenes/` | `index.html` 의 재료 15개. 여기를 고친다 |
 | `src/shell.html` | 재료를 끼워 넣는 틀 (`<head>`, 스크립트 태그, 씬 뼈대) |
 | `src/build.py` | 재료 + 틀 → `index.html` 을 만드는 스크립트 |
-| `db/` | Supabase 서버측 SQL. 브라우저와 무관 |
+| `src/preview-warning.html` | 90초 안 기다리고 세션 경고 화면만 띄워보는 개발용 도구 |
+| `supabase/` | Supabase 에 사람이 직접 올리는 것들(SQL·Edge Function). 브라우저와 무관 — `supabase/README.md` 참고 |
 | `docs/` | 이 문서와 배포 메모 |
 
-`_trash/` 는 버린 파일 모음이다. git 에 올라가지 않고 이 맥북에만 있다.
+`_trash/` 는 정말 안 쓰는 것만 들어 있다(옛 작업본·옛 메모). git 에 올라가지 않는다.
 
 ---
 

@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARGO — 경고 화면 미리보기 (임시)</title>
+<!--
+  임시 확인용 페이지. 배포에는 넣지 않는다.
+
+  실제 페이지를 iframe 으로 띄우고 ?argoWarningPreview=1 을 붙인다 —
+  경고 오버레이만 즉시 뜨고 세션·Supabase 요청·이벤트·종료는 일절 없다.
+  (미리보기 모드는 localhost / 127.0.0.1 에서만 동작한다)
+
+  여는 법 :  python3 -m http.server 8899   →   http://localhost:8899/src/preview-warning.html
+             ※ file:// 로 열면 안 된다(스크립트·폰트가 안 붙는다)
+-->
+<style>
+  :root{ color-scheme:dark }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; background:#060305; color:#fff;
+    font-family:'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    display:flex; flex-direction:column;
+  }
+  .bar{
+    flex:0 0 auto; display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    padding:10px 14px; border-bottom:1px solid rgba(255,45,130,.22);
+    background:rgba(14,8,12,.9);
+  }
+  .bar b{font-size:10px; letter-spacing:.24em; color:rgba(255,255,255,.45); font-weight:400; margin-right:6px}
+  button{
+    font:inherit; font-size:10.5px; letter-spacing:.16em;
+    padding:8px 14px; border-radius:9px; cursor:pointer; color:#fff;
+    border:1px solid rgba(255,45,130,.38); background:rgba(255,45,130,.09);
+    transition:background .2s ease, border-color .2s ease;
+  }
+  button:hover{background:rgba(255,45,130,.18); border-color:rgba(255,45,130,.6)}
+  button[aria-pressed="true"]{background:rgba(255,45,130,.3); border-color:#FF3D68}
+  .note{font-size:10px; letter-spacing:.06em; color:rgba(255,255,255,.34); margin-left:auto}
+  iframe{flex:1 1 auto; width:100%; border:0; display:block; background:#060305}
+  .warn{
+    display:none; padding:18px; font-size:12px; line-height:1.7;
+    color:#FF9A7A; background:rgba(255,45,130,.08);
+    border-bottom:1px solid rgba(255,45,130,.25);
+  }
+  .warn code{color:#fff}
+</style>
+</head>
+<body>
+
+<div class="warn" id="notlocal">
+  이 미리보기는 <code>localhost</code> / <code>127.0.0.1</code> 에서만 동작합니다.<br>
+  프로젝트 폴더에서 <code>python3 -m http.server 8899</code> 를 띄우고
+  <code>http://localhost:8899/src/preview-warning.html</code> 로 여세요.
+</div>
+
+<div class="bar">
+  <b>SESSION CONTROL · 경고 화면 미리보기</b>
+  <button id="b-main" aria-pressed="true">MAIN</button>
+  <button id="b-mars" aria-pressed="false">MARS</button>
+  <button id="b-wall" aria-pressed="false">CANDIDATE WALL</button>
+  <button id="b-reload">다시 띄우기</button>
+  <span class="note">오버레이를 누르면 닫힙니다 · DB 요청 0 · 세션 생성 안 함</span>
+</div>
+
+<iframe id="stage" title="경고 화면 미리보기"></iframe>
+
+<script>
+  /* 이 파일은 src/ 안에 있고 대상 페이지는 저장소 루트에 있다 — ../ 로 올라간다. */
+  var PAGES = {
+    main: '../index.html',
+    mars: '../11-planet-detail.html',
+    wall: '../photo-wall.html'
+  };
+  var stage = document.getElementById('stage');
+  var cur = 'main';
+
+  var host = location.hostname;
+  var local = (host === 'localhost' || host === '127.0.0.1' || host === '[::1]');
+  if (!local) document.getElementById('notlocal').style.display = 'block';
+
+  function load() {
+    /* cb 는 HTML 문서 캐시를 우회한다 — ?v= 는 css/js 에만 붙어 있어서
+       문서 자체가 캐시되면 새 스크립트 태그가 안 들어온다. */
+    stage.src = PAGES[cur] + '?argoWarningPreview=1&cb=' + Date.now();
+  }
+  function pick(k) {
+    cur = k;
+    ['main', 'mars', 'wall'].forEach(function (n) {
+      document.getElementById('b-' + n).setAttribute('aria-pressed', String(n === k));
+    });
+    load();
+  }
+  document.getElementById('b-main').onclick = function () { pick('main'); };
+  document.getElementById('b-mars').onclick = function () { pick('mars'); };
+  document.getElementById('b-wall').onclick = function () { pick('wall'); };
+  document.getElementById('b-reload').onclick = load;
+  load();
+</script>
+</body>
+</html>

@@ -1261,7 +1261,7 @@ function resetAssessment(){
 })();
 
 /* [주의] 이 함수는 **시험지(s3) 전용**이다. 6 시스템(s1)의 BACK 도 이걸 부르고 있어서
-   같이 MARS 로 튀었다 — s1 은 pages/02-about.html 에서 goScene(0) 을 직접 부른다. */
+   같이 MARS 로 튀었다 — s1 은 src/scenes/02-about.html 에서 goScene(0) 을 직접 부른다. */
 function backAssessment(){
   answers=[];
   cq=0;

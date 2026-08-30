@@ -18,7 +18,7 @@
   var ASSESS_URL = 'index.html?goto=assess';
   var CH_MS = 36;   /* 타자 속도 : 글자 하나 찍는 간격(ms). 올릴수록 느려진다 */
 
-  /* 캐릭터 프레임 위치. 이 파일은 루트(11-planet-detail.html)와 pages/ 양쪽에서
+  /* 캐릭터 프레임 위치. 이 파일은 루트(11-planet-detail.html)와 src/scenes/ 양쪽에서
      불리므로, 자기 src 를 기준으로 shared/assets/guide/ 를 찾는다. */
   var GUIDE_BASE = (function () {
     var s = document.currentScript;

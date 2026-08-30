@@ -8,7 +8,7 @@
 
    [ 활성화 — 딱 2분 ]
    1) https://supabase.com 에서 무료 프로젝트 생성 (직접 하셔야 합니다).
-   2) 프로젝트의 SQL Editor 에 shared/argo-db.setup.sql 전체를 붙여넣고 RUN.
+   2) 프로젝트의 SQL Editor 에 _trash/argo-db.setup.sql (미사용 — 키를 채울 때만 필요) 전체를 붙여넣고 RUN.
    3) Settings → API 에서 값 2개를 아래 CONFIG 에 붙여넣기:
         · Project URL      → url
         · anon public key  → anonKey

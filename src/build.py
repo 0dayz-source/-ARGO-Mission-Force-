@@ -1,24 +1,27 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-build.py — pages/* 를 _shell.html 에 합쳐 index.html 생성.
+build.py — src/scenes/* 를 src/shell.html 에 합쳐 index.html 생성.
 
 동작:
-  1) pages/*.html 에서 <!-- PAGE-START:id --> ~ <!-- PAGE-END:id --> 사이 내용을 추출
-  2) _shell.html 의 <!--INCLUDE:id--> 자리에 그 내용을 끼워넣음
+  1) src/scenes/*.html 에서 <!-- PAGE-START:id --> ~ <!-- PAGE-END:id --> 사이 내용을 추출
+  2) src/shell.html 의 <!--INCLUDE:id--> 자리에 그 내용을 끼워넣음
   3) 끼워넣는 조각의 ../shared/ 경로를 shared/ 로 보정 (index.html 은 루트에 위치)
-     ※ ../pages/ 링크는 그대로 둠
+     ※ ../scenes/ 링크는 그대로 둠
   4) 결과를 index.html 로 저장
 
-사용:  python3 build.py
+사용:  python3 src/build.py   (어느 위치에서 실행해도 된다)
 """
 import re
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent
-PAGES_DIR = ROOT / "pages"
-SHELL = ROOT / "_shell.html"
+# 이 파일은 src/ 안에 있고, 결과물 index.html 은 저장소 루트에 놓인다.
+#   src/scenes/*.html  +  src/shell.html   →   <루트>/index.html
+ROOT = Path(__file__).resolve().parent.parent      # 저장소 루트 (= 사이트 루트)
+SRC = ROOT / "src"
+PAGES_DIR = SRC / "scenes"
+SHELL = SRC / "shell.html"
 OUT = ROOT / "index.html"
 
 VER_RE = re.compile(r"\?v=\d+")
@@ -31,7 +34,7 @@ INCLUDE_RE = re.compile(r"<!--\s*INCLUDE:([A-Za-z0-9_-]+)\s*-->")
 
 
 def collect_sections():
-    """pages/*.html 를 훑어 id -> 마커 사이 내용 dict 생성."""
+    """src/scenes/*.html 를 훑어 id -> 마커 사이 내용 dict 생성."""
     sections = {}
     for page in sorted(PAGES_DIR.glob("*.html")):
         text = page.read_text(encoding="utf-8")
@@ -53,7 +56,7 @@ def collect_sections():
 
 def main():
     if not SHELL.exists():
-        print("ERROR: _shell.html 없음", file=sys.stderr)
+        print("ERROR: src/shell.html 없음", file=sys.stderr)
         sys.exit(1)
     shell = SHELL.read_text(encoding="utf-8")
     sections = collect_sections()
@@ -81,7 +84,7 @@ def main():
 def stamp_version():
     """shared/ 안에서 가장 최근 수정시각으로 ?v= 를 새로 찍는다.
 
-    _shell.html 에 ?v=1794600103 이 상수로 박혀 있어서, CSS/JS 를 고쳐도 브라우저가
+    src/shell.html 에 ?v=1794600103 이 상수로 박혀 있어서, CSS/JS 를 고쳐도 브라우저가
     캐시된 옛 파일을 계속 썼다(고친 게 화면에 안 나타나는 원인). 빌드할 때마다
     실제 파일 시각으로 바꿔 준다 — 안 바뀌었으면 번호도 그대로라 캐시는 그대로 산다.
     """

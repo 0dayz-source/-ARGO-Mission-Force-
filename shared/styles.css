@@ -4442,6 +4442,10 @@ button,input,textarea,select{font-family:inherit}
   box-shadow:none !important;
   border-radius:0 !important;
   filter:url(#gx-goo);
+  /* [높이 조절 손잡이] 원을 글자 기준으로 얼마나 올릴지. 여기 한 값만 고치면 된다.
+     상자의 정중앙(50%)은 계산상 '가운데' 지만, 원이 글자보다 작아서 그대로 두면
+     눈에는 아래로 처져 보인다. 대문자·한글의 세로 중앙에 얹히는 값이 3px 이다. */
+  --sc-rise:3px;
 }
 .sc-caret::before,
 .sc-caret::after{
@@ -4449,9 +4453,9 @@ button,input,textarea,select{font-family:inherit}
   width:11px; height:11px; border-radius:50%;
   background:#FF2D82;                       /* 원은 메인 핑크 */
 }
-.sc-caret::before{transform:translate(-50%,calc(-50% - 0.8px))}   /* 아주 살짝 위로(요청) */
+.sc-caret::before{transform:translate(-50%,calc(-50% - var(--sc-rise)))}
 .sc-caret::after{                            /* 잔상 — 이동량만큼 뒤로 늘어졌다 붙는다 */
-  transform:translate(calc(-50% + var(--sc-lag-x,0px)), calc(-50% - 0.8px + var(--sc-lag-y,0px)));
+  transform:translate(calc(-50% + var(--sc-lag-x,0px)), calc(-50% - var(--sc-rise) + var(--sc-lag-y,0px)));
   transition:transform .26s cubic-bezier(.23,1,.32,1);
 }
 @media (prefers-reduced-motion: reduce){

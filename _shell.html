@@ -1,0 +1,141 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%2032%2032%22%3E%3Crect%20width=%2232%22%20height=%2232%22%20rx=%227%22%20fill=%22%230A0A0C%22/%3E%3Ccircle%20cx=%2216%22%20cy=%2216%22%20r=%227%22%20fill=%22%23FF2D82%22/%3E%3Ccircle%20cx=%2216%22%20cy=%2216%22%20r=%2211.5%22%20fill=%22none%22%20stroke=%22%23FF9A7A%22%20stroke-width=%221.5%22%20opacity=%22.6%22/%3E%3C/svg%3E">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0A0A0C">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>ARGO — TFSC</title><link rel="stylesheet" href="shared/assets/fonts/pretendard.css"><link rel="stylesheet" href="shared/assets/fonts/syne.css"><link rel="stylesheet" href="shared/assets/fonts/geistmono.css"><link rel="stylesheet" href="shared/styles.css?v=1794600103"><link rel="stylesheet" href="shared/argo-objects.css?v=1794600103"><link rel="stylesheet" href="shared/argo-track.css?v=1794600103"><link rel="stylesheet" href="shared/argo-warn.css?v=1794600103"><link rel="stylesheet" href="shared/argo-operator.css?v=1794600103">
+<script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script><link rel="stylesheet" href="shared/argo-driftwall.css?v=1794600103"><link rel="stylesheet" href="shared/argo-sysindex.css?v=1794600103">
+</head><body class="on-main">
+<svg class="svg-sprite" aria-hidden="true">
+  <defs>
+    <symbol id="icon-mission" viewBox="0 0 48 48">
+      <circle cx="24" cy="24" r="19"/><path d="M24 12 L35 34 L24 29 L13 34 Z"/><path d="M24 12 V29"/><circle cx="24" cy="24" r="3"/>
+    </symbol>
+    <symbol id="icon-match" viewBox="0 0 48 48">
+      <circle cx="24" cy="24" r="19"/><path d="M24 12 L35 18 V31 L24 37 L13 31 V18 Z"/><path d="M13 18 L24 24 L35 18"/><path d="M24 24 V37"/><path d="M18 15 L29 21"/>
+    </symbol>
+    <symbol id="icon-event" viewBox="0 0 48 48">
+      <circle cx="24" cy="24" r="19"/><path d="M24 10 L32 33 L24 29 L16 33 Z"/><path d="M18 36 H30"/><path d="M24 29 V38"/><circle cx="24" cy="22" r="2.5"/>
+    </symbol>
+    <symbol id="icon-adventure" viewBox="0 0 48 48">
+      <circle cx="24" cy="24" r="19"/><path d="M24 10 L27 21 L38 24 L27 27 L24 38 L21 27 L10 24 L21 21 Z"/><circle cx="24" cy="24" r="3"/><path d="M35 13 L38 10"/><path d="M10 38 L13 35"/>
+    </symbol>
+    <symbol id="icon-total" viewBox="0 0 48 48">
+      <circle cx="18" cy="18" r="5"/><circle cx="30" cy="18" r="5"/><path d="M10 34 C11.5 28 15 25 20 25"/><path d="M28 25 C33 25 36.5 28 38 34"/><path d="M15 35 H33"/><circle cx="24" cy="24" r="19"/>
+    </symbol>
+    <symbol id="icon-mars-stack" viewBox="0 0 48 48">
+      <path d="M24 10 L38 17 L24 24 L10 17 Z"/><path d="M38 24 L24 31 L10 24"/><path d="M38 31 L24 38 L10 31"/><circle cx="24" cy="24" r="19"/>
+    </symbol>
+    <symbol id="icon-location" viewBox="0 0 48 48">
+      <path d="M24 42 C24 42 36 29 36 19 C36 12.4 30.6 7 24 7 C17.4 7 12 12.4 12 19 C12 29 24 42 24 42 Z"/><circle cx="24" cy="19" r="5"/>
+    </symbol>
+    <symbol id="icon-diamond-star" viewBox="0 0 48 48">
+      <path d="M24 8 L28 20 L40 24 L28 28 L24 40 L20 28 L8 24 L20 20 Z"/><circle cx="24" cy="24" r="3"/>
+    </symbol>
+    <symbol id="logo-argo" viewBox="0 0 1064 314"><path d="M100.101 236.062H69.3729C66.9591 236.062 65 234.098 65 231.678V171.555C65 170.289 65.5466 169.083 66.4999 168.25L168.301 79.3811C169.097 78.6841 170.116 78.3027 171.174 78.3027H212.253C213.408 78.3027 214.51 78.7586 215.332 79.5695L331.078 194.467C331.909 195.292 332.373 196.414 332.373 197.584V231.674C332.373 234.093 330.413 236.057 328 236.057H299.987C297.573 236.057 295.614 234.093 295.614 231.674V214.337C295.614 213.132 295.12 211.979 294.245 211.155L286.251 203.576C285.438 202.805 284.362 202.375 283.247 202.375H138.871C136.458 202.375 134.499 200.411 134.499 197.992V179.63C134.499 178.354 135.054 177.14 136.016 176.307L143.607 169.758C144.399 169.074 145.413 168.697 146.463 168.697H237.367C241.32 168.697 243.244 163.862 240.375 161.136L193.065 116.14C191.443 114.597 188.919 114.532 187.218 115.983L106.63 184.841C105.362 185.924 104.632 187.507 104.632 189.172C104.632 197.242 104.605 221.728 104.474 231.735C104.444 234.133 102.493 236.062 100.101 236.062Z"/><path d="M483.496 128.321V113.413H284.17C283.051 113.413 281.97 112.984 281.157 112.208L270.548 102.104L270.513 102.152L253.254 85.8856C250.363 83.1635 252.283 78.3066 256.24 78.3066H487.357C488.463 78.3066 489.535 78.7274 490.344 79.4902L508.5 96.5548C509.383 97.3789 509.891 98.5405 509.891 99.7459V138.276H483.5V128.321H483.496Z"/><path d="M508.5 154.433L489.447 172.348C488.634 173.097 487.567 173.531 486.461 173.531H449.029C445.058 173.531 443.138 178.397 446.055 181.123L496.676 228.477C499.575 231.186 497.66 236.056 493.689 236.056H452.999C451.893 236.056 450.821 235.635 450.012 234.873L385.98 174.715C385.167 173.952 384.1 173.531 382.993 173.531H348.29C347.184 173.531 346.112 173.102 345.303 172.348L331.288 159.175L317.137 145.854C314.247 143.132 316.18 138.275 320.137 138.275H509.891V151.237C509.891 152.443 509.388 153.604 508.5 154.428V154.433Z"/><path d="M591.257 113.843H710.047C711.092 113.843 712.098 113.444 712.859 112.734L736.022 91.0889L741.978 85.4255C744.681 82.8568 742.87 78.2937 739.144 78.2893L580.92 78C579.936 78 578.982 78.3507 578.235 78.9863L531.471 118.941C530.553 119.726 530.023 120.879 530.023 122.088V213.105C530.023 214.249 530.496 215.341 531.327 216.121L551.354 234.939C552.12 235.658 553.13 236.057 554.175 236.057H713.716C714.766 236.057 715.771 235.658 716.537 234.939L734.719 217.857C735.55 217.077 736.022 215.981 736.022 214.841V152.338C736.022 150.054 734.177 148.2 731.894 148.2H677.11C676.061 148.2 675.051 148.599 674.286 149.318L646.994 174.987C644.266 177.552 646.076 182.141 649.819 182.141H693.902C696.181 182.141 698.03 183.991 698.03 186.279V195.353C698.03 197.636 696.185 199.491 693.902 199.491H571.75C569.471 199.491 567.622 197.641 567.622 195.353V134.647C567.622 133.437 568.151 132.284 569.069 131.5L588.577 114.834C589.324 114.194 590.273 113.848 591.253 113.848L591.257 113.843Z"/><path d="M959.198 79.1835C958.389 78.4208 957.317 78 956.207 78H798.205C797.094 78 796.023 78.4252 795.214 79.1835L756.793 115.281C755.91 116.109 755.412 117.267 755.412 118.481V198.329C755.412 199.548 755.919 200.709 756.807 201.538L792.603 234.891C793.412 235.645 794.475 236.066 795.581 236.066H958.826C959.932 236.066 960.995 235.645 961.804 234.891L997.601 201.538C998.493 200.709 998.996 199.543 998.996 198.329V118.481C998.996 117.271 998.497 116.109 997.614 115.281L959.198 79.1835ZM961.568 178.367L940.556 198.881C939.738 199.679 938.645 200.126 937.504 200.126H816.917C815.775 200.126 814.682 199.679 813.864 198.881L792.852 178.367C792.008 177.543 791.532 176.416 791.532 175.237L791.471 143.422C791.471 142.208 791.969 141.047 792.852 140.218L819.558 115.123C820.367 114.36 821.438 113.94 822.549 113.94H931.867C932.978 113.94 934.049 114.365 934.858 115.123L961.564 140.218C962.447 141.047 962.95 142.208 962.945 143.422L962.884 175.237C962.884 176.416 962.407 177.547 961.564 178.371L961.568 178.367Z"/></symbol>
+    <linearGradient id="meterGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FF3D68"/><stop offset="55%" stop-color="#FF2D82"/><stop offset="100%" stop-color="#5C0E4A"/>
+    </linearGradient>
+  </defs>
+</svg>
+<svg width="0" height="0" style="position:absolute;pointer-events:none" aria-hidden="true"><filter id="dw-duotone" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0.2126 0.7152 0.0722 0 0  0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="0 0.361 1 1"/><feFuncG type="table" tableValues="0 0.106 0.302 0.839"/><feFuncB type="table" tableValues="0 0.478 0.580 0.910"/></feComponentTransfer></filter><filter id="lg-disp" x="-20%" y="-20%" width="140%" height="140%"><feTurbulence type="fractalNoise" baseFrequency="0.012 0.025" numOctaves="2" seed="7" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="14" xChannelSelector="R" yChannelSelector="G"/></filter><filter id="lg-disp-card" x="-20%" y="-20%" width="140%" height="140%"><feTurbulence type="fractalNoise" baseFrequency="0.008 0.014" numOctaves="3" seed="11" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="34" xChannelSelector="R" yChannelSelector="G"/></filter><filter id="lg-disp-card-idle" x="-20%" y="-20%" width="140%" height="140%"><feTurbulence type="fractalNoise" baseFrequency="0.008 0.014" numOctaves="3" seed="11" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="16" xChannelSelector="R" yChannelSelector="G"/></filter></svg><div class="scene-iris" id="scene-iris"></div><canvas id="comet-cv" style="position:fixed;inset:0;z-index:9990;pointer-events:none;mix-blend-mode:screen"></canvas><div id="cur"></div><div id="cur-r"><span id="cur-label"></span></div><!-- MARS·photo-wall 과 같은 커서 (shared/argo-cursor.js 가 이 셋을 찾는다). 위 #cur/#cur-r 은 CSS 로 숨기고 app.js 호환용으로만 남겨 둔다. --><div class="pd-cursor" aria-hidden="true"></div><div class="pd-cursor-ring" aria-hidden="true"></div><div class="pd-cursor-label" aria-hidden="true"></div><div class="circuit"><svg viewBox="0 0 1440 900" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice"><g stroke="#FF9A7A" stroke-width=".4" fill="none" opacity=".9"><path d="M0 200 H120 V150 H300 V200 H500"/><path d="M1440 300 H1300 V250 H1100 V300 H900"/><path d="M50 700 H200 V750 H400 V700 H600"/><path d="M1440 600 H1250 V650 H1050 V600 H850"/><path d="M200 0 V80 H150 V180 H200 V300"/><path d="M1240 0 V80 H1290 V180 H1240 V300"/><path d="M400 900 V820 H450 V720 H400 V600"/><path d="M1050 900 V820 H1000 V720 H1050 V600"/><rect x="95" y="142" width="12" height="12" rx="1"/><rect x="295" y="192" width="12" height="12" rx="1"/><rect x="1288" y="242" width="12" height="12" rx="1"/><rect x="1094" y="292" width="12" height="12" rx="1"/><rect x="193" y="172" width="12" height="12" rx="1"/><rect x="443" y="712" width="12" height="12" rx="1"/><circle cx="200" cy="200" r="3" fill="#FF9A7A"/><circle cx="1240" cy="300" r="3" fill="#FF9A7A"/><circle cx="400" cy="700" r="3" fill="#FF2D82"/><circle cx="1050" cy="600" r="3" fill="#FF2D82"/></g><g stroke="#FF9A7A" stroke-width=".3" fill="none" opacity=".6"><path d="M0 450 H80 V400 H200 V450 H350"/><path d="M1440 500 H1360 V550 H1200 V500 H1050"/><path d="M700 0 V60 H720 V160 H700 V260"/><path d="M750 900 V840 H730 V740 H750 V640"/><rect x="73" y="392" width="10" height="10" rx="1"/><rect x="195" y="442" width="10" height="10" rx="1"/></g></svg></div><!-- [삭제] 기존 로딩 화면(#load) — MetaBalls 로딩으로 통일 --><canvas id="gc"></canvas><canvas id="scan-cv" style="position:fixed;inset:0;z-index:3;pointer-events:none;mix-blend-mode:screen"></canvas><canvas id="mw-canvas" style="position:fixed;inset:0;z-index:2;pointer-events:none;mix-blend-mode:screen;opacity:0.5"></canvas><canvas id="radar-canvas" style="position:fixed;inset:0;z-index:4;pointer-events:none;opacity:0.55"></canvas><div class="bg-grad"></div><div class="noise"></div><div class="scan"></div><div class="chroma"></div><div class="sweep"></div><div class="hc tl"></div><div class="hc tr"></div><div class="hc bl"></div><div class="hc br"></div><div class="dvdr"></div><div class="rec-hud"><div class="rec-dot"></div>REC &nbsp;<span data-mission-date="iso">2068-05-29</span></div><div class="hud-box hb1"><div class="hud-box-label" style="color:rgba(255,45,130,.45);font-family:var(--mono);font-size:10.5px;letter-spacing:.2em">BIO-NODE 4.1</div></div><div class="hud-box hb2"><div class="hud-box-label" style="color:rgba(255,45,130,.4);font-family:var(--mono);font-size:10.5px;letter-spacing:.2em">FLUX-CORE</div></div><div class="hud-box hb3"><div class="hud-box-label" style="color:rgba(255,255,255,.2);font-family:var(--mono);font-size:10.5px;letter-spacing:.2em">SCAN ZONE</div></div><div class="hud-arrow ha1"></div><div class="hud-arrow ha2"></div><div class="scene-dots"><div class="sdot on" data-s="0" title="MAIN"></div><div class="sdot" data-s="11" title="ARGO INDEX"></div><div class="sdot" data-s="10" title="CANDIDATE WALL"></div></div><div class="scroll-hint" id="scroll-hint"><button class="scroll-btn" id="scroll-btn" onclick="scrollDown()" aria-label="Scroll down"><div class="sh-bar"></div><div class="sh-txt">SCROLL DOWN</div><div class="sh-arr">↓</div></button></div><!--INCLUDE:s0--><!--INCLUDE:s1--><!--INCLUDE:s10--><!--INCLUDE:s11--><!--INCLUDE:s2--><!--INCLUDE:s3--><!--INCLUDE:s4--><!--INCLUDE:s5--><!--INCLUDE:s6--><!--INCLUDE:s7--><!--INCLUDE:s8--><!--INCLUDE:s9--><!--INCLUDE:result-overlay--><!-- [삭제] planet-overlay — 진입 경로 없는 구버전 화성 오버레이 --><!--INCLUDE:origin-overlay--><!--INCLUDE:join-modal--><div class="ticker"><div class="tk-track"><span>ARGO ONLINE</span><b>◆</b><span>QUANTUM MESH ACTIVE</span><b>◆</b><span>BIO-SYNC 98.4%</span><b>◆</b><span>SECTOR-7 NOMINAL</span><b>◆</b><span>NANOBOT SWARM DEPLOYED</span><b>◆</b><span>ORBITAL GRID LOCKED</span><b>◆</b><span>PSYCH EVAL PHASE 02</span><b>◆</b><span>CANDIDATE INTAKE OPEN</span><b>◆</b><span>ARGO ONLINE</span><b>◆</b><span>QUANTUM MESH ACTIVE</span><b>◆</b><span>BIO-SYNC 98.4%</span><b>◆</b><span>SECTOR-7 NOMINAL</span><b>◆</b><span>NANOBOT SWARM DEPLOYED</span><b>◆</b><span>ORBITAL GRID LOCKED</span><b>◆</b><span>PSYCH EVAL PHASE 02</span><b>◆</b><span>CANDIDATE INTAKE OPEN</span><b>◆</b></div></div>
+
+
+
+<script src="shared/argo-nav.js?v=1794600103"></script><script src="shared/argo-operator.js?v=1794600103"></script>
+<script src="shared/argo-cursor.js?v=1794600103"></script>
+<script src="shared/argo-warn.js?v=1794600103"></script><script src="shared/argo-track.js?v=1794600103"></script>
+<script src="shared/argo-db.js?v=1794600103"></script>
+<script src="shared/argo-qr.js?v=1794600103"></script>
+<script src="shared/argo-optionwheel.js?v=1794600103"></script>
+<script src="shared/argo-smoothcaret.js?v=1794600103"></script>
+<script src="shared/argo-ripple.js?v=1794600103"></script><script src="shared/argo-driftwall.js?v=1794600103"></script><script src="shared/argo-date.js?v=1794600103"></script><script src="shared/argo-scramble.js?v=1794600103"></script><script src="shared/app.js?v=1794600103"></script>
+
+<script>
+/* "Genie from the lamp" transition for the circular entry buttons (candidates, city).
+   The target page opens, then its main card is warped OUT of the clicked button.
+   planet is intentionally excluded (its card opens with a plain fade — no warp).
+   Lives in _shell.html so build.py always reproduces it. */
+(function(){
+  var CARD = {
+    city:       '#origin-overlay .oo-card'
+  };
+  function spark(cx, cy){
+    var s = document.createElement('div');
+    s.className = 'genie-spark';
+    s.style.left = cx+'px'; s.style.top = cy+'px';
+    document.body.appendChild(s);
+    var a = s.animate([
+      { transform:'translate(-50%,-50%) scale(.2)',  opacity:0 },
+      { transform:'translate(-50%,-50%) scale(.75)', opacity:.9, offset:.28 },
+      { transform:'translate(-50%,-50%) scale(1.9)', opacity:0 }
+    ], { duration:700, easing:'cubic-bezier(.16,1,.3,1)' });
+    function rm(){ if(s.parentNode) s.parentNode.removeChild(s); }
+    if(a && a.finished && a.finished.then){ a.finished.then(rm).catch(rm); } else setTimeout(rm, 740);
+  }
+  function genie(card, cx, cy, done){
+    var r = card.getBoundingClientRect();
+    card.style.transformOrigin = (cx - r.left)+'px '+(cy - r.top)+'px';
+    /* genie state classes go on the CARD, never on #candidates-overlay (its
+       MutationObservers would re-fire the content reveal -> content appears twice) */
+    card.style.willChange = 'transform,opacity';
+    card.classList.add('genie-opening');
+    var a = card.animate([
+      { transform:'scale(.04)',   opacity:0, offset:0 },
+      { transform:'scale(.44)',   opacity:1, offset:.42 },
+      { transform:'scale(1.035)', opacity:1, offset:.80 },  /* gentle overshoot */
+      { transform:'scale(1)',     opacity:1, offset:1 }     /* chewy settle back */
+    ], { duration:1180, easing:'cubic-bezier(.22,1,.36,1)' });
+    function fin(){
+      card.style.transformOrigin = '';
+      card.style.willChange = '';
+      card.classList.remove('genie-opening');
+      card.classList.add('genie-settle');
+      setTimeout(function(){ card.classList.remove('genie-settle'); }, 480);
+      if(done) done();
+    }
+    if(a && a.finished && a.finished.then){ a.finished.then(fin).catch(fin); } else setTimeout(fin, 1230);
+  }
+  function portalEnter(trigger, openFn){
+    if(typeof openFn !== 'function') return;
+    if(window.__genieBusy) return;
+    if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches){ openFn(); return; }
+    window.__genieBusy = true;
+    var rect = trigger.getBoundingClientRect();
+    var cx = rect.left + rect.width/2, cy = rect.top + rect.height/2;
+    var sel = CARD[trigger.getAttribute('data-layout-id')];
+    /* [삭제] 누를 때의 발광(portal-firing)과 스파크 — 버튼이 번쩍이는 효과는 뺀다(요청).
+       카드가 버튼 자리에서 열리는 지니 전환만 남긴다(어디서 왔는지 설명하는 모션). */
+    openFn();
+    var card = sel && document.querySelector(sel);
+    function release(){ trigger.classList.remove('portal-firing'); window.__genieBusy = false; }
+    if(!card){ release(); return; }
+    genie(card, cx, cy, release);
+  }
+  window.portalEnter = portalEnter;
+})();
+</script>
+<script>
+/* Deep-link arrival from the promoted landing page (11-planet-detail.html).
+   ?goto=assess  ->  wait for loader, then jump straight into the
+   psychological assessment (scene 3). Mirrors the old
+   closePlanetOverlay(()=>goScene(3)) hand-off. */
+(function(){
+  var __gotoTarget; try{ var __g=new URLSearchParams(location.search).get("goto"); var __m={assess:3,systems:1,guestbook:2,index:11}; /* sN 형태도 받는다 — SYSTEM INDEX 가 각 씬을 딥링크로 가리키고, 썸네일 캡처도 이 경로를 쓴다 */ var __sm=/^s(\d+)$/.exec(__g||""); if(__sm) __gotoTarget=parseInt(__sm[1],10); else if(__g in __m) __gotoTarget=__m[__g]; else return; }catch(e){ return; }
+  var tries=0;
+  var iv=setInterval(function(){
+    tries++;
+    /* 예전엔 index 자체 로딩화면(#load)이 .off 되기를 기다렸다. 그 화면을 MetaBalls
+       오버레이로 통합하면서 #load 를 지웠고, 그 뒤로 이 조건이 영원히 거짓이라
+       ?goto=assess 로 들어와도 시험지로 넘어가지 않았다. goScene 준비만 보면 된다. */
+    var ready=typeof window.goScene==="function";
+    if(ready){ clearInterval(iv); window.goScene(__gotoTarget);
+      try{ history.replaceState(null,"",location.pathname); }catch(e){} }
+    else if(tries>250){ clearInterval(iv); }
+  },100);
+})();
+</script>
+
+
+<script src="shared/argo-reveal.js?v=1794600103"></script>
+<script src="shared/argo-torus.js?v=1794600103"></script>
+<script src="shared/argo-sysindex.js?v=1794600103"></script>
+</body></html>

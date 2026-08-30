@@ -799,6 +799,14 @@
       document.addEventListener(t, function (e) {
         /* 실제 조작 대상이 있는 이벤트만 — 배경 클릭도 조작으로 본다(키오스크라 오작동이 적다) */
         if (e && e.isTrusted === false) return;
+        /* [경고 오버레이는 건너뛴다] 이 리스너는 캡처 단계라 오버레이 자신의 핸들러보다
+           먼저 돈다. 여기서 touch() 를 부르면 '새 후보자로 시작' 을 누른 순간
+           세션이 연장되고 hideWarning() 이 ArgoWarn 의 onNew 콜백을 지워 버려,
+           정작 버튼 핸들러가 돌 때는 콜백이 null 이라 아무 일도 일어나지 않는다
+           (버튼이 먹통이 되고 화면도 그대로 남는 증상의 원인).
+           오버레이 안쪽은 ArgoWarn 이 이미 두 갈래로 나눠 처리한다 —
+           화면 클릭 → onKeep → touch(), 버튼 → onNew → endSession('manual'). */
+        if (e.target && e.target.closest && e.target.closest('#argo-session-warn')) return;
         touch();
       }, true);
     });

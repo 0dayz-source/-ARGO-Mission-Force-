@@ -1,0 +1,111 @@
+<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%2032%2032%22%3E%3Crect%20width=%2232%22%20height=%2232%22%20rx=%227%22%20fill=%22%230A0A0C%22/%3E%3Ccircle%20cx=%2216%22%20cy=%2216%22%20r=%227%22%20fill=%22%23FF2D82%22/%3E%3Ccircle%20cx=%2216%22%20cy=%2216%22%20r=%2211.5%22%20fill=%22none%22%20stroke=%22%23FF9A7A%22%20stroke-width=%221.5%22%20opacity=%22.6%22/%3E%3C/svg%3E">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0A0A0C">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>17-system-index · ARGO INDEX · ARCHIVE</title><link rel="stylesheet" href="../shared/assets/fonts/pretendard.css"><link rel="stylesheet" href="../shared/assets/fonts/syne.css"><link rel="stylesheet" href="../shared/assets/fonts/geistmono.css"><link rel="stylesheet" href="../shared/styles.css"><link rel="stylesheet" href="../shared/argo-sysindex.css"><style>html,body{width:100%;height:100%;background:#050406;overflow:hidden}body{cursor:auto}</style></head><body>
+<!-- ↓↓ 이 마커 사이만 편집하세요 (build 시 이 부분만 병합됩니다) ↓↓ -->
+<!-- PAGE-START:s11 -->
+<div class="scene" id="s11">
+  <div class="si-wrap">
+
+    <!-- 토러스 : 칼럼 안이 아니라 화면 전체를 덮는다. 글자가 그 위에 얹힌다. -->
+    <canvas class="si-canvas" id="si-canvas" aria-hidden="true"></canvas>
+    <div class="si-veil" aria-hidden="true"></div>
+
+    <!-- ── 상단 락업 ───────────────────────────────────────────── -->
+    <header class="si-top si-rv" style="--rvd:.05s">
+      <div class="si-top-l">
+        <span class="si-mark" aria-hidden="true"></span>
+        <span>
+          <span class="si-title">ARGO Index</span>
+          <span class="si-sub">BY TERRAFORMING SELECTION COMMITTEE</span>
+        </span>
+      </div>
+      <div class="si-top-r">
+        <span data-mission-date="iso">2068-05-29</span>
+        <span id="si-count">—</span>
+        <button class="si-back lg-btn" onclick="argoLeaveIndex()"><span class="lg-iri"></span><span class="lg-spec"></span><span class="lg-label">← MAIN</span></button>
+      </div>
+    </header>
+
+    <!-- ── 왼쪽 : SITE INDEX ───────────────────────────────────── -->
+    <nav class="si-left si-rv" style="--rvd:.12s" aria-label="사이트 인덱스">
+      <div class="si-filters" id="si-filters"></div>
+      <div class="si-list" id="si-list"></div>
+    </nav>
+
+    <!-- ── 오른쪽 : 설명 ───────────────────────────────────────── -->
+    <aside class="si-right si-rv" style="--rvd:.46s" aria-live="polite">
+      <div class="si-panel" id="si-panel">
+
+        <!-- 기본 상태 : ARGO·TFSC 세계관 -->
+        <div id="si-default">
+          <div class="si-sec">
+            <div class="si-sec-h">[MISSION]</div>
+            <p class="kr"><em>PROJECT ARGO</em>는 인류의 화성 정착 가능성을 검증하고,
+               새로운 정착 사회를 구축하기 위한 장기 이주 프로젝트입니다. 후보자는 지구와 단절된
+               환경에 필요한 심리적 소양과 적응 가능성을 평가받으며, 선발 결과에 따라 화성
+               정착지에서 수행할 직군을 부여받습니다.</p>
+            <p class="kr">이 여정은 귀환을 전제로 하지 않습니다. ARGO가 확인하는 것은
+               <em>떠나고 싶은가</em>가 아니라, 낯선 환경을 견디며 새로운 사회의 일부가 될 수
+               있는가입니다.</p>
+          </div>
+
+          <div class="si-sec">
+            <div class="si-sec-h">[ORGANIZATION]</div>
+            <dl class="si-rows">
+              <div class="si-row"><dt>AGENCY</dt><dd>TERRAFORMING SELECTION COMMITTEE</dd></div>
+              <div class="si-row"><dt>CODE</dt><dd>TFSC · DIV. 07</dd></div>
+              <div class="si-row"><dt>FOUNDED</dt><dd>2041</dd></div>
+              <div class="si-row"><dt>TIMELINE</dt><dd class="kr">2041 창설 · 2063 무인 시스템 · 2068 유인 임무</dd></div>
+              <div class="si-row"><dt>MANDATE</dt><dd class="kr">화성 정착 후보자의 심리적 소양과 환경 적응 가능성을 평가하고, 결과에 따라 정착 직군을 배정한다.</dd></div>
+            </dl>
+          </div>
+
+          <div class="si-sec">
+            <div class="si-sec-h">[SELECTION PROTOCOL]</div>
+            <p class="kr">ARGO의 선발은 기술과 경력만으로 결정되지 않습니다. 고립을 견디는 회복력,
+               불확실성 속의 판단력, 낯선 환경에 적응하면서도 자신을 유지하는 능력을 평가합니다.</p>
+            <dl class="si-rows">
+              <div class="si-row"><dt>PHASE 01</dt><dd class="kr">후보자 등록 — 식별 정보와 얼굴 이미지 기록</dd></div>
+              <div class="si-row"><dt>PHASE 02</dt><dd class="kr">심리 소양 평가 — 응답을 기반으로 적응 성향 분석</dd></div>
+              <div class="si-row"><dt>PHASE 03</dt><dd class="kr">정착 직군 배정 — 적합도 프로파일에 따라 역할 부여</dd></div>
+            </dl>
+          </div>
+        </div>
+
+        <!-- 선택 상태 (JS 가 채운다) -->
+        <div id="si-detail" hidden>
+          <div class="si-detail-code" id="si-d-code"></div>
+          <h2 class="si-detail-name" id="si-d-name"></h2>
+          <div class="si-detail-ko" id="si-d-ko"></div>
+          <div class="si-sec">
+            <div class="si-sec-h">[OVERVIEW]</div>
+            <p class="kr" id="si-d-desc"></p>
+          </div>
+          <div class="si-sec">
+            <div class="si-sec-h">[KEY FUNCTIONS]</div>
+            <ul class="si-feat" id="si-d-feat"></ul>
+          </div>
+          <div class="si-sec">
+            <div class="si-sec-h">[ROUTE]</div>
+            <dl class="si-rows" id="si-d-rows"></dl>
+          </div>
+        </div>
+
+      </div>
+      <!-- [삭제] OPEN PAGE 버튼 — 항목을 누르면 바로 이동한다(요청) -->
+
+      <div class="si-credit">
+        BUILT -&gt; ARGO · TERRAFORMING SELECTION COMMITTEE<br>
+        STACK -&gt; THREE.JS · WEBGL · CANVAS 2D · VANILLA JS
+      </div>
+    </aside>
+
+  </div>
+</div>
+<!-- PAGE-END:s11 -->
+<!-- ↑↑ 위 마커 사이만 병합 대상 ↑↑ -->
+<script>/* preview-only (build 시 제외됨) */window.addEventListener('DOMContentLoaded',function(){var el=document.getElementById('s11');if(el){el.classList.add('active');el.style.opacity=1;el.style.visibility='visible';el.style.pointerEvents='auto';}});</script>
+<script src="../shared/argo-torus.js"></script>
+<script src="../shared/argo-sysindex.js"></script>
+</body></html>

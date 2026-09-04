@@ -2326,7 +2326,7 @@ html.no-vhs .pd-scan-vhs,html.no-vhs .pd-scan-chroma{display:none}
      간격을 벌리면서 링이 예전보다 커졌으므로(옛 16.76em) 글자를 0.873배 해
      겉보기 지름을 예전 그대로 되돌린다 — 26/2.6vw/42 → 23/2.27vw/37.
      세로도 함께 보고 작은 쪽을 쓴다(4.1vh 이면 링이 화면 높이의 79%). */
-  font-size:clamp(23px,min(2.27vw,4.1vh),37px);   /* 1.2배 추가 확대 (누적 1.73배) */
+  font-size:clamp(18px,min(1.82vw,3.28vh),30px);   /* [0.8배] 23/2.27vw/37 → 18/1.82vw/30 */
   letter-spacing:.01em;
   color:#fff;
   text-transform:uppercase;
@@ -2389,30 +2389,39 @@ html.no-vhs .pd-scan-vhs,html.no-vhs .pd-scan-chroma{display:none}
   position:relative;
   /* 이 단어의 절대 각도. 0deg = 3시. --rot 은 wheel-fx 가 매 프레임 갱신한다 */
   --a:calc(var(--rot,0deg) + var(--order) * 1turn / var(--total));
-  /* 박스 채움. 폭 .22 면 읽는 자리 ±30° 까지만 물든다 — 한 단어가 확실히 주인공이고
-     양옆이 옅게 따라온다. 더 넓히면 링 절반이 붉어져 '지금 차례'가 안 읽힌다. */
-  --near:clamp(0, calc((cos(var(--a)) - .78) / .22), 1);
+  /* [교체] 예전 --near 는 ±38° 에서 툭 끊겨 색이 계단처럼 넘어갔다.
+     시험지 왼쪽 문항 휠(.aw-wheel)과 같은 '3칸 램프'로 바꾼다 — 거기서는
+     --ow-far = 1 - dist/3 이고, 여기서는 각도라 cos() 이 곧 그 램프다
+     (0°=1 · 30°=.87 · 60°=.5 · 90°=0). 끊기는 지점 없이 이어진다. */
+  --far:clamp(0, cos(var(--a)), 1);
   /* 글자 반전은 채움보다 늦고 가파르게 — 중간 단계에서 회색 글자 + 탁한 빨강이
      겹치는 구간을 없앤다. 흰 글자로 버티다 정중앙에서만 검게 떨어진다. */
   --ink:clamp(0, calc((cos(var(--a)) - .88) / .12), 1);
   color:color-mix(in srgb, #0A0A0C calc(var(--ink) * 100%), var(--wc,#fff));
   /* 겹칠 때 누가 앞인가 — 읽는 자리에 가까운 단어가 위로 올라온다.
      DOM 순서대로 두면 ARRIVE 가 늘 SIGNAL 을 덮어 낙인이 뒤에 깔린다. */
-  z-index:calc(var(--near) * 100);
+  /* 겹칠 때 누가 앞인가 — --far 는 뒤쪽 반원이 전부 0 이라 순서가 안 갈린다.
+     각도를 그대로 0~100 으로 편 값을 쓴다. */
+  z-index:calc((cos(var(--a)) + 1) * 50);
 }
 .pd-wheel-in > span::before{
   content:"";position:absolute;z-index:-1;
   /* 폭은 span 이 이미 고정돼 있으므로 좌우는 살짝만 넘긴다. 위아래 .18em 이
      라벨의 숨통 — 이 값이 커지면 박스가 높아져 안쪽에서 다시 물린다. */
   inset:-.18em -.1em;
-  border:1px solid rgb(255 255 255 / calc(.20 + var(--near) * .35));
+  border:1px solid rgb(255 255 255 / calc(.20 + var(--far) * .35));
   /* 바탕을 페이지 색으로 깔아 불투명하게 만든다 — 안 그러면 링 안쪽에서 박스가
      겹칠 때 뒤 박스의 테두리가 앞 박스를 뚫고 비친다(사용자 지적).
      코랄 채움은 그 위에 이미지 레이어로 얹는다. */
   background-color:var(--bg);
-  /* [수정] 여기만 공백 구분 rgb() 문법이라 그동안의 색 스윕이 전부 비껴갔다 —
-     RECORD/IDENTITY 뒤 박스가 옛 코랄(#FF6B66)로 남아 벽돌색으로 보이던 원인. */
-  background-image:linear-gradient(rgb(255 45 142 / var(--near)) 0 100%);
+  /* 채움 = 시험지 왼쪽 문항 휠과 같은 2단 섞기.
+       안쪽 color-mix : 핫핑크 → 하이퍼 피치 (읽는 자리가 가장 진한 핑크)
+       바깥 color-mix : 그 색 → 투명 (멀어지면 테두리만 남는다)
+     색 단계는 oklab, 투명으로 빼는 단계는 srgb(프리멀티플라이드라 색이 탁해지지 않는다). */
+  background-image:linear-gradient(
+    color-mix(in srgb,
+      color-mix(in oklab, var(--neon-coral) calc(var(--far) * 100%), var(--neon-coral-soft))
+      calc(var(--far) * var(--far) * 100%), transparent) 0 100%);
 }
 
 /* ---- 촬영 화면 : CANDIDATE WALL 안내 문구 -----------------------------

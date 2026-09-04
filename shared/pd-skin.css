@@ -2417,11 +2417,20 @@ html.no-vhs .pd-scan-vhs,html.no-vhs .pd-scan-chroma{display:none}
   /* 채움 = 시험지 왼쪽 문항 휠과 같은 2단 섞기.
        안쪽 color-mix : 핫핑크 → 하이퍼 피치 (읽는 자리가 가장 진한 핑크)
        바깥 color-mix : 그 색 → 투명 (멀어지면 테두리만 남는다)
-     색 단계는 oklab, 투명으로 빼는 단계는 srgb(프리멀티플라이드라 색이 탁해지지 않는다). */
+     색 단계는 oklab, 투명으로 빼는 단계는 srgb(프리멀티플라이드라 색이 탁해지지 않는다).
+
+     [수정] 색과 알파를 같은 --far 로 몰면 주황이 보이질 않는다 —
+     피치가 주인공이 되는 구간(--far 0.4 이하)에서 알파도 같이 0 으로 떨어져
+     주황이 뜨기 전에 사라지거나, 반투명 피치가 검정에 얹혀 갈색으로 죽는다.
+     그래서 두 램프를 떼어 놓는다:
+       색  --cmix : 60° 안에서 핑크 → 피치까지 다 건너간다 (주황이 실제로 보인다)
+       알파 --cfade: 60° 까지는 꽉 채우고, 60~90° 에서만 걷힌다 (탁해지지 않는다) */
+  --cmix:clamp(0, calc((var(--far) - .4) / .6), 1);
+  --cfade:clamp(0, calc(var(--far) * 2), 1);
   background-image:linear-gradient(
     color-mix(in srgb,
-      color-mix(in oklab, var(--neon-coral) calc(var(--far) * 100%), var(--neon-coral-soft))
-      calc(var(--far) * var(--far) * 100%), transparent) 0 100%);
+      color-mix(in oklab, var(--neon-coral) calc(var(--cmix) * 100%), var(--neon-coral-soft))
+      calc(var(--cfade) * 100%), transparent) 0 100%);
 }
 
 /* ---- 촬영 화면 : CANDIDATE WALL 안내 문구 -----------------------------

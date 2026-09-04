@@ -2322,7 +2322,10 @@ html.no-vhs .pd-scan-vhs,html.no-vhs .pd-scan-chroma{display:none}
   font-family:var(--f-sans);
   font-weight:600;
   /* [1.2배] 15/1.5vw/24 → 18/1.8vw/29. 반경은 em 기준이라 함께 커진다. */
-  font-size:clamp(26px,2.6vw,42px);   /* 1.2배 추가 확대 (누적 1.73배) */
+  /* 링 반높이 = 반경 3.6em + 박스 5.9em ≈ 9.6em 이라 링 전체가 19.2em 이다.
+     화면이 낮으면(예: 1710x800) 42px 로는 링이 화면 밖으로 나간다 —
+     세로도 함께 보고 작은 쪽을 쓴다(4.6vh 이면 링이 화면의 92% 안에 들어온다). */
+  font-size:clamp(26px,min(2.6vw,4.6vh),42px);   /* 1.2배 추가 확대 (누적 1.73배) */
   letter-spacing:.01em;
   color:#fff;
   text-transform:uppercase;
@@ -2331,13 +2334,20 @@ html.no-vhs .pd-scan-vhs,html.no-vhs .pd-scan-chroma{display:none}
 }
 .pd-wheel-in > span{
   grid-area:1/1;
-  /* display:block 만 두면 그리드 칼럼 폭(가장 긴 단어 기준)까지 늘어나
-     회전 시 빈 박스가 같이 돌아 페인트 범위가 링의 4배로 부푼다.
-     글자 폭에 맞춰 잡아준다. */
-  width:max-content;justify-self:start;
+  /* [수정] width:max-content 는 단어 길이대로 박스가 달라져 바깥 끝이 들쭉날쭉했다.
+     가장 긴 단어(CANDIDATE = 5.74em)에 맞춰 폭을 고정하고 글자를 가운데 둔다 —
+     12개 박스가 같은 크기로 안팎 끝이 맞아 스포크처럼 정렬된다.
+     고정 폭이라 예전 grid 칼럼 늘어남(페인트 4배) 문제는 그대로 없다. */
+  width:5.9em;justify-self:start;text-align:center;
+  /* 상속된 행간(1.55)이 박스를 78px 까지 부풀려 안쪽 끝에서 이웃과 겹쳤다.
+     라벨답게 조여 준다 — 박스 높이가 줄어야 안쪽 간격이 벌어진다. */
+  line-height:1.1;
   display:block;white-space:nowrap;
   transform-origin:0% 50%;
-  transform:rotate(calc(var(--order) * 360deg / var(--total))) translate(calc(var(--total) * 0.22em),0);
+  /* [수정] 0.22em(반경 2.64em) 에서는 안쪽 호 간격 58px < 박스 높이 78px 이라
+     12개가 허브에서 서로 물렸다. 조인 박스 높이(1.46em)로 이웃 간 6° 가 남는
+     0.30em(반경 3.6em)으로 넓힌다. */
+  transform:rotate(calc(var(--order) * 360deg / var(--total))) translate(calc(var(--total) * 0.30em),0);
   translate:calc(var(--wg) * -0.5) 0;
 }
 /* 원본과 같이 첫 단어만 강조색 (--wc 로 빼 둔다 — 아래 낙인 반전이 이 값을 섞는다) */
@@ -2391,7 +2401,9 @@ html.no-vhs .pd-scan-vhs,html.no-vhs .pd-scan-chroma{display:none}
 }
 .pd-wheel-in > span::before{
   content:"";position:absolute;z-index:-1;
-  inset:-.16em -.14em;
+  /* 폭은 span 이 이미 고정돼 있으므로 좌우는 살짝만 넘긴다. 위아래 .18em 이
+     라벨의 숨통 — 이 값이 커지면 박스가 높아져 안쪽에서 다시 물린다. */
+  inset:-.18em -.1em;
   border:1px solid rgb(255 255 255 / calc(.20 + var(--near) * .35));
   /* 바탕을 페이지 색으로 깔아 불투명하게 만든다 — 안 그러면 링 안쪽에서 박스가
      겹칠 때 뒤 박스의 테두리가 앞 박스를 뚫고 비친다(사용자 지적).

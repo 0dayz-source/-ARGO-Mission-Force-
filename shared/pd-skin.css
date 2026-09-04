@@ -2322,10 +2322,11 @@ html.no-vhs .pd-scan-vhs,html.no-vhs .pd-scan-chroma{display:none}
   font-family:var(--f-sans);
   font-weight:600;
   /* [1.2배] 15/1.5vw/24 → 18/1.8vw/29. 반경은 em 기준이라 함께 커진다. */
-  /* 링 반높이 = 반경 3.6em + 박스 5.9em ≈ 9.6em 이라 링 전체가 19.2em 이다.
-     화면이 낮으면(예: 1710x800) 42px 로는 링이 화면 밖으로 나간다 —
-     세로도 함께 보고 작은 쪽을 쓴다(4.6vh 이면 링이 화면의 92% 안에 들어온다). */
-  font-size:clamp(26px,min(2.6vw,4.6vh),42px);   /* 1.2배 추가 확대 (누적 1.73배) */
+  /* 링 전체 높이 = (반경 3.6em + 박스 5.9em) * 2 = 19.2em.
+     간격을 벌리면서 링이 예전보다 커졌으므로(옛 16.76em) 글자를 0.873배 해
+     겉보기 지름을 예전 그대로 되돌린다 — 26/2.6vw/42 → 23/2.27vw/37.
+     세로도 함께 보고 작은 쪽을 쓴다(4.1vh 이면 링이 화면 높이의 79%). */
+  font-size:clamp(23px,min(2.27vw,4.1vh),37px);   /* 1.2배 추가 확대 (누적 1.73배) */
   letter-spacing:.01em;
   color:#fff;
   text-transform:uppercase;

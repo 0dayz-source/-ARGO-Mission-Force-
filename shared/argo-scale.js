@@ -36,9 +36,20 @@
     /* 전면 캔버스는 JS 가 innerWidth 로 크기를 잡는다(확대되면 화면을 넘친다).
        resize 를 한 번 흘려 보내 각자 다시 재도록 한다. */
     dispatchEvent(new Event('resize'));
+    /* 현장에서 "무엇이 적용 중인지" 를 콘솔 한 줄로 확인할 수 있게 남긴다.
+       캐시된 옛 파일을 보고 있는지 판별하는 데 이 줄이 있고 없고가 갈린다. */
+    try{ console.log('[ARGO] scale', z, '· viewport', innerWidth + '×' + innerHeight); }catch(e){}
   }
 
   apply();
   addEventListener('resize', apply);
   window.ArgoScale = { apply:apply, get z(){ return window.__argoZ; } };
+
+  /* 좌표 변환용 공용 배율.
+     getBoundingClientRect · innerWidth · scrollY 는 '확대된 px' 를 주고
+     style.width · style.transform · offsetHeight 는 '확대 전 px' 다.
+     앞의 값을 뒤에 쓰려면 이 값으로 나눈다.
+     Element.currentCSSZoom 은 최신 크롬에만 있어서 쓰지 않는다 —
+     다른 브라우저에서는 undefined 라 보정이 통째로 무시된다. */
+  window.argoZoom = function(){ return window.__argoZ || 1; };
 })();

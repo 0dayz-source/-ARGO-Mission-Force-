@@ -39,16 +39,16 @@
 }
 </script>
 
-<link rel="stylesheet" href="shared/pd-skin.css?v=1788917617">
-  <script src="shared/argo-date.js?v=1788917617"></script>
-  <script id="ripple-fx" src="shared/argo-ripple.js?v=1788917617"></script>
-  <script src="shared/argo-scramble.js?v=1788917617"></script>
-<link rel="stylesheet" href="shared/argo-operator.css?v=1788917617">
-<link rel="stylesheet" href="shared/argo-track.css?v=1788917617"><link rel="stylesheet" href="shared/argo-warn.css?v=1788917617">
-<script src="shared/argo-scale.js?v=1788917617"></script>
+<link rel="stylesheet" href="shared/pd-skin.css?v=1788918530">
+  <script src="shared/argo-date.js?v=1788918530"></script>
+  <script id="ripple-fx" src="shared/argo-ripple.js?v=1788918530"></script>
+  <script src="shared/argo-scramble.js?v=1788918530"></script>
+<link rel="stylesheet" href="shared/argo-operator.css?v=1788918530">
+<link rel="stylesheet" href="shared/argo-track.css?v=1788918530"><link rel="stylesheet" href="shared/argo-warn.css?v=1788918530">
+<script src="shared/argo-scale.js?v=1788918530"></script>
 </head>
 <body>
-<script src="shared/argo-nav.js?v=1788917617"></script>
+<script src="shared/argo-nav.js?v=1788918530"></script>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
     <!-- [VHS] 테이프가 살짝 늘어난 듯한 가로 왜곡. baseFrequency 를 세로로만 크게 줘서
@@ -1376,9 +1376,9 @@
        섞어 쓰면 진행도가 실제보다 일찍 1 에 닿아(= 낙하가 먼저 터지고
        IN PROCESS 패널이 나오기 전에 끝난다) 트랙도 덜 밀려 오른쪽이 잘렸다.
        각 계산을 한 좌표계로 통일한다. */
-    if(hero)targetHeroProgress=clamp(scrollY/(hero.offsetHeight*(hero.currentCSSZoom||1)-innerHeight));
+    if(hero)targetHeroProgress=clamp(scrollY/(hero.offsetHeight*(window.argoZoom ? window.argoZoom() : 1)-innerHeight));
     if(tele&&track&&innerWidth>820){var rect=tele.getBoundingClientRect();
-      var cz=track.currentCSSZoom||1, vw=innerWidth/cz, vh=innerHeight/cz;
+      var cz=(window.argoZoom ? window.argoZoom() : 1), vw=innerWidth/cz, vh=innerHeight/cz;
       var tp=clamp((-rect.top/cz)/(tele.offsetHeight-vh));
       window.__teleProgress=tp;   /* tele-fall-fx 가 읽는다 — 레이아웃 재측정 없이 */
       var dist=track.scrollWidth-vw+vw*0.08;
@@ -2649,10 +2649,10 @@ void main(){ vec2 p = gl_PointCoord - 0.5; float l = length(p); if (l > 0.5) dis
 })();
 </script>
 
-<script src="shared/argo-warn.js?v=1788917617"></script><script src="shared/argo-track.js?v=1788917617"></script>
-<script src="shared/argo-db.js?v=1788917617"></script>
-<script src="shared/argo-foldtext.js?v=1788917617"></script>
-<script id="scan-fx" src="shared/argo-scan.js?v=1788917617"></script>
+<script src="shared/argo-warn.js?v=1788918530"></script><script src="shared/argo-track.js?v=1788918530"></script>
+<script src="shared/argo-db.js?v=1788918530"></script>
+<script src="shared/argo-foldtext.js?v=1788918530"></script>
+<script id="scan-fx" src="shared/argo-scan.js?v=1788918530"></script>
 
 <script src="shared/vendor/matter.min.js"></script>
 <script id="tele-fall-fx">
@@ -2768,7 +2768,7 @@ void main(){ vec2 p = gl_PointCoord - 0.5; float l = length(p); if (l > 0.5) dis
      써 넣는 el.style.transform 은 확대 전 px 라 zoom 이 한 번 더 곱해진다.
      그대로 두면 실제 이동량이 물리가 아는 값보다 배율만큼 커져서 벽·천장과
      어긋나고 낙하가 끊겨 보인다. 화면에 쓸 때 배율로 나눈다. */
-  function fallZoom(){ return pin.currentCSSZoom || 1; }
+  function fallZoom(){ return (window.argoZoom ? window.argoZoom() : 1); }
 
   function paint(){
     var gone=0, cz=fallZoom();
@@ -2941,7 +2941,7 @@ void main(){ vec2 p = gl_PointCoord - 0.5; float l = length(p); if (l > 0.5) dis
     /* getBoundingClientRect 는 화면 배율이 곱해진 폭을 준다. 그대로 style.width
        (확대 전 px)에 넣으면 글자 상자가 배율만큼 넓어져 자간이 벌어지고
        단어로 안 읽힌다. 배율로 나눠 같은 좌표계로 되돌린다. */
-    var wz=host.currentCSSZoom||1;
+    var wz=(window.argoZoom ? window.argoZoom() : 1);
     for(i=0;i<chars.length;i++) ws[i]=chars[i].getBoundingClientRect().width/wz;
     for(i=0;i<chars.length;i++){
       w=ws[i];
@@ -4906,6 +4906,6 @@ void main(){
   },{threshold:[0,0.05,0.35,0.6]}).observe(stage);
 })();
 </script>
-<script src="shared/argo-operator.js?v=1788917617"></script>
+<script src="shared/argo-operator.js?v=1788918530"></script>
 </body>
 </html>

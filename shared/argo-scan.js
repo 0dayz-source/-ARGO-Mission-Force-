@@ -546,7 +546,7 @@
       var metaH=meta?meta.offsetHeight:0;
       /* 화면 배율(html{zoom}) 안에서 계산되므로 화면 크기는 배율로 나눠 쓴다.
          안 나누면 큰 모니터에서 사진이 화면 밖으로 넘친다. */
-      var z=lbImg.currentCSSZoom||1;
+      var z=(window.argoZoom ? window.argoZoom() : 1);
       var maxW=Math.min(1440, innerWidth*0.92/z);
       var maxH=innerHeight*0.92/z - metaH;
       /* 2.6배 상한 : 갤러리 썸네일(384px)이 소스일 때 과확대로 뭉개지는 걸 막는다 */

@@ -1,3 +1,20 @@
+/* 화면 배율 — shared/argo-scale.js 가 --z 를 올리면 페이지 전체가 확대된다.
+   뷰포트 단위는 calc(N * var(--vh)) 꼴로 바뀌어 있고 여기서 배율만큼 나눈다.
+   자세한 설명은 shared/styles.css 맨 위 주석 참고. */
+:root{
+  --vh:calc(1vh / var(--z,1));
+  --dvh:calc(1dvh / var(--z,1));
+  --vw:calc(1vw / var(--z,1));
+  --vmin:calc(1vmin / var(--z,1));
+}
+html{zoom:var(--z,1)}
+/* 전면 캔버스와 커스텀 커서는 JS 가 확대 전 화면 좌표(innerWidth·clientX)로
+   크기와 위치를 잡는다. 여기서만 zoom 을 되돌려 화면과 1:1 로 맞춘다 —
+   배경 입자와 커서는 확대 대상이 아니다(확대하면 화면 밖으로 넘친다). */
+#gc,#scan-cv,#mw-canvas,#radar-canvas,#comet-cv,
+#cur,#cur-r,.pd-cursor,.pd-cursor-ring,.pd-cursor-label{zoom:calc(1 / var(--z,1))}
+
+
 /* ARGO 랜딩(11-planet-detail.html) 스킨.
    인라인 <style id="pd-skin"> 에서 분리한 공용 스킨. photo-wall.html 도 같은 색·폰트·버튼을 쓴다.
    두 페이지가 같은 파일을 보므로 한쪽만 손대도 어긋나지 않는다. */
@@ -23,7 +40,7 @@
   --cam-filter:saturate(.72) contrast(.82) brightness(1.16) sepia(.12);
   /* 모든 섹션이 공유하는 가로 폭. 섹션마다 1100/1200/1280/1300 으로 달라서
      같은 위계의 글자가 섹션마다 200px 씩 튀어 있었다 → 하나로 통일. */
-  --pd-shell:min(1560px,calc(100vw - 144px));
+  --pd-shell:min(1560px,calc(calc(100 * var(--vw)) - 144px));
   /* ---- THEME (dark by default) : bg + foreground triplet ---- */
   --bg:#0a0a0c;
   --fg:#D4FAFF; --fg-2:rgba(212,250,255,.55); --fg-3:rgba(212,250,255,.26);
@@ -223,7 +240,7 @@ html.lb-open .pd-cursor-label{z-index:2147482101}
    각 레이어는 서로 다른 blur 반경 + 서로 다른 mask 구간을 가져 계단이 안 보인다. */
 .pd-gblur{
   position:fixed;left:0;right:0;bottom:0;
-  height:clamp(80px,11vh,150px);
+  height:clamp(80px,calc(11 * var(--vh)),150px);
   z-index:55;pointer-events:none;isolation:isolate;
   /* 스크롤 진행도로 직접 구동 → transition 없이도 스크롤에 붙어 부드럽게 올라온다 */
   opacity:var(--gblur-p,0);
@@ -334,7 +351,7 @@ html.theme-light .pd-hero-pin::after{background:radial-gradient(120% 90% at 50% 
 .glb-slot model-viewer{position:absolute;inset:0;z-index:2;width:100%;height:100%;background:transparent;--poster-color:transparent}
 .glb-tag{position:absolute;left:10px;bottom:9px;z-index:3;font-family:var(--f-mono);font-size:9px;letter-spacing:.13em;color:var(--bone-3);border:1px dashed var(--hair);padding:3px 7px;border-radius:4px}
 .mars-ph{position:absolute;inset:0;z-index:1;display:grid;place-items:center}
-.mars-ph .ball{width:min(56vmin,440px);aspect-ratio:1;border-radius:50%;position:relative;
+.mars-ph .ball{width:min(calc(56 * var(--vmin)),440px);aspect-ratio:1;border-radius:50%;position:relative;
   background:radial-gradient(circle at 34% 30%,#FF9A7A 0%,#FF3D68 17%,#FF3D68 42%,#FF27C3 72%,#5C0E4A 100%);
   box-shadow:inset -30px -22px 80px rgba(0,0,0,.72),inset 20px 16px 60px rgba(255,154,122,.18),0 0 90px rgba(92,14,74,.22);animation:spin 48s linear infinite}
 .mars-ph .ball::before{content:"";position:absolute;inset:0;border-radius:50%;mix-blend-mode:overlay;opacity:.5;
@@ -347,13 +364,13 @@ html.theme-light .pd-hero-pin::after{background:radial-gradient(120% 90% at 50% 
 .dna-ph .node{position:absolute;width:12px;height:12px;border-radius:50%}
 
 /* ============================ HERO (StringTune-style: one giant wordmark + small scattered labels) ============================ */
-/* 다음 섹션이 너무 빨리 올라와서 스크롤 구간 자체를 늘렸다(260 → 820vh) */
-.pd-hero{position:relative;z-index:6;height:820vh}
-.pd-hero-pin{position:sticky;top:0;height:100dvh;overflow:hidden;display:block;z-index:1;mask-image:url(#heroRevealMask);-webkit-mask-image:url(#heroRevealMask)}
+/* 다음 섹션이 너무 빨리 올라와서 스크롤 구간 자체를 늘렸다(260 → calc(820 * var(--vh))) */
+.pd-hero{position:relative;z-index:6;height:calc(820 * var(--vh))}
+.pd-hero-pin{position:sticky;top:0;height:calc(100 * var(--dvh));overflow:hidden;display:block;z-index:1;mask-image:url(#heroRevealMask);-webkit-mask-image:url(#heroRevealMask)}
 
 /* the ONE big display word */
-.pd-hero-title{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:flex-start;z-index:4;pointer-events:none;will-change:transform;padding:0 4vw 15vh 24px}
-.pd-hero-title h1{font-family:var(--f-disp);font-weight:700;font-size:clamp(3.6rem,17vw,14.5rem);line-height:.82;letter-spacing:.01em;
+.pd-hero-title{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:flex-start;z-index:4;pointer-events:none;will-change:transform;padding:0 calc(4 * var(--vw)) calc(15 * var(--vh)) 24px}
+.pd-hero-title h1{font-family:var(--f-disp);font-weight:700;font-size:clamp(3.6rem,calc(17 * var(--vw)),14.5rem);line-height:.82;letter-spacing:.01em;
   background:linear-gradient(115deg, rgba(91,141,239,.55) 0%, rgba(255,255,255,.94) 20%, rgba(212,250,255,.72) 34%, rgba(255,255,255,.96) 46%, rgba(172,176,186,.5) 58%, rgba(255,255,255,.92) 72%, rgba(212,250,255,.65) 86%, rgba(255,255,255,.96) 100%);
   background-size:260% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:var(--fg);
   mix-blend-mode:overlay;opacity:.88;text-align:center;
@@ -364,18 +381,18 @@ html.theme-light .pd-hero-pin::after{background:radial-gradient(120% 90% at 50% 
 
 /* small supporting labels, scattered to the corners */
 .pd-hero-lbl{position:absolute;z-index:6;font-family:var(--f-mono);font-size:11px;letter-spacing:.2em;color:var(--fg-2);line-height:1.9;will-change:transform,opacity}
-.pd-hero-lbl.tl{top:14vh;left:24px}
-.pd-hero-lbl.tr{top:14vh;right:24px;text-align:right}
+.pd-hero-lbl.tl{top:calc(14 * var(--vh));left:24px}
+.pd-hero-lbl.tr{top:calc(14 * var(--vh));right:24px;text-align:right}
 .pd-hero-lbl.ml{top:42%;left:24px;max-width:22ch}
 .pd-hero-lbl.mr{top:42%;right:24px;text-align:right;max-width:20ch}
-.pd-hero-lbl .big{display:block;font-family:var(--f-serif);font-style:italic;font-size:clamp(1.4rem,2.4vw,2rem);line-height:1.02;letter-spacing:.01em;word-spacing:-.14em;color:var(--fg);margin-bottom:6px}
+.pd-hero-lbl .big{display:block;font-family:var(--f-serif);font-style:italic;font-size:clamp(1.4rem,calc(2.4 * var(--vw)),2rem);line-height:1.02;letter-spacing:.01em;word-spacing:-.14em;color:var(--fg);margin-bottom:6px}
 .pd-hero-lbl .k{color:var(--rose)}
-.pd-hero-serif{position:absolute;left:24px;bottom:6vh;z-index:6;font-family:var(--f-disp);font-style:italic;font-size:clamp(1.6rem,4vw,3rem);line-height:1;color:var(--fg);letter-spacing:.01em;will-change:transform}
-.pd-hero-r{position:absolute;right:24px;bottom:6vh;z-index:6;text-align:right;font-family:var(--f-mono);font-size:10px;letter-spacing:.16em;color:var(--fg-3);line-height:2.1;will-change:transform}
+.pd-hero-serif{position:absolute;left:24px;bottom:calc(6 * var(--vh));z-index:6;font-family:var(--f-disp);font-style:italic;font-size:clamp(1.6rem,calc(4 * var(--vw)),3rem);line-height:1;color:var(--fg);letter-spacing:.01em;will-change:transform}
+.pd-hero-r{position:absolute;right:24px;bottom:calc(6 * var(--vh));z-index:6;text-align:right;font-family:var(--f-mono);font-size:10px;letter-spacing:.16em;color:var(--fg-3);line-height:2.1;will-change:transform}
 
 /* HERO -> BRIEF footer-shifting: 히어로가 밀려나며 밝은 브리핑 페이지가 아래에서 솟아올라 화면을 뒤덮음 */
 /* (구 hero-shift 복제 레이어 제거됨 — 이제 실제 마스크 컷아웃 방식 사용) */
-.pd-cue{position:absolute;left:50%;bottom:4vh;transform:translateX(-50%);z-index:7;display:flex;flex-direction:column;align-items:center;gap:8px;font-family:var(--f-mono);font-size:9px;letter-spacing:.28em;color:var(--fg-3)}
+.pd-cue{position:absolute;left:50%;bottom:calc(4 * var(--vh));transform:translateX(-50%);z-index:7;display:flex;flex-direction:column;align-items:center;gap:8px;font-family:var(--f-mono);font-size:9px;letter-spacing:.28em;color:var(--fg-3)}
 .pd-cue i{width:1px;height:36px;background:linear-gradient(var(--pink),transparent);animation:cue 2.4s var(--io) infinite}
 @keyframes cue{0%{transform:scaleY(0);transform-origin:top}40%{transform:scaleY(1);transform-origin:top}50%{transform:scaleY(1);transform-origin:bottom}90%{transform:scaleY(0);transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
 
@@ -400,33 +417,33 @@ html.theme-light .pd-hero-pin::after{background:radial-gradient(120% 90% at 50% 
 .pd-cue::before{display:none}
 @media(max-width:820px){
   .pd-hero-lbl.ml,.pd-hero-lbl.mr{display:none}
-  .pd-hero-title h1{font-size:clamp(2.72rem,20.8vw,7.2rem)}
+  .pd-hero-title h1{font-size:clamp(2.72rem,calc(20.8 * var(--vw)),7.2rem)}
 }
 
 /* ============================ BRIEF ============================ */
 .pd-brief p,.pd-brief .pd-brief-lede{max-width:68ch}   /* 셸은 넓어도 읽기 폭은 유지 */
-/* hero 핀이 떠 있는 100vh 내내 브리핑 섹션이 바로 그 뒤에 이미 깔려 있도록 끌어올림
+/* hero 핀이 떠 있는 calc(100 * var(--vh)) 내내 브리핑 섹션이 바로 그 뒤에 이미 깔려 있도록 끌어올림
    -> 도형이 "복제품"이 아니라, 실제 브리핑 페이지에 뚫리는 구멍이 됨(픽셀 단위로 100% 동일) */
 /* 위 여백은 줄여 본문이 구멍에 맞춰 빨리 올라오게 하고, 아래 여백은 크게 늘려
    "다 열린 뒤 읽을 시간"을 만든다. 이게 없으면 완전히 드러난 직후 다음 섹션이 곧장 올라온다 */
 /* 섹션 자체는 아주 길게 잡고(런웨이), 안쪽 .pd-brief-pin 을 sticky 로 붙잡는다.
-   위로 크게 당겨서(-320dvh) 구멍이 열리기 시작할 때 이미 본문이 제자리에 고정돼 있게 한다
+   위로 크게 당겨서(calc(-320 * var(--dvh))) 구멍이 열리기 시작할 때 이미 본문이 제자리에 고정돼 있게 한다
    → 구멍이 빈 공간이 아니라 처음부터 '본문'을 열어젖힌다. */
 /* tutorial-01 처럼 "글자가 다 뜰 때까지 화면 정지" 를 만들려면 sticky 유지 구간이
-   텍스트 리빌(≈35%)보다 길어야 한다 → 런웨이를 340vh 로 늘렸다. */
-.pd-brief{position:relative;z-index:5;padding:0 0 400vh;width:var(--pd-shell);max-width:none;margin:-320dvh auto 0}
+   텍스트 리빌(≈35%)보다 길어야 한다 → 런웨이를 calc(340 * var(--vh)) 로 늘렸다. */
+.pd-brief{position:relative;z-index:5;padding:0 0 calc(400 * var(--vh));width:var(--pd-shell);max-width:none;margin:calc(-320 * var(--dvh)) auto 0}
 /* align-items 기본값(stretch)이면 inline-flex 인 .pd-brief-tag 가 전폭으로 늘어나
    내용이 왼쪽에 붙는다 — 중앙정렬이 풀렸던 이유. 항목을 각자 폭으로 줄여 가운데로 모은다. */
 /* position:sticky 가 이 문서 구조에서 붙잡히지 않는다(측정: 22% 지점에서 pin.top = -409px).
    그래서 스크롤 구간 동안 JS 가 .is-pinned 를 붙여 fixed 로 직접 고정한다. */
-.pd-brief-pin{position:absolute;top:0;left:0;right:0;height:100dvh;display:flex;flex-direction:column;
+.pd-brief-pin{position:absolute;top:0;left:0;right:0;height:calc(100 * var(--dvh));display:flex;flex-direction:column;
   justify-content:center;align-items:center}
-.pd-brief-pin.is-pinned{position:fixed;top:0;left:0;right:0;height:100dvh;min-height:0;z-index:5}
-.pd-brief-pin.is-past{position:absolute;left:0;right:0;bottom:auto;height:100dvh;min-height:0}
-#tunnel-canvas,#galaxy-canvas{position:fixed;inset:0;width:100vw;height:100vh;display:block;z-index:1;pointer-events:none;opacity:0}
+.pd-brief-pin.is-pinned{position:fixed;top:0;left:0;right:0;height:calc(100 * var(--dvh));min-height:0;z-index:5}
+.pd-brief-pin.is-past{position:absolute;left:0;right:0;bottom:auto;height:calc(100 * var(--dvh));min-height:0}
+#tunnel-canvas,#galaxy-canvas{position:fixed;inset:0;width:calc(100 * var(--vw));height:calc(100 * var(--vh));display:block;z-index:1;pointer-events:none;opacity:0}
 /* -- Aurora Background (aceternity 참고): 은은하게 흐르는 컬러 블롭 -- */
 .pd-brief-aurora{
-  position:absolute;left:50%;top:-10px;bottom:-10px;width:100vw;z-index:-1;pointer-events:none;overflow:hidden;
+  position:absolute;left:50%;top:-10px;bottom:-10px;width:calc(100 * var(--vw));z-index:-1;pointer-events:none;overflow:hidden;
   --aurora-drift-x:0px;--aurora-drift-y:0px;
   transform:translate(calc(-50% + var(--aurora-drift-x)),var(--aurora-drift-y));
   transition:transform 1.6s var(--ease-soft);
@@ -459,22 +476,22 @@ html.theme-light .pd-hero-pin::after{background:radial-gradient(120% 90% at 50% 
 @media (prefers-reduced-motion:reduce){.pd-brief-aurora,.pd-brief-aurora::after{animation:none}}
 .pd-brief-tag{font-family:var(--f-mono);font-size:11px;letter-spacing:.24em;color:var(--fg-2);margin-bottom:34px;display:inline-flex;gap:12px;align-items:center}
 .pd-brief-tag::before{content:"";width:30px;height:1px;background:var(--red)}
-.pd-brief-lede{font-family:var(--f-disp);font-weight:700;font-size:clamp(2rem,6vw,4.4rem);line-height:1.04;letter-spacing:.01em;margin-bottom:40px}
+.pd-brief-lede{font-family:var(--f-disp);font-weight:700;font-size:clamp(2rem,calc(6 * var(--vw)),4.4rem);line-height:1.04;letter-spacing:.01em;margin-bottom:40px}
 .pd-brief-lede .hot{color:inherit}
-.pd-brief-body{font-size:clamp(15px,1.5vw,18px);color:var(--bone-2);max-width:60ch;margin-bottom:18px}
+.pd-brief-body{font-size:clamp(15px,calc(1.5 * var(--vw)),18px);color:var(--bone-2);max-width:60ch;margin-bottom:18px}
 .pd-brief-coord{margin-top:40px;font-family:var(--f-mono);font-size:10px;letter-spacing:.2em;color:var(--bone-3);border-top:1px solid var(--hair);padding-top:18px;display:inline-block}
 .pd-brief-thread{color:var(--red);font-style:italic;font-family:var(--f-serif)}
 
 /* ============================ TELEMETRY (horizontal) ============================ */
-.pd-tele{position:relative;z-index:5;height:560vh}
-.pd-tele-pin{position:sticky;top:0;height:100dvh;overflow:hidden;display:flex;flex-direction:column;justify-content:center}
+.pd-tele{position:relative;z-index:5;height:calc(560 * var(--vh))}
+.pd-tele-pin{position:sticky;top:0;height:calc(100 * var(--dvh));overflow:hidden;display:flex;flex-direction:column;justify-content:center}
 
 /* -- PHASE TRANSITION 핀 스크럽: 스크롤에 1:1로 붙는 시그니처 모먼트 -- */
-.pd-phase{position:relative;z-index:5;height:120vh}
-.pd-phase-pin{position:sticky;top:0;height:100dvh;display:grid;place-items:center;overflow:hidden;background:#FF2D82}
+.pd-phase{position:relative;z-index:5;height:calc(120 * var(--vh))}
+.pd-phase-pin{position:sticky;top:0;height:calc(100 * var(--dvh));display:grid;place-items:center;overflow:hidden;background:#FF2D82}
 /* StringTune "Flexibility" 참고: 화면보다 훨씬 넓은 타원이 아래에서 위로 스크롤에 따라 솟아오르며 화면을 뒤덮음 */
 .pd-phase-shape{
-  position:absolute;left:50%;bottom:-2px;width:180vw;height:118vh;
+  position:absolute;left:50%;bottom:-2px;width:calc(180 * var(--vw));height:calc(118 * var(--vh));
   background:#070d16;transform:translate(-50%,101%);
   border-radius:100% 100% 0 0;
   will-change:transform,border-radius;z-index:2;
@@ -483,41 +500,41 @@ html.theme-light .pd-hero-pin::after{background:radial-gradient(120% 90% at 50% 
 .pd-phase-next{position:absolute;inset:0;z-index:3;display:grid;place-items:center;text-align:center;
   opacity:0;transform:translateY(46px);pointer-events:none;will-change:transform,opacity}
 .pd-phase-next-kick{display:block;font-family:var(--f-mono);font-size:11px;letter-spacing:.28em;color:rgba(255,255,255,.45);margin-bottom:20px}
-.pd-phase-next-line{display:block;font-family:var(--f-serif);font-style:italic;font-size:clamp(2.6rem,7vw,5.5rem);line-height:1.05;letter-spacing:.01em;color:var(--bone)}
-.pd-phase-label{position:absolute;bottom:9vh;left:50%;z-index:1;transform:translateX(-50%);font-family:var(--f-mono);font-size:11px;letter-spacing:.28em;color:var(--fg-3);white-space:nowrap;height:1.4em}
+.pd-phase-next-line{display:block;font-family:var(--f-serif);font-style:italic;font-size:clamp(2.6rem,calc(7 * var(--vw)),5.5rem);line-height:1.05;letter-spacing:.01em;color:var(--bone)}
+.pd-phase-label{position:absolute;bottom:calc(9 * var(--vh));left:50%;z-index:1;transform:translateX(-50%);font-family:var(--f-mono);font-size:11px;letter-spacing:.28em;color:var(--fg-3);white-space:nowrap;height:1.4em}
 .pd-phase-label .a,.pd-phase-label .b{position:absolute;left:50%;top:0;transform:translateX(-50%);transition:opacity .25s linear;white-space:nowrap}
-.pd-phase-hint{position:absolute;top:6vh;left:50%;z-index:3;transform:translateX(-50%);font-family:var(--f-mono);font-size:10px;letter-spacing:.24em;color:var(--fg-3);opacity:.6}
+.pd-phase-hint{position:absolute;top:calc(6 * var(--vh));left:50%;z-index:3;transform:translateX(-50%);font-family:var(--f-mono);font-size:10px;letter-spacing:.24em;color:var(--fg-3);opacity:.6}
 @media (prefers-reduced-motion:reduce){.pd-phase-shape{transition:none}}
-.pd-tele-head{position:absolute;top:13vh;left:24px;right:24px;display:flex;justify-content:space-between;align-items:baseline;font-family:var(--f-mono);font-size:11px;letter-spacing:.22em;color:var(--bone-3);z-index:3}
+.pd-tele-head{position:absolute;top:calc(13 * var(--vh));left:24px;right:24px;display:flex;justify-content:space-between;align-items:baseline;font-family:var(--f-mono);font-size:11px;letter-spacing:.22em;color:var(--bone-3);z-index:3}
 .pd-tele-head .a{color:var(--fg-2)}
 .pd-tele-track{display:flex;will-change:transform}
-.pd-panel{position:relative;flex:0 0 auto;width:min(74vw,640px);padding:0 clamp(28px,6vw,90px);display:flex;flex-direction:column;justify-content:center;min-height:54vh}
+.pd-panel{position:relative;flex:0 0 auto;width:min(calc(74 * var(--vw)),640px);padding:0 clamp(28px,calc(6 * var(--vw)),90px);display:flex;flex-direction:column;justify-content:center;min-height:calc(54 * var(--vh))}
 /* 예전엔 이 선이 .pd-panel 의 border-left 였다. border 는 패널과 한 몸이라
    따로 떠오르게 할 수 없어서, 같은 모양의 독립 요소로 분리했다(외형 동일). */
 .pd-panel-rule{position:absolute;left:0;top:0;bottom:0;width:1px;background:var(--hair);pointer-events:none}
 .pd-panel-idx{font-family:var(--f-mono);font-size:11px;letter-spacing:.2em;color:var(--bone-3);margin-bottom:auto}
 .pd-panel-cat{font-family:var(--f-mono);font-size:11px;letter-spacing:.2em;color:var(--bone-3);margin:0 0 14px}
 .pd-panel-label{font-family:var(--f-body);font-size:14px;color:var(--bone-2);margin-bottom:10px}
-.pd-panel-val{font-family:var(--f-disp);font-weight:700;font-size:clamp(3rem,8vw,6rem);line-height:.9;letter-spacing:.01em;color:var(--bone)}
+.pd-panel-val{font-family:var(--f-disp);font-weight:700;font-size:clamp(3rem,calc(8 * var(--vw)),6rem);line-height:.9;letter-spacing:.01em;color:var(--bone)}
 .pd-panel-val .u{font-family:var(--f-serif);font-style:italic;font-size:.3em;font-weight:400;color:#FF2D82;margin-left:.4em;letter-spacing:0;vertical-align:.4em}
 .pd-panel-val.txt{color:var(--orange)}
 .pd-panel-note{font-size:13px;color:var(--bone-3);margin-top:22px;max-width:34ch;line-height:1.55}
-.pd-tele-rail{position:absolute;bottom:calc(11vh - 11px);left:24px;right:24px;height:24px;z-index:3}
+.pd-tele-rail{position:absolute;bottom:calc(calc(11 * var(--vh)) - 11px);left:24px;right:24px;height:24px;z-index:3}
 .pd-tele-rail-svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
 .pd-tele-rail .beam-base{stroke:var(--hair-c,#141414)}
 .pd-tele-rail .beam-glow{stroke:url(#teleBeamGradient)}
 .pd-tele-rail-dot{position:absolute;left:-3px;top:50%;transform:translate(-50%,-50%);width:10px;height:10px;border-radius:50%;
   border:1px solid var(--hair);display:flex;align-items:center;justify-content:center;z-index:1;background:var(--bg)}
 .pd-tele-rail-dot i{width:5px;height:5px;border-radius:50%;background:var(--red);display:block;transition:background .2s}
-.pd-tele-hint{position:absolute;bottom:calc(11vh + 14px);left:24px;z-index:3;font-family:var(--f-mono);font-size:9px;letter-spacing:.26em;color:var(--bone-3)}
+.pd-tele-hint{position:absolute;bottom:calc(calc(11 * var(--vh)) + 14px);left:24px;z-index:3;font-family:var(--f-mono);font-size:9px;letter-spacing:.26em;color:var(--bone-3)}
 
 /* ============================ CAPABILITIES ============================ */
-.pd-cap{position:relative;z-index:5;padding:18vh 0;width:var(--pd-shell);max-width:none;margin:0 auto}
-.pd-cap-dots{position:absolute;left:50%;top:0;bottom:0;width:100vw;transform:translateX(-50%);z-index:-1;pointer-events:none;overflow:hidden}
+.pd-cap{position:relative;z-index:5;padding:calc(18 * var(--vh)) 0;width:var(--pd-shell);max-width:none;margin:0 auto}
+.pd-cap-dots{position:absolute;left:50%;top:0;bottom:0;width:calc(100 * var(--vw));transform:translateX(-50%);z-index:-1;pointer-events:none;overflow:hidden}
 .pd-cap-dots canvas{display:block;width:100%;height:100%}
 .pd-cap-kick{font-family:var(--f-mono);font-size:12px;letter-spacing:.06em;color:var(--bone-2);margin-bottom:22px}
-.pd-cap-title{position:relative;font-family:var(--f-serif);font-style:italic;font-size:clamp(3rem,9vw,7rem);line-height:1.08;letter-spacing:.01em;color:var(--bone);margin-bottom:22px}
-.pd-cap-sub{font-size:clamp(14px,1.4vw,16px);color:var(--bone-2);max-width:60ch;margin-bottom:54px;word-break:keep-all;overflow-wrap:break-word}
+.pd-cap-title{position:relative;font-family:var(--f-serif);font-style:italic;font-size:clamp(3rem,calc(9 * var(--vw)),7rem);line-height:1.08;letter-spacing:.01em;color:var(--bone);margin-bottom:22px}
+.pd-cap-sub{font-size:clamp(14px,calc(1.4 * var(--vw)),16px);color:var(--bone-2);max-width:60ch;margin-bottom:54px;word-break:keep-all;overflow-wrap:break-word}
 .pd-cap-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
 /* -- Focus Cards (aceternity 참고): 클릭한 카드만 강조, 나머지는 블러+축소 -- */
 .pd-cap-grid .pd-cap-card{transition:transform .3s ease-out,filter .3s ease-out,opacity .6s var(--io) !important}
@@ -578,7 +595,7 @@ html.theme-light .pd-hero-pin::after{background:radial-gradient(120% 90% at 50% 
 .pd-cap-icon{width:46px;height:46px;border-radius:12px;display:grid;place-items:center;color:var(--bone);flex:0 0 auto}
 .pd-cap-icon svg{width:22px;height:22px}
 .pd-cap-mid{flex:1}
-.pd-cap-name{font-family:var(--f-serif);font-style:italic;font-size:clamp(1.9rem,3vw,2.4rem);line-height:1;letter-spacing:.01em;color:var(--bone);margin-top:24px}
+.pd-cap-name{font-family:var(--f-serif);font-style:italic;font-size:clamp(1.9rem,calc(3 * var(--vw)),2.4rem);line-height:1;letter-spacing:.01em;color:var(--bone);margin-top:24px}
 .pd-cap-body{font-size:14px;color:var(--bone-2);line-height:1.6;margin-top:14px;max-width:none;word-break:keep-all;overflow-wrap:break-word}
 .pd-cap-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:20px}
 .pd-cap-grid .pd-cap-card:nth-child(1){transition-delay:0s}
@@ -590,17 +607,17 @@ html.theme-light .pd-hero-pin::after{background:radial-gradient(120% 90% at 50% 
 
 /* ============================ GENOME ============================ */
 /* [SIZE] 다른 섹션(.pd-cap 995px / .pd-sys 1001px)보다 이 섹션만 910px 로 낮았다.
-   패딩이 24vh/16vh 로 비대칭이기도 했다 → 20vh 로 맞추고, 캡슐을 키워 높이를 맞춘다.
+   패딩이 calc(24 * var(--vh))/calc(16 * var(--vh)) 로 비대칭이기도 했다 → calc(20 * var(--vh)) 로 맞추고, 캡슐을 키워 높이를 맞춘다.
    칼럼 비는 텍스트 쪽을 조금 넓혀(0.62->0.66) 세로로 길어진 캡슐과 균형을 잡는다. */
-.pd-dna{position:relative;z-index:5;padding:20vh 0;display:grid;grid-template-columns:minmax(0,0.66fr) minmax(0,1.34fr);gap:40px;align-items:center;width:var(--pd-shell);max-width:none;margin:0 auto}
+.pd-dna{position:relative;z-index:5;padding:calc(20 * var(--vh)) 0;display:grid;grid-template-columns:minmax(0,0.66fr) minmax(0,1.34fr);gap:40px;align-items:center;width:var(--pd-shell);max-width:none;margin:0 auto}
 /* -- Background Gradient Animation (aceternity 참고): 블랙 배경 + Aurora(blue/indigo/violet) 블롭 -- */
 .pd-dna-gradientbg{
-  position:absolute;left:50%;top:0;bottom:0;width:100vw;transform:translateX(-50%);
+  position:absolute;left:50%;top:0;bottom:0;width:calc(100 * var(--vw));transform:translateX(-50%);
   z-index:-1;overflow:hidden;pointer-events:none;
   background:#0a0a0c; /* painted every frame from window.scrollY by the theme script, not a fixed image */
 }
 .pd-dna-goo-defs{position:absolute;width:0;height:0}
-/* [PERF] 예전엔 100vw × 섹션 전체 높이 레이어에 blur(40px) 를 걸고 그 안에서 블롭 5개가
+/* [PERF] 예전엔 calc(100 * var(--vw)) × 섹션 전체 높이 레이어에 blur(40px) 를 걸고 그 안에서 블롭 5개가
    계속 회전했다. 블러는 자식이 움직일 때마다 부모 레이어 전체를 다시 래스터화하므로
    이 조합이 genome 진입 렉의 가장 큰 원인이었다.
    · 블롭 자체가 이미 radial-gradient 로 55%에서 투명해지는 소프트 형태라 큰 블러가 필요 없다 → 14px
@@ -644,8 +661,8 @@ html:not(.dna-live) .dna-gbg{animation-play-state:paused}
 /* [FIX] line-height 1.1 -> .92. 이 제목은 "Candidate / genome." 두 줄로 떨어지는데,
    이탤릭 세리프는 x-height 가 낮아서 1.1 이면 두 줄 사이가 크게 벌어져 보였다.
    .kin .word 의 padding-bottom:.22em 이 g 디센더를 지켜 주므로 더 조여도 잘리지 않는다. */
-.pd-dna-title{font-family:var(--f-serif);font-style:italic;font-size:clamp(2.6rem,6vw,4.8rem);line-height:.92;letter-spacing:.01em;margin-bottom:22px}
-.pd-dna-desc{font-size:clamp(14px,1.4vw,16px);color:var(--bone-2);max-width:44ch}
+.pd-dna-title{font-family:var(--f-serif);font-style:italic;font-size:clamp(2.6rem,calc(6 * var(--vw)),4.8rem);line-height:.92;letter-spacing:.01em;margin-bottom:22px}
+.pd-dna-desc{font-size:clamp(14px,calc(1.4 * var(--vw)),16px);color:var(--bone-2);max-width:44ch}
 .pd-dna-coord{font-family:var(--f-mono);font-size:10px;letter-spacing:.18em;color:var(--bone-3);margin-top:30px;display:block}
 
 /* ── ASCII CANDIDATE : 얼굴 → 아스키 코드 배경 ─────────────────────────
@@ -687,7 +704,7 @@ html.dna-live .pd-dna-ascii{opacity:.92}
 
 /* ── GENOME CAPSULE CARD : red-glass scanner UI ───────────────────────── */
 .pd-dna-stage{
-  height:72vh;min-height:560px;position:relative;border-radius:18px;overflow:hidden;
+  height:calc(72 * var(--vh));min-height:560px;position:relative;border-radius:18px;overflow:hidden;
   box-shadow:0 30px 70px -20px rgba(0,0,0,.55);
   /* [PERF] backdrop-filter 해제.
      캡슐 안은 WebGL 캔버스(inset:0, 100%x100%)와 아스키 레이어가 완전히 덮고 있어서
@@ -722,17 +739,17 @@ html.dna-live .pd-dna-ascii{opacity:.92}
 .dna-status-bar{position:relative;flex:0 0 34px;height:3px;border-radius:2px;background:rgba(255,255,255,.22);overflow:hidden}
 .dna-status-bar i{position:absolute;inset:0;width:78%;background:rgba(255,255,255,.85);border-radius:inherit}
 .dna-status-txt{font-family:var(--f-mono);font-size:9px;letter-spacing:.14em;color:rgba(255,255,255,.7)}
-@media(max-width:820px){.pd-dna{grid-template-columns:1fr;gap:34px}.pd-dna-stage{height:46vh}}
+@media(max-width:820px){.pd-dna{grid-template-columns:1fr;gap:34px}.pd-dna-stage{height:calc(46 * var(--vh))}}
 
 /* ============================ FIXED SYSTEM CARDS (mask reveal) ============================ */
-.pd-sys{position:relative;z-index:5;padding:18vh 24px 18vh}
+.pd-sys{position:relative;z-index:5;padding:calc(18 * var(--vh)) 24px calc(18 * var(--vh))}
 /* SYS는 항상 순백이어야 한다 — 전역 --bg/wash 보간(다음 섹션인 DNA로 넘어가며 어두워지는 계산)이
    화면에 SYS와 DNA가 동시에 걸쳐 보이는 구간에서 SYS 쪽까지 새어 들어가 "왜 자꾸 어두워지냐"는
    원인이 됐음. 그래서 SYS 자체 박스를 덮는 불투명 흰 배경을 별도로 깔아 전역 계산과 완전히
    분리한다 — 이제 SYS는 그 어떤 스크롤 위치에서도 항상 흰색으로 고정. */
 .pd-sys::before{content:"";position:absolute;inset:0;z-index:-1;background:#ffffff}
 /* -- Gooey Filter 배경 (21st.dev danielpetho 참고): 카드 뒤에서만 보이는 액체 블롭, ARGO 코랄 -- */
-.pd-sys-gooey{position:absolute;left:50%;top:0;bottom:0;width:100vw;transform:translateX(-50%);z-index:0;pointer-events:auto;overflow:hidden}
+.pd-sys-gooey{position:absolute;left:50%;top:0;bottom:0;width:calc(100 * var(--vw));transform:translateX(-50%);z-index:0;pointer-events:auto;overflow:hidden}
 .sys-pixel-grid{position:absolute;inset:0;filter:url(#sysGooFilter);display:flex;flex-wrap:wrap;align-content:flex-start}
 /* [RESPONSE] 켜질 때까지 .5s 가 걸려 '느리다'고 느껴졌다.
    켜짐은 즉각(.07s), 꺼짐은 여운을 남기도록 분리한다. */
@@ -750,13 +767,13 @@ html.dna-live .pd-dna-ascii{opacity:.92}
   background:linear-gradient(90deg,#FF2D82,#FF2D82);-webkit-background-clip:text;background-clip:text;color:transparent;
 }
 .pd-sys-kick{font-family:var(--f-mono);font-size:12px;letter-spacing:.06em;color:var(--bone-2);margin-bottom:20px}
-.pd-sys-title{font-family:var(--f-serif);font-style:italic;font-size:clamp(2.6rem,7vw,5.4rem);line-height:.95;letter-spacing:.01em;color:var(--bone);margin-bottom:18px}
+.pd-sys-title{font-family:var(--f-serif);font-style:italic;font-size:clamp(2.6rem,calc(7 * var(--vw)),5.4rem);line-height:.95;letter-spacing:.01em;color:var(--bone);margin-bottom:18px}
 .pd-sys-sub{font-family:var(--f-mono);font-size:11px;letter-spacing:.2em;color:var(--bone-3)}
 #fixed-system-cards{position:relative;z-index:5;margin-top:40px;padding:34px 0 64px;overflow:hidden}
 .fsc-grid{display:flex;gap:22px;width:max-content}
 #fixed-system-cards{-webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
 .fsc-card{will-change:filter,opacity}
-.fsc-card{position:relative;flex:0 0 auto;width:min(320px,80vw);padding:22px;border-radius:20px;display:flex;flex-direction:column;min-height:230px;cursor:default;
+.fsc-card{position:relative;flex:0 0 auto;width:min(320px,calc(80 * var(--vw)));padding:22px;border-radius:20px;display:flex;flex-direction:column;min-height:230px;cursor:default;
   opacity:0;transform:translateY(46px) scale(.92);
   transition:transform .7s cubic-bezier(.34,1.56,.64,1),opacity .5s var(--io)}
 .fsc-grid.entered .fsc-card{opacity:1;transform:translateY(0) scale(1)}
@@ -771,10 +788,10 @@ html.dna-live .pd-dna-ascii{opacity:.92}
 .fsc-body{font-family:var(--f-body);font-size:12.5px;color:var(--bone-2);line-height:1.55;max-width:38ch}
 .fsc-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px}
 .fsc-tag{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.1em;color:var(--bone-2);border:1px solid var(--hair);border-radius:9999px;padding:4px 9px}
-@media(max-width:820px){.fsc-card{min-height:0;padding:16px;width:min(260px,78vw)}.fsc-body{display:none}#fixed-system-cards{padding-bottom:16px}}
+@media(max-width:820px){.fsc-card{min-height:0;padding:16px;width:min(260px,calc(78 * var(--vw)))}.fsc-body{display:none}#fixed-system-cards{padding-bottom:16px}}
 
 /* ============================ TFSC ENTRY (typewriter) + CTA ============================ */
-.pd-cta{position:relative;z-index:5;min-height:100dvh;padding:24vh 24px;display:grid;place-items:center;text-align:center;overflow:hidden;
+.pd-cta{position:relative;z-index:5;min-height:calc(100 * var(--dvh));padding:calc(24 * var(--vh)) 24px;display:grid;place-items:center;text-align:center;overflow:hidden;
   background:linear-gradient(180deg, #0a0a0c 0%, #0d0d0f 45%, #0a0a0c 100%)} /* neutral black, matches the DNA scroll-painted end color exactly */
 .pd-cta::before{
   content:"";position:absolute;inset:-12%;pointer-events:none;z-index:0;
@@ -793,10 +810,10 @@ html.dna-live .pd-dna-ascii{opacity:.92}
     rgba(255,45,130,.09) 46%, transparent 70%);
   opacity:.65;transform:rotate(-8deg) scale(1.1);-webkit-mask-image:linear-gradient(180deg,transparent 0,rgba(0,0,0,.6) 5%,#000 12%);mask-image:linear-gradient(180deg,transparent 0,rgba(0,0,0,.6) 5%,#000 12%);}
 .pd-cta-veil{position:absolute;inset:0;z-index:2;pointer-events:none;background:radial-gradient(80% 70% at 50% 45%,rgba(7,13,22,.35),rgba(7,13,22,.85))}
-.pd-cta-orbit{position:absolute;top:50%;left:50%;width:150vmin;height:150vmin;transform:translate(-50%,-50%);border-radius:50%;border:1px solid rgba(255,255,255,.05);pointer-events:none;z-index:3}
+.pd-cta-orbit{position:absolute;top:50%;left:50%;width:calc(150 * var(--vmin));height:calc(150 * var(--vmin));transform:translate(-50%,-50%);border-radius:50%;border:1px solid rgba(255,255,255,.05);pointer-events:none;z-index:3}
 .pd-cta-orbit::after{content:"";position:absolute;inset:13%;border-radius:50%;border:1px dashed rgba(212,250,255,.08);animation:spin 90s linear infinite}
 .pd-cta-glow{
-  position:absolute;left:58%;top:52%;width:58vw;height:58vw;max-width:900px;max-height:900px;
+  position:absolute;left:58%;top:52%;width:calc(58 * var(--vw));height:calc(58 * var(--vw));max-width:900px;max-height:900px;
   transform:translate(-50%,-50%);pointer-events:none;z-index:1;border-radius:50%;
   /* [렉] blur(64px) 제거 — 라디얼 그라디언트는 원래 부드럽다 */
   background:radial-gradient(circle,
@@ -834,7 +851,7 @@ html.dna-live .pd-dna-ascii{opacity:.92}
    기울기를 주고, 13~16px 은 이 히어로에서 작아 15~19px 로 올렸다.
    Geist Mono 는 가변이라 굵기를 350 으로 살짝 낮춰 얇은 전문(電文) 느낌을 만든다. */
 .pd-entry-type{font-family:var(--f-mono);font-style:italic;font-weight:350;
-  font-size:clamp(15px,1.9vw,19px);letter-spacing:.03em;line-height:1.75;
+  font-size:clamp(15px,calc(1.9 * var(--vw)),19px);letter-spacing:.03em;line-height:1.75;
   color:var(--bone);min-height:3.2em;margin-bottom:36px;max-width:62ch;margin-left:auto;margin-right:auto}
 .pd-type-caret{display:inline-block;width:8px;background:var(--orange);margin-left:2px;animation:caret 1s steps(1) infinite}
 .pd-entry-type .enc-char{color:var(--bone-3);transition:color .15s linear}
@@ -842,7 +859,7 @@ html.dna-live .pd-dna-ascii{opacity:.92}
 .pd-type-caret.idle{animation:caret 2.2s steps(1) infinite}
 @keyframes caret{50%{opacity:0}}
 .pd-cta-eyebrow{font-family:var(--f-mono);font-size:11px;letter-spacing:.26em;color:var(--rose);margin-bottom:24px}
-.pd-cta-head{position:relative;font-family:var(--f-serif);font-style:italic;font-size:clamp(2.6rem,8vw,6.4rem);line-height:.98;letter-spacing:.01em;margin-bottom:22px}
+.pd-cta-head{position:relative;font-family:var(--f-serif);font-style:italic;font-size:clamp(2.6rem,calc(8 * var(--vw)),6.4rem);line-height:.98;letter-spacing:.01em;margin-bottom:22px}
 /* [FIX] 마지막 섹션의 한글 안내가 --bone-2(55% 불투명)라 배경 스톰 위에서 거의 읽히지 않았다.
    화이트 100% 는 헤드라인과 위계가 붙어서 80% 로 내렸다 — 읽히면서 한 단계 뒤로 물러난다. */
 .pd-cta-desc{font-family:var(--f-kr);font-size:16px;line-height:1.75;color:rgba(255,255,255,.8);margin-bottom:40px;
@@ -869,7 +886,7 @@ html.dna-live .pd-dna-ascii{opacity:.92}
 @media(max-width:820px){.fsc-metrics{display:none}}
 
 /* ===== POLISH: hero layers ===== */
-.pd-hero-title::before{content:"";position:absolute;top:50%;left:50%;width:62vmin;height:62vmin;transform:translate(-50%,-50%);
+.pd-hero-title::before{content:"";position:absolute;top:50%;left:50%;width:calc(62 * var(--vmin));height:calc(62 * var(--vmin));transform:translate(-50%,-50%);
   border-radius:50%;pointer-events:none;background:radial-gradient(circle,rgba(92,14,74,.15),transparent 62%);filter:blur(10px)}
 .pd-orb-dot{position:absolute;inset:-8%;border-radius:50%;pointer-events:none;animation:spin 16s linear infinite}
 .pd-orb-dot::after{content:"";position:absolute;top:-3px;left:50%;width:6px;height:6px;border-radius:50%;transform:translateX(-50%);background:var(--rose);box-shadow:0 0 10px var(--rose)}
@@ -884,9 +901,9 @@ html.dna-live .pd-dna-ascii{opacity:.92}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.001s!important}.rv,.brise{opacity:1;transform:none;filter:none}.scan-underline::after{animation:none}.tg .w{opacity:1;filter:none}}
 @media(max-width:820px){
   .pd-hero-r{display:none}
-  .pd-tele{height:auto}.pd-tele-pin{position:static;height:auto;padding:18vh 0}
+  .pd-tele{height:auto}.pd-tele-pin{position:static;height:auto;padding:calc(18 * var(--vh)) 0}
   .pd-tele-track{flex-direction:column;transform:none!important}
-  .pd-panel{width:86vw;min-height:auto;padding:40px 24px;border-left:0;border-top:1px solid var(--hair)}
+  .pd-panel{width:calc(86 * var(--vw));min-height:auto;padding:40px 24px;border-left:0;border-top:1px solid var(--hair)}
   .pd-tele-head,.pd-tele-rail,.pd-tele-hint{display:none}
 }
 
@@ -905,30 +922,30 @@ html.dna-live .pd-dna-ascii{opacity:.92}
   filter:blur(2px);animation:nebula-drift 26s ease-in-out infinite alternate}
 @keyframes nebula-drift{from{transform:translate3d(-1.5%,-1%,0) scale(1)}to{transform:translate3d(1.5%,1.5%,0) scale(1.05)}}
 /* 바닥 앰비언트 글로우: 스티커처럼 붕 떠 보이지 않게 */
-.pd-hero-ground{position:absolute;left:50%;bottom:6vh;transform:translateX(-50%);z-index:1;pointer-events:none;
-  width:min(70vw,900px);height:16vh;border-radius:50%;
+.pd-hero-ground{position:absolute;left:50%;bottom:calc(6 * var(--vh));transform:translateX(-50%);z-index:1;pointer-events:none;
+  width:min(calc(70 * var(--vw)),900px);height:calc(16 * var(--vh));border-radius:50%;
   background:radial-gradient(50% 50% at 50% 50%, rgba(92,14,74,.14), rgba(255,39,195,.05) 55%, transparent 75%);
   filter:blur(14px)}
 @media(prefers-reduced-motion:reduce){.pd-nebula{animation:none}}
-@media(max-width:820px){.pd-hero-ground{width:92vw;height:12vh}}
+@media(max-width:820px){.pd-hero-ground{width:calc(92 * var(--vw));height:calc(12 * var(--vh))}}
 
 /* ============================================================
    [ADDED 2026-07] APPLICANT BIOMETRIC SCAN + bridging copy
    화성 브랜드 팔레트(coral #FF2D82 / orange #FF9A7A / dusty pink #FF9A7A)만 사용
    ============================================================ */
 
-.pd-hero-kr{position:absolute;left:50%;top:61%;transform:translate(-50%,0);max-width:82vw;text-align:center;font-family:var(--f-kr);font-weight:300;font-size:clamp(13px,1.7vw,17px);line-height:1.7;color:rgba(212,250,255,.74);z-index:4;}
+.pd-hero-kr{position:absolute;left:50%;top:61%;transform:translate(-50%,0);max-width:calc(82 * var(--vw));text-align:center;font-family:var(--f-kr);font-weight:300;font-size:clamp(13px,calc(1.7 * var(--vw)),17px);line-height:1.7;color:rgba(212,250,255,.74);z-index:4;}
 .pd-hero-kr b{color:var(--neon-coral);font-weight:500;}
 .pd-hero-kr .ey{display:block;margin-bottom:8px;font-family:var(--f-mono);font-size:10.5px;letter-spacing:.28em;color:rgba(255,154,122,.6);}
 
-.pd-scan{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:12vh 6vw;background:var(--bg);color:var(--fg);}
+.pd-scan{position:relative;min-height:calc(100 * var(--vh));display:flex;align-items:center;justify-content:center;padding:calc(12 * var(--vh)) calc(6 * var(--vw));background:var(--bg);color:var(--fg);}
 .pd-scan-kick{font-family:var(--f-mono);font-size:12px;letter-spacing:.32em;color:var(--neon-coral);}
-.pd-scan-title{font-family:var(--f-disp);font-weight:700;font-size:clamp(36px,6.4vw,80px);line-height:.98;letter-spacing:.01em;margin:.06em 0;}
-.pd-scan-sub{max-width:640px;font-family:var(--f-kr);font-weight:300;font-size:clamp(14px,1.5vw,17px);line-height:1.72;color:var(--fg-2);}
+.pd-scan-title{font-family:var(--f-disp);font-weight:700;font-size:clamp(36px,calc(6.4 * var(--vw)),80px);line-height:.98;letter-spacing:.01em;margin:.06em 0;}
+.pd-scan-sub{max-width:640px;font-family:var(--f-kr);font-weight:300;font-size:clamp(14px,calc(1.5 * var(--vw)),17px);line-height:1.72;color:var(--fg-2);}
 .pd-scan-hint{font-family:var(--f-kr);font-size:13px;color:var(--fg-2);}
 .pd-scan-hint b{color:var(--neon-coral);}
 
-.pd-scan-stage{position:relative;width:min(660px,92vw);aspect-ratio:4/3;border-radius:22px;overflow:hidden;background:#090909;border:1px solid rgba(255,45,130,.24);box-shadow:0 0 0 1px rgba(255,154,122,.05),0 30px 90px rgba(0,0,0,.6),inset 0 0 70px rgba(255,45,130,.06);}
+.pd-scan-stage{position:relative;width:min(660px,calc(92 * var(--vw)));aspect-ratio:4/3;border-radius:22px;overflow:hidden;background:#090909;border:1px solid rgba(255,45,130,.24);box-shadow:0 0 0 1px rgba(255,154,122,.05),0 30px 90px rgba(0,0,0,.6),inset 0 0 70px rgba(255,45,130,.06);}
 .pd-scan-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);background:#090909;}
 .pd-scan-fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;mix-blend-mode:screen;}
 .pd-scan-capture{position:absolute;left:-9999px;top:-9999px;pointer-events:none;}
@@ -974,11 +991,11 @@ html.dna-live .pd-dna-ascii{opacity:.92}
 
 /* GENOME candidate capsule (captured face callback) */
 
-.pd-cta-next{margin-top:8px;font-family:var(--f-kr);font-weight:400;font-size:clamp(15px,1.9vw,20px);color:var(--fg);}
+.pd-cta-next{margin-top:8px;font-family:var(--f-kr);font-weight:400;font-size:clamp(15px,calc(1.9 * var(--vw)),20px);color:var(--fg);}
 .pd-cta-next b{color:var(--neon-coral);font-weight:600;}
 
 /* [ADDED 2026-07] hero Korean copy in glassmorphism box (replaces 'Across the second horizon') */
-.pd-hero-kr{left:24px!important;right:auto;top:auto!important;bottom:9vh;transform:none!important;max-width:min(520px,74vw);text-align:left;z-index:6;}
+.pd-hero-kr{left:24px!important;right:auto;top:auto!important;bottom:calc(9 * var(--vh));transform:none!important;max-width:min(520px,calc(74 * var(--vw)));text-align:left;z-index:6;}
 /* ============================ GLASS SURFACE (reactbits) ============================
    공식 GlassSurface.jsx / .css 를 그대로 이식.
    · backdrop-filter : var(--filter-id) saturate(var(--glass-saturation))  ← 이것만.
@@ -1020,15 +1037,15 @@ html.dna-live .pd-dna-ascii{opacity:.92}
 .gs-defs{position:absolute;width:0;height:0;pointer-events:none;overflow:hidden}
 .glass-surface__content{width:100%;display:flex;flex-direction:column;gap:9px;padding:18px 22px;border-radius:inherit;}
 .glass-hero-kr .ey{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.26em;color:rgba(255,154,122,.82);}
-.glass-hero-kr .kr-lead{font-family:var(--f-kr);font-weight:500;font-size:clamp(15px,1.9vw,20px);line-height:1.4;color:var(--fg);}
+.glass-hero-kr .kr-lead{font-family:var(--f-kr);font-weight:500;font-size:clamp(15px,calc(1.9 * var(--vw)),20px);line-height:1.4;color:var(--fg);}
 .glass-hero-kr .kr-lead b{color:var(--neon-coral);}
-.glass-hero-kr .kr-sub{font-family:var(--f-kr);font-weight:300;font-size:clamp(12px,1.4vw,14px);line-height:1.6;color:rgba(212,250,255,.82);}
+.glass-hero-kr .kr-sub{font-family:var(--f-kr);font-weight:300;font-size:clamp(12px,calc(1.4 * var(--vw)),14px);line-height:1.6;color:rgba(212,250,255,.82);}
 @media(max-width:820px){.pd-hero-kr{bottom:auto;top:58%!important;}}
 
 /* [ADDED 2026-07 rev2] Mars detail — cosmic scan, 16:9 webcam, hero nav hint */
 /* 바탕을 #060406 로 박아둬서 WavePath(.pd-pre, 전역 --bg = ink)와 색이 달랐다 → 같은 토큰으로 통일.
    붉은 radial 틴트도 제거해 WavePath 와 완전히 동일한 배경이 되게 한다. */
-.pd-scan{min-height:200vh!important;display:block!important;padding:0!important;
+.pd-scan{min-height:calc(200 * var(--vh))!important;display:block!important;padding:0!important;
   background:var(--bg);}
 /* 장식용 별먼지. [FIX] 원래 5개 중 두 개(18% 26%, 30% 62%)가 왼쪽 카피 칼럼 위에 떨어져
    글자 사이에 1px 점이 찍혔다 — 분위기가 아니라 얼룩/오류로 읽혔다.
@@ -1036,23 +1053,23 @@ html.dna-live .pd-dna-ascii{opacity:.92}
 .pd-scan::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;opacity:.55;
   background-image:radial-gradient(1px 1px at 68% 58%,rgba(255,154,122,.55),transparent),radial-gradient(1.5px 1.5px at 42% 82%,rgba(255,255,255,.5),transparent),radial-gradient(1px 1px at 88% 20%,rgba(255,255,255,.45),transparent);}
 .pd-scan-title{line-height:1.1!important;padding-bottom:.16em;overflow:visible;}
-.pd-scan-stage{aspect-ratio:16/9!important;width:min(1000px,94vw)!important;}
+.pd-scan-stage{aspect-ratio:16/9!important;width:min(1000px,calc(94 * var(--vw)))!important;}
 .pd-scan-video{filter:contrast(1.12) saturate(1.15) sepia(.35) hue-rotate(315deg) brightness(1.02);}
 .pd-scan-cosmos{position:absolute;inset:0;pointer-events:none;z-index:2;background:radial-gradient(circle at 50% 32%, rgba(255,45,130,.12), transparent 55%),linear-gradient(180deg, rgba(6,4,6,.10), rgba(6,4,6,.5));}
 /* 스캔선 그라데이션 완전 제거 (요청) — 규칙 자체를 무력화 */
 .pd-scan-line{display:none!important;background:none!important;box-shadow:none!important;animation:none!important;}
-.pd-hero-hint{position:absolute;left:50%;bottom:4vh;transform:translateX(calc(-100% - 44px));z-index:7;max-width:min(340px,60vw);text-align:left;}
+.pd-hero-hint{position:absolute;left:50%;bottom:calc(4 * var(--vh));transform:translateX(calc(-100% - 44px));z-index:7;max-width:min(340px,calc(60 * var(--vw)));text-align:left;}
 .glass-hero-hint .ey{font-family:var(--f-mono);font-size:10px;letter-spacing:.26em;color:rgba(255,154,122,.8);}
-.glass-hero-hint .hint-lead{font-family:var(--f-kr);font-weight:500;font-size:clamp(13px,1.5vw,16px);line-height:1.4;color:var(--fg);}
-.glass-hero-hint .hint-sub{font-family:var(--f-kr);font-weight:300;font-size:clamp(11px,1.3vw,13px);line-height:1.5;color:rgba(212,250,255,.78);}
-@media(max-width:820px){ .pd-hero-hint{left:16px;bottom:12vh;transform:none;max-width:72vw;} }
+.glass-hero-hint .hint-lead{font-family:var(--f-kr);font-weight:500;font-size:clamp(13px,calc(1.5 * var(--vw)),16px);line-height:1.4;color:var(--fg);}
+.glass-hero-hint .hint-sub{font-family:var(--f-kr);font-weight:300;font-size:clamp(11px,calc(1.3 * var(--vw)),13px);line-height:1.5;color:rgba(212,250,255,.78);}
+@media(max-width:820px){ .pd-hero-hint{left:16px;bottom:calc(12 * var(--vh));transform:none;max-width:calc(72 * var(--vw));} }
 
 /* [ADDED 2026-07 rev3] camera b&w filter, tighter scan layout, hero hint left, sys hint box */
 .pd-scan-video{filter:var(--cam-filter) blur(.6px)!important;object-position:center!important;}
 .pd-scan-cosmos{background:radial-gradient(circle at 50% 34%, rgba(212,250,255,.06), transparent 55%),linear-gradient(180deg, rgba(20,22,18,.02), rgba(18,20,16,.20))!important;}
-.pd-hero-hint{left:24px!important;right:auto!important;transform:none!important;bottom:4vh!important;text-align:left!important;}
+.pd-hero-hint{left:24px!important;right:auto!important;transform:none!important;bottom:calc(4 * var(--vh))!important;text-align:left!important;}
 .pd-sys-cursor-hint{display:inline-block!important;color:#FF9A7A!important;border:1px solid rgba(255,39,195,.6)!important;background:rgba(255,39,195,.10)!important;padding:9px 16px!important;border-radius:9px!important;font-family:var(--f-mono)!important;letter-spacing:.14em!important;box-shadow:0 0 22px rgba(255,39,195,.18)!important;}
-@media(max-width:820px){ .pd-hero-hint{left:16px!important;bottom:12vh!important;max-width:72vw;} }
+@media(max-width:820px){ .pd-hero-hint{left:16px!important;bottom:calc(12 * var(--vh))!important;max-width:calc(72 * var(--vw));} }
 
 /* ── [FLOAT] 스크롤 인터랙션 ──────────────────────────────────────────
    sticky 구간 진행도(--sc-p 0→1)에 따라 각 블록이 서로 다른 속도로 떠오른다.
@@ -1067,12 +1084,12 @@ html.dna-live .pd-dna-ascii{opacity:.92}
    시안의 "정보 구조"(좌 안내 / 우 웹캠·컨트롤·필름스트립)는 가져오되,
    표면 언어는 ARGO 시스템에 맞춘다 : 각진 clip-path 컷 대신 유기적 곡률,
    불투명 패널 대신 liquid-glass(::before 그라디언트 림 + backdrop blur),
-   딱딱한 ㄱ자 브래킷 대신 부드러운 호(arc). 100dvh 안에서 스크롤 없이 완결. */
+   딱딱한 ㄱ자 브래킷 대신 부드러운 호(arc). calc(100 * var(--dvh)) 안에서 스크롤 없이 완결. */
 /* [PACING] 섹션에 스크롤 런웨이를 주고 내부를 sticky 로 고정한다.
-   높이를 딱 100dvh 로 묶었더니 스크롤하는 순간 섹션이 통째로 튀어나오고
-   고정 topbar 밑으로 상단이 잘렸다. 이제 190dvh 동안 천천히 들어와 화면에 머문다. */
-.pd-scan{padding:0!important;min-height:190dvh!important;height:auto!important;overflow:visible}
-.pd-scan .sc-sticky{position:sticky;top:0;height:100dvh;display:flex;flex-direction:column;
+   높이를 딱 calc(100 * var(--dvh)) 로 묶었더니 스크롤하는 순간 섹션이 통째로 튀어나오고
+   고정 topbar 밑으로 상단이 잘렸다. 이제 calc(190 * var(--dvh)) 동안 천천히 들어와 화면에 머문다. */
+.pd-scan{padding:0!important;min-height:calc(190 * var(--dvh))!important;height:auto!important;overflow:visible}
+.pd-scan .sc-sticky{position:sticky;top:0;height:calc(100 * var(--dvh));display:flex;flex-direction:column;
   justify-content:center;overflow:hidden;padding:70px 0 40px}
 
 /* ---- StringTune "Footer shifting" (tutorial-01) 이식 ----
@@ -1118,12 +1135,12 @@ html.dna-live .pd-dna-ascii{opacity:.92}
    char 별 진행도는 무작위 순번(--char-random)에 따라 어긋나게 시작한다:
      --char-progress = clamp(0, (progress - char-random/total) / (1/total), 1)
    데스크톱에서는 라인 자체도 translate: 0 (100% * progress) 로 흘러내린다. */
-.pd-creed{position:relative;z-index:5;min-height:240dvh;overflow:hidden}
+.pd-creed{position:relative;z-index:5;min-height:calc(240 * var(--dvh));overflow:hidden}
 /* 세 문장을 하나의 블록으로 묶어 화면 중앙에 놓는다(문장 사이 들여쓰기 리듬은 유지).
    폰트는 1.3배. */
-.pd-creed-w{position:relative;padding:14dvh 0 28dvh;width:min(84rem,94vw);margin:0 auto}
+.pd-creed-w{position:relative;padding:calc(14 * var(--dvh)) 0 calc(28 * var(--dvh));width:min(84rem,calc(94 * var(--vw)));margin:0 auto}
 .pd-creed-s{display:block;font-family:var(--f-sans);font-weight:600;letter-spacing:.01em;
-  font-size:clamp(2.96rem,7.18vw,5.62rem);line-height:1.06;color:transparent}
+  font-size:clamp(2.96rem,calc(7.18 * var(--vw)),5.62rem);line-height:1.06;color:transparent}
 /* [되돌림] 가운데 정렬 해제 — 원본처럼 줄마다 좌/우로 불규칙하게 어긋난 배치가 낫다 */
 /* [렉] will-change:contents 는 "이 서브트리는 계속 바뀐다"는 선언이라 브라우저가
    캐싱·최적화를 포기한다. 글자 210개 × 의사요소 2개짜리 서브트리에 이걸 걸어 두면
@@ -1255,7 +1272,7 @@ html.dna-live .pd-dna-ascii{opacity:.92}
   margin:0 auto;
   display:grid;
   grid-template-columns:400px minmax(0,1fr);
-  column-gap:clamp(40px,3.4vw,64px);
+  column-gap:clamp(40px,calc(3.4 * var(--vw)),64px);
   align-items:start;      /* 두 칼럼 상단을 같은 그리드 라인에 정렬 */
   padding:0;
 }
@@ -1268,7 +1285,7 @@ html.dna-live .pd-dna-ascii{opacity:.92}
 }
 .pd-scan-title{
   display:block;font-family:var(--f-disp);font-weight:700;
-  font-size:clamp(46px,3.4vw,64px)!important;line-height:.98!important;
+  font-size:clamp(46px,calc(3.4 * var(--vw)),64px)!important;line-height:.98!important;
   letter-spacing:.01em;color:var(--fg);margin:0 0 14px!important;padding:0!important;
 }
 .pd-scan-title .sc-t1{display:block}
@@ -1318,7 +1335,7 @@ html.dna-live .pd-dna-ascii{opacity:.92}
   display:flex;flex-direction:column;align-items:center;gap:16px;
   min-width:0;min-height:0;position:relative;
   /* 프레임의 실제 폭 = 높이 상한(16:9)과 칼럼 폭 중 작은 쪽. 하위 박스가 이 폭을 공유한다. */
-  --sc-fw:min(100%, calc((100dvh - 300px) * 16 / 9));
+  --sc-fw:min(100%, calc((calc(100 * var(--dvh)) - 300px) * 16 / 9));
 }
 /* .pd-scan .pd-booth{width:100%} 가 (0,2,0) 이라 (0,1,0) 셀렉터로는 못 이긴다 →
    같은 수준으로 올려 프레임/버튼/갤러리가 모두 동일한 폭을 공유하게 한다. */
@@ -1512,7 +1529,7 @@ html.dna-live .pd-dna-ascii{opacity:.92}
   .pd-scan .sc-sticky{position:static;height:auto}
   .pd-scan .sc-main{grid-template-columns:minmax(0,1fr);height:auto;padding:24px 0 40px;row-gap:26px}
   .sc-aside{align-self:stretch}
-  .pd-scan-title{font-size:clamp(34px,8vw,46px)!important}
+  .pd-scan-title{font-size:clamp(34px,calc(8 * var(--vw)),46px)!important}
   .pd-scan .pd-scan-stage{max-height:none;border-radius:28px}
   .sc-btn{min-width:0;width:100%}
   .sc-actions{grid-auto-flow:row}
@@ -1594,7 +1611,7 @@ html.no-vhs .pd-scan-vhs,html.no-vhs .pd-scan-chroma{display:none}
 .booth-lb.on{opacity:1;pointer-events:auto}
 .booth-lb-bd{position:absolute;inset:0;background:rgba(6,4,6,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
 .booth-lb-card{
-  position:relative;z-index:1;overflow:hidden;border-radius:20px;max-width:94vw;
+  position:relative;z-index:1;overflow:hidden;border-radius:20px;max-width:calc(94 * var(--vw));
   background:#090909;box-shadow:0 40px 120px rgba(0,0,0,.7);
   transform-origin:top left;will-change:transform,opacity;
   display:flex;flex-direction:column;
@@ -1603,12 +1620,12 @@ html.no-vhs .pd-scan-vhs,html.no-vhs .pd-scan-chroma{display:none}
    384px 썸네일이므로 팝업도 384px 로 작았고 max-width:1120px 는 걸릴 일이 없었다.
    게다가 .lowres 가 760px 로 더 줄이고 있었다. 이제 폭을 명시해 프레임을 채운다 —
    실제 값은 JS 가 원본 해상도를 보고 --lb-w 로 넣는다(포토부스처럼 크게). */
-/* [FIX2] max-height:82vh 를 같이 걸어 두면 폭은 --lb-w 그대로인데 높이만 잘려
+/* [FIX2] max-height:calc(82 * var(--vh)) 를 같이 걸어 두면 폭은 --lb-w 그대로인데 높이만 잘려
    박스 비율이 원본과 어긋난다 → object-fit:contain 이 그 안에서 다시 축소하며
    좌우가 비고, 하단 메타바는 카드 밖으로 밀려난다(사용자가 본 '잘리는 부분').
    높이 한계는 JS 가 폭으로 환산해서 --lb-w 에 넣는다. 여기선 폭만 다룬다. */
-.booth-lb-card img{display:block;width:var(--lb-w,min(92vw,1440px));height:auto;
-  max-width:92vw}
+.booth-lb-card img{display:block;width:var(--lb-w,min(calc(92 * var(--vw)),1440px));height:auto;
+  max-width:calc(92 * var(--vw))}
 .booth-lb-meta{
   display:flex;align-items:center;justify-content:space-between;gap:16px;
   padding:14px 18px;font-family:var(--f-mono);font-size:11px;letter-spacing:.16em;
@@ -1638,7 +1655,7 @@ html.no-vhs .pd-scan-vhs,html.no-vhs .pd-scan-chroma{display:none}
 @media (prefers-reduced-motion:reduce){.booth-lb,.booth-lb-card{transition:none!important}}
 
 /* ---- PHOTO BOOTH GALLERY (reactbits <ReflectiveCard/> 의 금속 글래스 트리트먼트) ---- */
-.pd-booth{width:min(1120px,94vw);margin:6px auto 0;display:flex;flex-direction:column;gap:12px}
+.pd-booth{width:min(1120px,calc(94 * var(--vw)));margin:6px auto 0;display:flex;flex-direction:column;gap:12px}
 .pd-booth[hidden]{display:none}
 .pd-booth-head{
   display:flex;align-items:baseline;justify-content:space-between;gap:12px;
@@ -1928,14 +1945,14 @@ html.no-vhs .pd-scan-vhs,html.no-vhs .pd-scan-chroma{display:none}
 
 /* ============ PRE-CAPTURE NOTICE — WavePath 이식 ============
    원본은 Tailwind 유틸리티로 짜여 있다. 대응 관계:
-     .relative h-px w-[70vw]            -> .wave-path (높이 1px, 폭 70vw)
+     .relative h-px w-[calc(70 * var(--vw))]            -> .wave-path (높이 1px, 폭 calc(70 * var(--vw)))
      .-top-5 h-10 hover:-top-[150px]... -> .wave-path-hit (평소 40px 띠, 호버 시 300px 로 확장)
      .absolute -top-[100px] h-[300px]   -> .wave-path-svg
    선 색은 stroke-current 라 부모의 color 를 따른다 → ARGO 톤으로 지정. */
-/* min-height 100dvh 라 웹캠 섹션과 바로 맞붙어 간격이 없었다 → 런웨이를 늘린다.
+/* min-height calc(100 * var(--dvh)) 라 웹캠 섹션과 바로 맞붙어 간격이 없었다 → 런웨이를 늘린다.
    배경도 .pd-scan 과 같은 radial + var(--bg) 조합으로 맞춰 두 섹션이 이어져 보이게 한다. */
 /* 붉은끼 제거 — radial 틴트 없이 순수 var(--bg) 만. .pd-scan 도 같이 맞춰 두 섹션이 동일하다 */
-.pd-pre{position:relative;z-index:5;min-height:180dvh;display:grid;place-items:center;overflow:hidden;
+.pd-pre{position:relative;z-index:5;min-height:calc(180 * var(--dvh));display:grid;place-items:center;overflow:hidden;
   background:var(--bg)}
 /* WavePath 구간 배경 — 예전엔 가운데가 옅게 밝아지는 원형 그라디언트가 깔려
    있었다(radial-gradient + blur 30px). 단색으로 간다: 글로우 레이어를 그리지 않고,
@@ -1943,7 +1960,7 @@ html.no-vhs .pd-scan-vhs,html.no-vhs .pd-scan-chroma{display:none}
 .pd-pre-glow{display:none}
 /* [되돌림] FlipWords exit(날아가며 사라지는 효과) 제거 — 원래대로.
    encrypted text(코드 돌아가는 듯한 등장)는 그대로 둔다. */
-.pd-pre-inner{position:relative;z-index:1;width:70vw;max-width:var(--pd-shell);
+.pd-pre-inner{position:relative;z-index:1;width:calc(70 * var(--vw));max-width:var(--pd-shell);
   display:flex;flex-direction:column;align-items:flex-end}
 .wave-path{position:relative;height:1px;width:100%;color:var(--fg-2);margin-bottom:40px}
 /* 히트 영역: 평소엔 얇게, 호버하면 위아래로 크게 열려 선을 끌 수 있는 범위가 넓어진다 */
@@ -1966,12 +1983,12 @@ html.no-vhs .pd-scan-vhs,html.no-vhs .pd-scan-chroma{display:none}
 .pd-pre-text{width:auto;max-width:88%}
 /* 메인은 영문 — 이탤릭 대신 기본체(--f-disp) */
 .pd-pre-lede{margin:0;font-family:var(--f-disp);font-style:normal;font-weight:600;
-  font-size:clamp(1.7rem,3.4vw,2.9rem);line-height:1.16;letter-spacing:.01em;color:var(--fg)}
+  font-size:clamp(1.7rem,calc(3.4 * var(--vw)),2.9rem);line-height:1.16;letter-spacing:.01em;color:var(--fg)}
 /* 한글 보조 설명 — 얇고 작게 */
 .pd-pre-sub{margin:18px 0 0;max-width:none;white-space:nowrap;font-family:var(--f-kr);font-weight:300;
   font-size:13.5px;line-height:1.75;color:var(--fg-2)}
 @media(max-width:820px){
-  .pd-pre-inner{width:calc(100vw - 48px)}
+  .pd-pre-inner{width:calc(calc(100 * var(--vw)) - 48px)}
   .pd-pre-copy{flex-direction:column;align-items:flex-end;gap:10px}
   .pd-pre-text{width:100%}
 }
@@ -2051,12 +2068,12 @@ html.no-vhs .pd-scan-vhs,html.no-vhs .pd-scan-chroma{display:none}
 /* 기존 대형 워드마크용 .pd-hero-title 과 충돌해서 전용 클래스로 분리했다
    (그쪽은 position:absolute + z-index:4 라 카피 블록을 덮어썼다) */
 /* WavePath 의 영문 헤드라인(.pd-pre-lede)과 동일한 서체로 통일 */
-.pd-hero-h1{font-family:var(--f-sans);font-style:normal;font-weight:600;letter-spacing:.01em;font-size:clamp(2.4rem,5.6vw,4.6rem);
+.pd-hero-h1{font-family:var(--f-sans);font-style:normal;font-weight:600;letter-spacing:.01em;font-size:clamp(2.4rem,calc(5.6 * var(--vw)),4.6rem);
   line-height:1.02;margin:0;color:var(--fg);position:static}
 /* [CHANGE] 13.5px 는 이 히어로에서 너무 작아 안내가 눈에 안 들어왔다 → 한 단계 키운다.
    화면 폭에 따라 16~19px. 굵기도 300 → 400 으로 올려 얇아서 묻히지 않게 한다. */
 .pd-hero-side{max-width:34ch;font-family:var(--f-kr);font-weight:400;
-  font-size:clamp(16px,1.15vw,19px);
+  font-size:clamp(16px,calc(1.15 * var(--vw)),19px);
   line-height:1.7;letter-spacing:-.01em;color:#fff;margin:0;text-align:right;
   word-break:keep-all}
 @media(max-width:820px){
@@ -2231,7 +2248,7 @@ html.no-vhs .pd-scan-vhs,html.no-vhs .pd-scan-chroma{display:none}
    강제해서, 그냥 두면 .pd-pre-lede 의 clamp 크기와 행간이 덮여버린다. */
 .pd-pre-lede.fold-text{
   display:block;
-  font-size:clamp(1.7rem,3.4vw,2.9rem);
+  font-size:clamp(1.7rem,calc(3.4 * var(--vw)),2.9rem);
   line-height:1.16;
   letter-spacing:.01em;
   font-weight:600;
@@ -2315,18 +2332,18 @@ html.no-vhs .pd-scan-vhs,html.no-vhs .pd-scan-chroma{display:none}
 .pd-wheel-in{
   display:grid;
   margin-left:calc(50% + var(--wg));
-  position:sticky;top:50dvh;
+  position:sticky;top:calc(50 * var(--dvh));
   transform-origin:calc(var(--wg) * -0.5) 50%;
   rotate:var(--rot);
   /* 폰트 : 바로 위 크리드(줄글) 섹션과 동일 — .pd-creed-s 와 같은 계열 */
   font-family:var(--f-sans);
   font-weight:600;
-  /* [1.2배] 15/1.5vw/24 → 18/1.8vw/29. 반경은 em 기준이라 함께 커진다. */
+  /* [1.2배] 15/calc(1.5 * var(--vw))/24 → 18/calc(1.8 * var(--vw))/29. 반경은 em 기준이라 함께 커진다. */
   /* 링 전체 높이 = (반경 3.6em + 박스 5.9em) * 2 = 19.2em.
      간격을 벌리면서 링이 예전보다 커졌으므로(옛 16.76em) 글자를 0.873배 해
-     겉보기 지름을 예전 그대로 되돌린다 — 26/2.6vw/42 → 23/2.27vw/37.
-     세로도 함께 보고 작은 쪽을 쓴다(4.1vh 이면 링이 화면 높이의 79%). */
-  font-size:clamp(18px,min(1.82vw,3.28vh),30px);   /* [0.8배] 23/2.27vw/37 → 18/1.82vw/30 */
+     겉보기 지름을 예전 그대로 되돌린다 — 26/calc(2.6 * var(--vw))/42 → 23/calc(2.27 * var(--vw))/37.
+     세로도 함께 보고 작은 쪽을 쓴다(calc(4.1 * var(--vh)) 이면 링이 화면 높이의 79%). */
+  font-size:clamp(18px,min(calc(1.82 * var(--vw)),calc(3.28 * var(--vh))),30px);   /* [0.8배] 23/calc(2.27 * var(--vw))/37 → 18/calc(1.82 * var(--vw))/30 */
   letter-spacing:.01em;
   color:#fff;
   text-transform:uppercase;
@@ -2500,7 +2517,7 @@ html.no-vhs .pd-scan-vhs,html.no-vhs .pd-scan-chroma{display:none}
           한글 본문은 아래 두 크기만 쓴다.
    ========================================================================= */
 :root{
-  --t-ko-lead:clamp(15px,1.4vw,17px);   /* 섹션 리드 문단 */
+  --t-ko-lead:clamp(15px,calc(1.4 * var(--vw)),17px);   /* 섹션 리드 문단 */
   --t-ko-body:14px;                     /* 보조 안내 문구 */
   --t-ko-lh:1.75;
   --t-ko-ls:-.01em;
@@ -2564,7 +2581,7 @@ html.no-vhs .pd-scan-vhs,html.no-vhs .pd-scan-chroma{display:none}
   letter-spacing:.015em!important}
 .sc-sub-ko{
   /* 27px 은 이 칼럼에서 영문 타이틀과 맞먹어 위계가 흐려졌다 → 소제목 크기로 낮춘다. */
-  font-family:var(--f-kr);font-size:clamp(20px,1.6vw,23px);font-weight:600;
+  font-family:var(--f-kr);font-size:clamp(20px,calc(1.6 * var(--vw)),23px);font-weight:600;
   line-height:1.4;letter-spacing:-.01em;color:var(--fg);
   max-width:var(--sc-col);
   margin:0 0 48px;              /* A → B : 섹션 경계 */

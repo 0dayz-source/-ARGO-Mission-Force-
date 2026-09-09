@@ -46,7 +46,7 @@ body.aw-open .pd-cursor-label{z-index:2147482601}
 /* 우하단 고정용 절대배치만 풀고, 유리면·모서리·그림자는 op-panel-in 그대로 둔다 */
 .aw-root .op-panel{
   position:relative; right:auto; bottom:auto;
-  width:clamp(340px, 38vw, 520px);
+  width:clamp(340px, calc(38 * var(--vw)), 520px);
   transform-origin:100% 100%;          /* 캐릭터 쪽에서 펴진다 — 챗봇과 같다 */
 }
 /* 캐릭터가 먼저 솟고 말풍선이 뒤따른다 (argo-operator.css 의 규칙과 같은 값) */

@@ -43,7 +43,7 @@
 
 /* ── ① DNA 캡슐 섹션 ─────────────────────────────────────────────────────── */
 #mars-page .ms-dna-zone{
-  position:relative; min-height:170vh; padding:14vh 6vw 14vh;
+  position:relative; min-height:calc(170 * var(--vh)); padding:calc(14 * var(--vh)) calc(6 * var(--vw)) calc(14 * var(--vh));
   display:flex; flex-direction:column; align-items:center;
   background:
     radial-gradient(80% 50% at 50% 18%, rgba(255,39,195,.10), transparent 60%),
@@ -63,7 +63,7 @@
 @keyframes msDnaPulse{ 0%,100%{opacity:1} 50%{opacity:.35} }
 #mars-page .ms-dna-title{
   margin-top:14px; font-family:var(--disp); font-weight:800;
-  font-size:clamp(34px,6vw,76px); line-height:.96; letter-spacing:.01em;
+  font-size:clamp(34px,calc(6 * var(--vw)),76px); line-height:.96; letter-spacing:.01em;
   background:var(--ms-grad); -webkit-background-clip:text; background-clip:text;
   -webkit-text-fill-color:transparent; color:transparent;
 }
@@ -72,11 +72,11 @@
   font-size:14px; line-height:1.85; color:var(--ms-ink,#D4FAFF);
 }
 #mars-page .ms-dna-sticky{
-  position:sticky; top:0; height:100vh; width:100%;
+  position:sticky; top:0; height:calc(100 * var(--vh)); width:100%;
   display:flex; align-items:center; justify-content:center;
 }
 #mars-page .ms-dna-stage{
-  width:min(78vmin,640px); height:88vmin; opacity:0;
+  width:min(calc(78 * var(--vmin)),640px); height:calc(88 * var(--vmin)); opacity:0;
   will-change:transform,opacity; transform-origin:center center;
   filter:drop-shadow(0 30px 90px rgba(255,45,130,.22));
 }

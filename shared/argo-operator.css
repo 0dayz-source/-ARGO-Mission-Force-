@@ -93,7 +93,7 @@
   right:44px;                       /* 캐릭터 왼쪽으로 비켜난다 */
   bottom:56px;                      /* 캐릭터 머리 위로 올라간다 */
   transform-origin:100% 100%;       /* 접힐 때 캐릭터 쪽으로 빨려 들어간다 */
-  width:min(430px, calc(100vw - 130px));
+  width:min(430px, calc(calc(100 * var(--vw)) - 130px));
   padding:1px;                      /* 테두리가 새어 나올 틈 */
   border-radius:30px;
   /* [수정] 패널 자체를 페이드시키면 backdrop-filter 가 불투명해질 때까지
@@ -254,8 +254,8 @@
 @media (max-width:640px){
   .op-root{right:14px;bottom:max(12px, env(safe-area-inset-bottom));gap:10px}
   .op-guide{width:24px;height:38px}
-  .op-panel{right:38px;bottom:48px;width:calc(100vw - 76px)}
-  .op-panel{width:calc(100vw - 92px);padding:14px 15px 13px}
+  .op-panel{right:38px;bottom:48px;width:calc(calc(100 * var(--vw)) - 76px)}
+  .op-panel{width:calc(calc(100 * var(--vw)) - 92px);padding:14px 15px 13px}
   .op-msg{font-size:12.5px}
   .op-guide-tag{display:none}
 }

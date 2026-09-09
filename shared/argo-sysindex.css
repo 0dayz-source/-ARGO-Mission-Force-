@@ -29,14 +29,14 @@
 
 .si-wrap{
   position:relative;
-  /* [중요] 이 요소의 box-sizing 이 content-box 로 계산돼서, height:100dvh 에
+  /* [중요] 이 요소의 box-sizing 이 content-box 로 계산돼서, height:calc(100 * var(--dvh)) 에
      상하 패딩(58+70)이 그대로 더해져 화면보다 128px 큰 상자가 됐다.
      그 결과 오른쪽 칼럼 아래쪽이 화면 밖으로 잘렸다. 명시적으로 못 박는다. */
   box-sizing:border-box;
-  height:100dvh; max-height:100dvh; min-height:0;
+  height:calc(100 * var(--dvh)); max-height:calc(100 * var(--dvh)); min-height:0;
   display:grid;
   /* 오른쪽을 크게 넓혀 안쪽으로 당긴다 — 오른쪽 끝에 붙어 좁게 흐르던 것을 고쳤다 */
-  grid-template-columns:clamp(248px,19vw,300px) minmax(0,1fr) clamp(430px,38vw,620px);
+  grid-template-columns:clamp(248px,calc(19 * var(--vw)),300px) minmax(0,1fr) clamp(430px,calc(38 * var(--vw)),620px);
   grid-template-rows:auto minmax(0,1fr);
   /* 위 : 전역 REC HUD(좌상단) 아래로 내려 겹치지 않게. 아래 : 전역 티커 회피 */
   /* 오른쪽 여백을 키워 설명 블록을 화면 안쪽으로 더 당긴다 */
@@ -252,7 +252,7 @@
 }
 .si-detail-name{
   font-family:'Syne',sans-serif;font-weight:800;letter-spacing:-.03em;
-  font-size:clamp(25px,2.3vw,36px);line-height:1.02;color:#D4FAFF;margin-bottom:5px;
+  font-size:clamp(25px,calc(2.3 * var(--vw)),36px);line-height:1.02;color:#D4FAFF;margin-bottom:5px;
   text-shadow:0 0 14px rgba(5,4,6,.95);
 }
 .si-detail-ko{
@@ -309,7 +309,7 @@
 @media (max-width:720px){
   .si-wrap{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;padding-inline:18px}
   .si-left{grid-column:1}
-  .si-right{grid-column:1;max-height:42dvh}
+  .si-right{grid-column:1;max-height:calc(42 * var(--dvh))}
 }
 
 /* ============ 버튼 통일 (2026-08-25) =========================================

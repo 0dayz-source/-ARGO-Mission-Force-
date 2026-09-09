@@ -39,15 +39,16 @@
 }
 </script>
 
-<link rel="stylesheet" href="shared/pd-skin.css?v=1788502145">
-  <script src="shared/argo-date.js?v=1788502145"></script>
-  <script id="ripple-fx" src="shared/argo-ripple.js?v=1788502145"></script>
-  <script src="shared/argo-scramble.js?v=1788502145"></script>
-<link rel="stylesheet" href="shared/argo-operator.css?v=1788502145">
-<link rel="stylesheet" href="shared/argo-track.css?v=1788502145"><link rel="stylesheet" href="shared/argo-warn.css?v=1788502145">
+<link rel="stylesheet" href="shared/pd-skin.css?v=1788915955">
+  <script src="shared/argo-date.js?v=1788915955"></script>
+  <script id="ripple-fx" src="shared/argo-ripple.js?v=1788915955"></script>
+  <script src="shared/argo-scramble.js?v=1788915955"></script>
+<link rel="stylesheet" href="shared/argo-operator.css?v=1788915955">
+<link rel="stylesheet" href="shared/argo-track.css?v=1788915955"><link rel="stylesheet" href="shared/argo-warn.css?v=1788915955">
+<script src="shared/argo-scale.js?v=1788915955"></script>
 </head>
 <body>
-<script src="shared/argo-nav.js?v=1788502145"></script>
+<script src="shared/argo-nav.js?v=1788915955"></script>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
     <!-- [VHS] 테이프가 살짝 늘어난 듯한 가로 왜곡. baseFrequency 를 세로로만 크게 줘서
@@ -2117,7 +2118,7 @@
    (measured via getBoundingClientRect, not CSS percentages — see the
    tunnel-hero-fx sizing bug fixed earlier in this file) and to drive
    "scroll" from the section's own scroll-through progress instead of
-   a dedicated 300vh scroll-host.
+   a dedicated calc(300 * var(--vh)) scroll-host.
    ===================================================================== */
 import * as THREE from 'three';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
@@ -2641,10 +2642,10 @@ void main(){ vec2 p = gl_PointCoord - 0.5; float l = length(p); if (l > 0.5) dis
 })();
 </script>
 
-<script src="shared/argo-warn.js?v=1788502145"></script><script src="shared/argo-track.js?v=1788502145"></script>
-<script src="shared/argo-db.js?v=1788502145"></script>
-<script src="shared/argo-foldtext.js?v=1788502145"></script>
-<script id="scan-fx" src="shared/argo-scan.js?v=1788502145"></script>
+<script src="shared/argo-warn.js?v=1788915955"></script><script src="shared/argo-track.js?v=1788915955"></script>
+<script src="shared/argo-db.js?v=1788915955"></script>
+<script src="shared/argo-foldtext.js?v=1788915955"></script>
+<script id="scan-fx" src="shared/argo-scan.js?v=1788915955"></script>
 
 <script src="shared/vendor/matter.min.js"></script>
 <script id="tele-fall-fx">
@@ -3013,7 +3014,7 @@ void main(){ vec2 p = gl_PointCoord - 0.5; float l = length(p); if (l > 0.5) dis
    WavePath 바닐라 이식 (촬영 사전 안내 섹션)
    원본 로직 그대로:
      · setPath   : M0 100 Q(width*x) (100 + progress*0.6), width 100
-                   width = innerWidth * 0.7  (컨테이너가 70vw 라서)
+                   width = innerWidth * 0.7  (컨테이너가 calc(70 * var(--vw)) 라서)
      · mousemove : x = 커서의 가로 비율, progress += movementY
      · mouseleave: animateOut — progress 를 0 으로 lerp(0.025) 하면서
                    sin(time) 을 곱해 감쇠 진동. |progress| <= 0.75 면 정지.
@@ -3237,8 +3238,8 @@ void main(){ vec2 p = gl_PointCoord - 0.5; float l = length(p); if (l > 0.5) dis
         continue;
       }
       var r=it.el.getBoundingClientRect();
-      /* start: 요소 중심이 (뷰포트 바닥 + 50vh) 에 닿는 지점
-         end  : 요소 하단이 (뷰포트 바닥 - 40vh) 에 닿는 지점 */
+      /* start: 요소 중심이 (뷰포트 바닥 + calc(50 * var(--vh))) 에 닿는 지점
+         end  : 요소 하단이 (뷰포트 바닥 - calc(40 * var(--vh))) 에 닿는 지점 */
       var center=r.top+r.height/2;
       var span=r.height/2+0.9*vh;
       apply(it, clamp01((1.5*vh-center)/span), 0);
@@ -4327,7 +4328,7 @@ var NEB = (function(){
 
    [사양과 다른 부분 — 이 페이지에 얹기 위해 불가피한 것만]
      · 캔버스가 fixed 풀윈도가 아니라 .pd-cta 안에 들어가는 섹션 크기 캔버스다.
-     · 스크롤은 별도 300vh 스크롤 호스트가 아니라 이 섹션의 통과 진행도로 만든다
+     · 스크롤은 별도 calc(300 * var(--vh)) 스크롤 호스트가 아니라 이 섹션의 통과 진행도로 만든다
        (페이지에 이미 자체 스크롤 구조가 있어 호스트를 더 두면 레이아웃이 깨진다).
      · 화면 밖이면 rAF 를 멈춘다.
      · 컬러는 요청대로 hero 페이지 팔레트로 치환했다(아래 CONFIG 주석 참조).
@@ -4888,6 +4889,6 @@ void main(){
   },{threshold:[0,0.05,0.35,0.6]}).observe(stage);
 })();
 </script>
-<script src="shared/argo-operator.js?v=1788502145"></script>
+<script src="shared/argo-operator.js?v=1788915955"></script>
 </body>
 </html>

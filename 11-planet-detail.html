@@ -39,15 +39,16 @@
 }
 </script>
 
-<link rel="stylesheet" href="shared/pd-skin.css?v=1788916965">
-  <script src="shared/argo-date.js?v=1788916965"></script>
-  <script id="ripple-fx" src="shared/argo-ripple.js?v=1788916965"></script>
-  <script src="shared/argo-scramble.js?v=1788916965"></script>
-<link rel="stylesheet" href="shared/argo-operator.css?v=1788916965">
-<link rel="stylesheet" href="shared/argo-track.css?v=1788916965"><link rel="stylesheet" href="shared/argo-warn.css?v=1788916965">
+<link rel="stylesheet" href="shared/pd-skin.css?v=1788917617">
+  <script src="shared/argo-date.js?v=1788917617"></script>
+  <script id="ripple-fx" src="shared/argo-ripple.js?v=1788917617"></script>
+  <script src="shared/argo-scramble.js?v=1788917617"></script>
+<link rel="stylesheet" href="shared/argo-operator.css?v=1788917617">
+<link rel="stylesheet" href="shared/argo-track.css?v=1788917617"><link rel="stylesheet" href="shared/argo-warn.css?v=1788917617">
+<script src="shared/argo-scale.js?v=1788917617"></script>
 </head>
 <body>
-<script src="shared/argo-nav.js?v=1788916965"></script>
+<script src="shared/argo-nav.js?v=1788917617"></script>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
     <!-- [VHS] 테이프가 살짝 늘어난 듯한 가로 왜곡. baseFrequency 를 세로로만 크게 줘서
@@ -157,10 +158,10 @@
         <div class="pd-hero-row">
           <h1 class="pd-hero-h1" data-scroll-float="intro">Can you<br>leave Earth?</h1>
           <p class="pd-hero-side" data-scroll-float="intro">커서를 움직여 성운을 흩뜨려 보세요.<br>
-            스크롤할수록 화성에 가까워집니다.</p>
+            마우스 휠을 아래로 굴려 화성에 다가가세요.</p>
         </div>
       </div>
-      <div class="pd-cue"><span>SCROLL · 화성으로</span><i></i></div>
+      <div class="pd-cue"><span>아래로 스크롤 · 화성으로</span><i></i></div>
     </div>
   </section>
 
@@ -2641,10 +2642,10 @@ void main(){ vec2 p = gl_PointCoord - 0.5; float l = length(p); if (l > 0.5) dis
 })();
 </script>
 
-<script src="shared/argo-warn.js?v=1788916965"></script><script src="shared/argo-track.js?v=1788916965"></script>
-<script src="shared/argo-db.js?v=1788916965"></script>
-<script src="shared/argo-foldtext.js?v=1788916965"></script>
-<script id="scan-fx" src="shared/argo-scan.js?v=1788916965"></script>
+<script src="shared/argo-warn.js?v=1788917617"></script><script src="shared/argo-track.js?v=1788917617"></script>
+<script src="shared/argo-db.js?v=1788917617"></script>
+<script src="shared/argo-foldtext.js?v=1788917617"></script>
+<script id="scan-fx" src="shared/argo-scan.js?v=1788917617"></script>
 
 <script src="shared/vendor/matter.min.js"></script>
 <script id="tele-fall-fx">
@@ -2756,13 +2757,19 @@ void main(){ vec2 p = gl_PointCoord - 0.5; float l = length(p); if (l > 0.5) dis
   /* 검증/디버그용: rAF 가 멈춘 환경에서 물리 상태를 확인할 수 있게 */
   window.__teleFallTick=function(n){ for(var i=0;i<(n||1);i++){ if(engine){ Engine.update(engine,1000/60); } } paint(); };
 
+  /* 물리는 getBoundingClientRect 로 잰 '확대된 px' 위에서 돈다. 그런데 결과를
+     써 넣는 el.style.transform 은 확대 전 px 라 zoom 이 한 번 더 곱해진다.
+     그대로 두면 실제 이동량이 물리가 아는 값보다 배율만큼 커져서 벽·천장과
+     어긋나고 낙하가 끊겨 보인다. 화면에 쓸 때 배율로 나눈다. */
+  function fallZoom(){ return pin.currentCSSZoom || 1; }
+
   function paint(){
-    var gone=0;
+    var gone=0, cz=fallZoom();
     for(var i=0;i<items.length;i++){
       var it=items[i], b=it.body;
       if(!b)continue;
-      it.el.style.transform='translate('+(b.position.x-it.x0).toFixed(1)+'px,'+
-        (b.position.y-it.y0).toFixed(1)+'px) rotate('+b.angle.toFixed(3)+'rad)';
+      it.el.style.transform='translate('+((b.position.x-it.x0)/cz).toFixed(1)+'px,'+
+        ((b.position.y-it.y0)/cz).toFixed(1)+'px) rotate('+b.angle.toFixed(3)+'rad)';
       if(b.isSleeping) gone++;
     }
     return gone;
@@ -2797,12 +2804,12 @@ void main(){ vec2 p = gl_PointCoord - 0.5; float l = length(p); if (l > 0.5) dis
     if(!back.length)return;
 
     if(backRaf){ cancelAnimationFrame(backRaf); backRaf=0; }
-    var t0=performance.now();
+    var t0=performance.now(), cz0=fallZoom();
     (function frame(now){
       var k=Math.min(1,(now-t0)/BACK_MS), f=1-easeInOutCubic(k);
       for(var j=0;j<back.length;j++){
         var o=back[j];
-        o.el.style.transform='translate('+(o.x*f).toFixed(2)+'px,'+(o.y*f).toFixed(2)+
+        o.el.style.transform='translate('+(o.x*f/cz0).toFixed(2)+'px,'+(o.y*f/cz0).toFixed(2)+
           'px) rotate('+(o.a*f).toFixed(4)+'rad)';
       }
       if(k<1){ backRaf=requestAnimationFrame(frame); }
@@ -4888,6 +4895,6 @@ void main(){
   },{threshold:[0,0.05,0.35,0.6]}).observe(stage);
 })();
 </script>
-<script src="shared/argo-operator.js?v=1788916965"></script>
+<script src="shared/argo-operator.js?v=1788917617"></script>
 </body>
 </html>

@@ -3995,7 +3995,12 @@ button,input,textarea,select{font-family:inherit}
   display:grid; grid-template-columns:minmax(400px,38fr) 52px minmax(0,62fr);
   grid-template-rows:auto minmax(0,1fr);
   gap:0 clamp(12px,calc(1.6 * var(--vw)),28px);
+  /* 왼쪽 위 REC HUD(.rec-hud — top:22px, 높이 약 16px)는 씬 위에 고정으로 얹힌다.
+     위 여백이 vh 기준이라 화면이 짧아지면 헤더가 그 밑으로 파고들어
+     "REC 2068…" 과 "TFSC · DEEP SPACE…" 두 줄이 겹쳤다.
+     REC HUD 아래 안전선(--tfsc-top-safe)을 바닥으로 깔아 준다. */
   padding:clamp(18px,calc(2.4 * var(--vh)),26px) clamp(28px,calc(3 * var(--vw)),56px) clamp(56px,calc(6 * var(--vh)),72px);
+  padding-top:max(var(--tfsc-top-safe,44px),clamp(18px,calc(2.4 * var(--vh)),26px));
   /* 패널 뒤만 살짝 어둡게 — 배경 파티클은 그대로 두고 가독성만 확보 */
   background:radial-gradient(120% 90% at 50% 45%, rgba(6,6,10,.62), rgba(6,6,10,.18) 70%, transparent);
 }

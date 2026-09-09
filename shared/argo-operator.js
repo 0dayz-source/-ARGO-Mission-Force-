@@ -119,7 +119,11 @@
     function resize() {
       var r = panel.getBoundingClientRect();
       if (!r.width || !r.height) return;
-      w = r.width; h = r.height;
+      /* 화면 배율(html{zoom}) 안에서는 getBoundingClientRect 가 확대된 px 를 준다.
+         이 캔버스의 CSS 상자는 확대 전 px 라, 나누지 않으면 셰이더가 그리는
+         테두리가 실제 패널 테두리보다 크게 그려져 외곽선이 둘로 보인다. */
+      var cz = panel.currentCSSZoom || 1;
+      w = r.width / cz; h = r.height / cz;
       canvas.width  = Math.max(1, Math.round((w + SPEC_PAD * 2) * dpr));
       canvas.height = Math.max(1, Math.round((h + SPEC_PAD * 2) * dpr));
       gl.viewport(0, 0, canvas.width, canvas.height);

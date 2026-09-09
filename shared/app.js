@@ -1348,6 +1348,9 @@ function warmupScenes(){
   });
 }
 
+/* 파티클은 zoom 이 걸리지 않는 캔버스 위에 그려진다(그래야 화면과 1:1 로 맞는다).
+   그래서 화면 배율을 점 크기에 직접 곱해 줘야 나머지 UI 와 비율이 맞는다. */
+function argoParticleScale(){ return window.__argoZ || 1; }
 function initScene(){
   function wt(cb){if(typeof THREE!=='undefined')cb();else setTimeout(()=>wt(cb),60)}
   wt(()=>{
@@ -1550,7 +1553,7 @@ while(pi<TOTAL){
     const mat = new THREE.ShaderMaterial({
       uniforms: {
         uTime:  { value: 0.0 },
-        uPixelRatio: { value: Math.min(devicePixelRatio, 2.0) },
+        uPixelRatio: { value: Math.min(devicePixelRatio, 2.0) * argoParticleScale() },
         /* 반짝임 — ARGO 토러스(shared/argo-torus.js)와 같은 방식·같은 속도대.
            uTwSpeed 느린 명멸(rad/s), uSpSpeed 짧은 섬광. 낮출수록 느긋하다. */
         uTwSpeed: { value: 0.22 },   /* 한 번 명멸에 약 28초 — 느긋하게 */
@@ -1678,7 +1681,7 @@ const BGPC=7200;
     bgGeo.setAttribute('phase',new THREE.BufferAttribute(bgPhase,1));
 
     const bgMat=new THREE.ShaderMaterial({
-      uniforms:{ uTime:{value:0}, uPixelRatio:{value:Math.min(devicePixelRatio,2.5)},
+      uniforms:{ uTime:{value:0}, uPixelRatio:{value:Math.min(devicePixelRatio,2.5) * argoParticleScale()},
         /* 별 반짝임 — 낮출수록 느긋하다. 별마다 속도가 또 흩어지므로
            실제 주기는 이 값 기준 0.45~1.7배 사이로 퍼진다. */
         uTwSpeed:{value:0.16}, uSpSpeed:{value:0.28} },

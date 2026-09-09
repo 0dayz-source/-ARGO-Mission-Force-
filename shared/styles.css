@@ -27,6 +27,12 @@ html{zoom:var(--z,1)}
 #gc,#scan-cv,#mw-canvas,#radar-canvas,#comet-cv,
 #cur,#cur-r,.pd-cursor,.pd-cursor-ring,.pd-cursor-label{zoom:calc(1 / var(--z,1))}
 
+/* 큰 글씨(히어로 제목)와 버튼은 배율을 그대로 먹이면 과하게 커진다.
+   zoom 을 일부만 되돌려 --z-soft 만큼만 커지게 한다.
+   얼마나 따라갈지는 argo-scale.js 의 SOFT 하나로 조절한다. */
+.lp-h,
+.lg-btn,.rp-icon-btn,.scroll-btn{zoom:calc(var(--z-soft,1) / var(--z,1))}
+
 ㅊ*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}:root{
   /* ============================================================
      ARGO 컬러 시스템 v5 — Neon Spectrum

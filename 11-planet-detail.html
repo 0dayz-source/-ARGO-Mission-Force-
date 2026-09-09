@@ -1370,11 +1370,18 @@
   function onScroll(){
     var sh=document.documentElement.scrollHeight-innerHeight;
     if(pbar)pbar.style.width=(clamp(scrollY/sh)*100)+'%';
-    if(hero)targetHeroProgress=clamp(scrollY/(hero.offsetHeight-innerHeight));
+    /* 화면 배율(html{zoom}) 안에서는 좌표계가 둘로 갈린다.
+       innerWidth/Height · scrollY · getBoundingClientRect → 확대된 px
+       offsetHeight · scrollWidth · style.transform        → 확대 전 px
+       섞어 쓰면 진행도가 실제보다 일찍 1 에 닿아(= 낙하가 먼저 터지고
+       IN PROCESS 패널이 나오기 전에 끝난다) 트랙도 덜 밀려 오른쪽이 잘렸다.
+       각 계산을 한 좌표계로 통일한다. */
+    if(hero)targetHeroProgress=clamp(scrollY/(hero.offsetHeight*(hero.currentCSSZoom||1)-innerHeight));
     if(tele&&track&&innerWidth>820){var rect=tele.getBoundingClientRect();
-      var tp=clamp(-rect.top/(tele.offsetHeight-innerHeight));
+      var cz=track.currentCSSZoom||1, vw=innerWidth/cz, vh=innerHeight/cz;
+      var tp=clamp((-rect.top/cz)/(tele.offsetHeight-vh));
       window.__teleProgress=tp;   /* tele-fall-fx 가 읽는다 — 레이아웃 재측정 없이 */
-      var dist=track.scrollWidth-innerWidth+innerWidth*0.08;
+      var dist=track.scrollWidth-vw+vw*0.08;
       track.style.transform='translateX('+(-tp*Math.max(0,dist))+'px)';
       if(railGrad&&railEl){
         var RW=railEl.clientWidth||1, win=RW*0.32;
@@ -2931,7 +2938,11 @@ void main(){ vec2 p = gl_PointCoord - 0.5; float l = length(p); if (l > 0.5) dis
     }
     void host.offsetWidth;                      /* 리플로우 강제 — 위 해제를 즉시 반영 */
     var ws=[];
-    for(i=0;i<chars.length;i++) ws[i]=chars[i].getBoundingClientRect().width;
+    /* getBoundingClientRect 는 화면 배율이 곱해진 폭을 준다. 그대로 style.width
+       (확대 전 px)에 넣으면 글자 상자가 배율만큼 넓어져 자간이 벌어지고
+       단어로 안 읽힌다. 배율로 나눠 같은 좌표계로 되돌린다. */
+    var wz=host.currentCSSZoom||1;
+    for(i=0;i<chars.length;i++) ws[i]=chars[i].getBoundingClientRect().width/wz;
     for(i=0;i<chars.length;i++){
       w=ws[i];
       if(w>0) chars[i].style.width=w.toFixed(2)+'px';

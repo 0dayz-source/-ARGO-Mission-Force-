@@ -274,7 +274,7 @@
       /* hero : 메인 성운과 같은 규칙. 소수만 흰 코어와 회절 섬광을 달아
          '빛나는 별' 로 읽히게 한다. 링 표면 쪽에 더 많이 둔다 — 부유 입자까지
          반짝이면 링의 윤곽이 뭉개진다. */
-      if (Math.random() < (kind === 2 ? 0.004 : 0.016)) aHero[i] = 0.55 + Math.random() * 0.45;
+      if (Math.random() < (kind === 2 ? 0.0015 : 0.006)) aHero[i] = 0.55 + Math.random() * 0.45;
     }
 
     var geo = new THREE.BufferGeometry();
@@ -453,7 +453,7 @@
         /* [수정] 레퍼런스는 점이 아주 작다 — 조밀해도 뭉개지지 않고 모래처럼 읽히고,
            본문 글자 위에 깔려도 가독성을 덜 해친다. 10.5→6.6, 상한 8.5→5.0 */
         '  gl_PointSize = clamp(uPR * (8.0 / dist) * (0.75 + dof * 1.2), uPR * 1.2, uPR * 6.0);',
-        '  gl_PointSize *= 1.0 + aHero * 5.0;',   // 섬광이 읽히려면 점이 충분히 커야 한다
+        '  gl_PointSize *= 1.0 + aHero * 3.4;',   // 섬광이 읽히되 과하지 않게
         '  vHero = aHero;',
         '  vPS = gl_PointSize;',
         /* 초점이 나갈수록, 그리고 개체 편차가 큰 것일수록 고리에 가깝다.
@@ -490,7 +490,7 @@
         'void main(){',
         '  vec2 uv = gl_PointCoord - 0.5;',
         '  float d = length(uv) * 2.0;',
-        '  if(d > 1.0 && vHero <= 0.0) discard;',   // hero 는 섬광이 모서리까지 간다
+        '  if(d > 1.35 && vHero <= 0.0) discard;',   // 글로우와 hero 섬광이 점 밖까지 번진다
         /* [보케] 레퍼런스의 입자는 솜털 같은 헤일로가 아니라 '납작한 원판' 이다 —
            가장자리만 안티에일리어싱하고 안쪽은 균일하게 채운다.
            [버그] 문턱을 0.86 처럼 고정하면 점이 작을 때 그 폭이 1픽셀도 안 돼
@@ -503,7 +503,12 @@
         /* 고리형 : 초점이 크게 나간 입자는 가운데가 뚫려 도넛/초승달로 보인다 */
         '  float hollow = mix(1.0, smoothstep(0.16, 0.76, d), vRing);',
         '  float a = disc * hollow * vAlpha;',
-        '  vec3 col = vColor * (1.0 + rim * (0.5 + 1.9 * vRing));',
+        /* [추가] 원판만으로는 '빛난다' 는 인상이 없다. 점 밖까지 번지는 부드러운
+           헤일로를 얹어 발광체로 읽히게 한다. 원판 모양은 그대로 두고 그 주위만
+           밝아지므로 링의 윤곽은 유지된다. */
+        '  float glow = exp(-d * d * 2.3);',
+        '  a = min(1.0, a + glow * vAlpha * 0.22);',
+        '  vec3 col = vColor * (1.0 + rim * (0.5 + 1.9 * vRing) + glow * 0.55);',
         /* hero : 납작한 원판 대신 타오르는 코어 + 가로·세로 회절 섬광.
            토러스의 '모양' 은 입자 배치가 만드는 것이라 여기서 손대지 않는다 —
            원형 링은 그대로고 그 위에 빛나는 별만 몇 개 얹힌다. */
@@ -513,7 +518,7 @@
         '    float spike = exp(-ha.y * 52.0) * exp(-ha.x * 4.0)',
         '                + exp(-ha.x * 52.0) * exp(-ha.y * 4.0);',
         '    col = mix(vColor, vec3(1.0), hc * 0.85) * (0.9 + hc * 1.3)',
-        '        + vec3(1.0, 0.95, 0.98) * spike * 0.5;',
+        '        + vec3(1.0, 0.95, 0.98) * spike * 0.30;',
         '    a = min(1.0, (hc * 0.95 + spike * 0.5) * vAlpha * vHero);',
         '  }',
         '  gl_FragColor = vec4(col, a);',

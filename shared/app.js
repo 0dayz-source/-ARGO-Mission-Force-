@@ -1551,6 +1551,27 @@ while(pi<TOTAL){
        uGather 하나로 두 자리 사이를 오간다. 1 = 제자리, 0 = 쓸려나간 상태.
        delay 는 별마다 다른 시작 시점이다. 바깥쪽일수록 값이 커서 먼저 빠져나가고
        돌아올 때는 가장 늦게 도착한다 — 코어부터 다시 뭉치는 결이 생긴다. */
+    /* ============ 별 조절판 =============================================
+       눈이 피로하면 이 숫자들만 내리면 된다. 전시장에서는 화면이 크고 계속
+       켜져 있으므로 웹에서 적당해 보이는 값도 과하게 느껴진다.
+       한 곳에 모아 뒀으니 여기만 고치면 성운·배경 별이 함께 따라간다. */
+    const STAR = {
+      heroCore:   0.005,   /* 성운 코어 쪽에서 hero(빛나는 별)가 되는 비율 */
+      heroOuter:  0.0015,  /* 성운 바깥쪽 비율 */
+      heroSize:   1.5,     /* hero 별이 보통 입자의 몇 배로 커지는가 */
+      bgHero:     0.003,   /* 배경 별의 hero 비율 */
+      bgHeroSize: 2.0,
+      spike:      0.30,    /* 십자 섬광 세기 — 올리면 눈에 띄고 피로해진다 */
+      blinkNeb:   0.22,    /* 성운 섬광 빈도 (낮을수록 뜸하게 터진다) */
+      blinkBg:    0.16,    /* 배경 별 섬광 빈도 */
+      wander:     0.16,    /* 별마다의 궤도 반경 (성운) */
+      bgWander:   0.38,    /* 별마다의 궤도 반경 (배경) */
+      lensRadius: 0.78,    /* 커서 렌즈 크기 — 작을수록 원이 보인다 */
+      lensDepth:  0.55,    /* 커서 쪽 별을 카메라로 당기는 양 */
+      lensGlow:   0.45,
+      lensMag:    0.45,
+    };
+
     /* hero : 진짜 별처럼 보이게 하는 소수의 밝은 별. 나머지는 성운의 살이 된다.
        코어 쪽에 더 많이 두되 바깥에도 흩뿌린다 — 한군데 몰리면 조명처럼 보인다. */
     const hero=new Float32Array(TOTAL);
@@ -1564,7 +1585,7 @@ while(pi<TOTAL){
       gdelay[i] = Math.min(1, rad/10)*0.7 + Math.random()*0.3;
       /* 안쪽 1.8% · 바깥 0.5% 만 hero. 세기도 흩어 놓아 크기가 다 같지 않게 한다. */
       const near = rad < 3.2;
-      if(Math.random() < (near ? 0.018 : 0.005)) hero[i] = 0.55 + Math.random()*0.45;
+      if(Math.random() < (near ? STAR.heroCore : STAR.heroOuter)) hero[i] = 0.55 + Math.random()*0.45;
     }
 
     const geo=new THREE.BufferGeometry();
@@ -1582,16 +1603,18 @@ while(pi<TOTAL){
            화면 전체가 따라 움직이는 대신 손이 닿은 자리만 반응한다. */
         uPointer:{ value: new THREE.Vector2(0,0) },
         uAspect:{ value: 1.0 },
-        uLensRadius:{ value: 0.78 },   /* 넓게 — 경계가 보이지 않을 만큼 */
-        uLensMag:{ value: 0.5 },
-        uLensGlow:{ value: 0.45 },
+        uLensRadius:{ value: STAR.lensRadius },
+        uLensMag:{ value: STAR.lensMag },
+        uLensGlow:{ value: STAR.lensGlow },
         uLensDepth:{ value: 0.0 },
-        uWander:{ value: 0.16 },
+        uWander:{ value: STAR.wander },
+        uHeroSize:{ value: STAR.heroSize },
+        uSpike:{ value: STAR.spike },
         uPixelRatio: { value: Math.min(devicePixelRatio, 2.0) * argoParticleScale() },
         /* 반짝임 — ARGO 토러스(shared/argo-torus.js)와 같은 방식·같은 속도대.
            uTwSpeed 느린 명멸(rad/s), uSpSpeed 짧은 섬광. 낮출수록 느긋하다. */
         uTwSpeed: { value: 0.22 },   /* 한 번 명멸에 약 28초 — 느긋하게 */
-        uSpSpeed: { value: 0.45 },   /* 섬광 간격도 함께 늘린다 */
+        uSpSpeed: { value: STAR.blinkNeb },   /* 섬광 빈도 — 낮출수록 뜸하다 */
       },
       vertexShader: `
         attribute vec3 color;
@@ -1611,6 +1634,7 @@ while(pi<TOTAL){
         uniform float uLensGlow;
         uniform float uLensDepth;   /* 커서 쪽 별을 카메라로 당기는 양 */
         uniform float uWander;      /* 별마다의 궤도 반경 */
+        uniform float uHeroSize;    /* hero 별 확대 배수 */
         uniform float uPixelRatio;
         uniform float uTwSpeed;
         uniform float uSpSpeed;
@@ -1653,7 +1677,7 @@ while(pi<TOTAL){
           float dist = -mv.z;
           float safeDist = max(dist, 3.0);
           gl_PointSize = min(uPixelRatio * (35.64 / safeDist), uPixelRatio * 12.54);  /* 1.2배 → 1.1배 더 (32.4/11.4) */
-          gl_PointSize *= (1.0 + hero * 2.4) * (1.0 + lens * uLensMag);
+          gl_PointSize *= (1.0 + hero * uHeroSize) * (1.0 + lens * uLensMag);
           float nearFade = smoothstep(0.8, 3.0, dist);
           vAlpha = clamp(1.0 - dist * 0.04, 0.0, 1.0) * nearFade;
 
@@ -1665,7 +1689,7 @@ while(pi<TOTAL){
           vAlpha *= 0.15 + 0.85 * tw;
           /* 짧은 섬광 — sin 을 26제곱으로 눌러 대부분 0, 아주 짧게만 1 에 닿는다 */
           vSpark = pow(max(0.0, sin(uTime * uSpSpeed * (0.7 + ph * 0.9) + ph * 31.4)), 26.0);
-          vAlpha = min(1.0, vAlpha + vSpark * 0.85);
+          vAlpha = min(1.0, vAlpha + vSpark * 0.45);
           vAlpha *= 1.0 + lens * uLensGlow;   /* 커서 근처는 밝아진다 */
           vAlpha *= g;            /* 쓸려나가면서 함께 흐려진다 */
         }
@@ -1675,6 +1699,7 @@ while(pi<TOTAL){
         varying float vAlpha;
         varying float vSpark;
         varying float vHero;
+        uniform float uSpike;
 
         void main(){
           vec2  uv  = gl_PointCoord - 0.5;          // -0.5 .. +0.5
@@ -1695,7 +1720,7 @@ while(pi<TOTAL){
           vec3  base  = mix(vColor, neon, core * 0.20);
           vec3  col   =  base * (core * 1.22 + halo * 0.36) * (1.0 + vSpark * 1.4);
           /* 섬광이 걸린 순간에는 코어에 네온 핑크를 한 겹 더 얹는다 */
-          col += neon * vSpark * core * 0.9;
+          col += neon * vSpark * core * 0.45;   /* 네온 번쩍임 절반으로 */
           /* ---- hero 별 ----
              코어를 흰색으로 몰고 가로·세로 섬광(회절 무늬)을 그린다.
              이 둘이 있어야 '점'이 아니라 '빛나는 별'로 읽힌다. */
@@ -1704,9 +1729,9 @@ while(pi<TOTAL){
             float spike = exp(-ha.y * 52.0) * exp(-ha.x * 4.0)
                         + exp(-ha.x * 52.0) * exp(-ha.y * 4.0);
             spike *= vHero * vAlpha;
-            col   = mix(col, vec3(1.0), core * vHero * 0.8);
-            col  += vec3(1.0, 0.94, 0.97) * spike * 0.55;
-            alpha = min(1.0, alpha + spike * 0.42 + core * vHero * 0.35);
+            col   = mix(col, vec3(1.0), core * vHero * 0.7);
+            col  += vec3(1.0, 0.94, 0.97) * spike * uSpike;
+            alpha = min(1.0, alpha + spike * uSpike * 0.7 + core * vHero * 0.25);
           }
           /* [v5] 밝기 배수가 크면 세 채널이 다 1.0 을 넘겨 전부 흰 점이 된다(사용자 지적).
              배수를 낮추고, 남은 색의 채도를 한 번 더 벌려 준다. */
@@ -1777,7 +1802,7 @@ const BGPC=7200;
       bgSweep[i*3+1] = (Math.random()-0.5)*12;
       bgSweep[i*3+2] = (Math.random()-0.5)*8;
       bgDelay[i] = Math.random();
-      if(Math.random() < 0.010) bgHero[i] = 0.5 + Math.random()*0.5;   /* 1% 만 밝은 별 */
+      if(Math.random() < STAR.bgHero) bgHero[i] = 0.5 + Math.random()*0.5;
     }
     bgGeo.setAttribute('sweep',new THREE.BufferAttribute(bgSweep,3));
     bgGeo.setAttribute('delay',new THREE.BufferAttribute(bgDelay,1));
@@ -1786,11 +1811,11 @@ const BGPC=7200;
     const bgMat=new THREE.ShaderMaterial({
       uniforms:{ uTime:{value:0}, uGather:{value:1.0},
         uPointer:{value:new THREE.Vector2(0,0)}, uAspect:{value:1.0},
-        uLensRadius:{value:0.78}, uLensMag:{value:0.4}, uLensGlow:{value:0.4}, uLensDepth:{value:0.0}, uWander:{value:0.38},
+        uLensRadius:{value:STAR.lensRadius}, uLensMag:{value:STAR.lensMag*0.8}, uLensGlow:{value:STAR.lensGlow*0.9}, uLensDepth:{value:0.0}, uWander:{value:STAR.bgWander}, uHeroSize:{value:STAR.bgHeroSize}, uSpike:{value:STAR.spike},
         uPixelRatio:{value:Math.min(devicePixelRatio,2.5) * argoParticleScale()},
         /* 별 반짝임 — 낮출수록 느긋하다. 별마다 속도가 또 흩어지므로
            실제 주기는 이 값 기준 0.45~1.7배 사이로 퍼진다. */
-        uTwSpeed:{value:0.16}, uSpSpeed:{value:0.28} },
+        uTwSpeed:{value:0.16}, uSpSpeed:{value:STAR.blinkBg} },
       vertexShader:`
         attribute vec3 color;
         attribute float phase;
@@ -1811,6 +1836,7 @@ const BGPC=7200;
         uniform float uLensGlow;
         uniform float uLensDepth;   /* 커서 쪽 별을 카메라로 당기는 양 */
         uniform float uWander;      /* 별마다의 궤도 반경 */
+        uniform float uHeroSize;    /* hero 별 확대 배수 */
         uniform float uPixelRatio;
         /* [버그] 아래에서 쓰는 uTwSpeed/uSpSpeed 선언이 빠져 있어 이 셰이더가
            컴파일에 실패했다 — 배경 별 7200개가 통째로 안 그려지고 있었다. */
@@ -1835,7 +1861,7 @@ const BGPC=7200;
           float lens = exp(-q * q * 2.2);
           mv.z += lens * uLensDepth;
           gl_Position = projectionMatrix * mv;
-          gl_PointSize = uPixelRatio * 3.96 * (1.0 + hero * 3.2) * (1.0 + lens * uLensMag);
+          gl_PointSize = uPixelRatio * 3.96 * (1.0 + hero * uHeroSize) * (1.0 + lens * uLensMag);
           vGather *= 1.0 + lens * uLensGlow;   /* 1.2배 → 1.1배 더 (3.6) */
           /* [반짝임] 예전 0.55+0.45*sin 은 밝기가 0.55~1.0 사이만 오가서
              '숨쉬는' 정도였지 반짝이는 걸로 안 보였다. 전 구간(0~1)을 쓴다.
@@ -1858,6 +1884,7 @@ const BGPC=7200;
         varying float vSpark;
         varying float vGather;
         varying float vHero;
+        uniform float uSpike;
         void main(){
           vec2 uv = gl_PointCoord - 0.5;
           float d = length(uv)*2.0;
@@ -1876,9 +1903,9 @@ const BGPC=7200;
             float spike = exp(-ha.y * 58.0) * exp(-ha.x * 4.0)
                         + exp(-ha.x * 58.0) * exp(-ha.y * 4.0);
             spike *= vHero * vGather;
-            col   = mix(col, vec3(1.0), core * vHero * 0.85);
-            col  += vec3(1.0, 0.95, 0.98) * spike * 0.6;
-            a     = min(1.0, a + spike * 0.45 + core * vHero * 0.4);
+            col   = mix(col, vec3(1.0), core * vHero * 0.7);
+            col  += vec3(1.0, 0.95, 0.98) * spike * uSpike;
+            a     = min(1.0, a + spike * uSpike * 0.7 + core * vHero * 0.25);
           }
           gl_FragColor = vec4(col, a);
         }
@@ -2172,9 +2199,9 @@ let targetFlowDir = 0;  // 0=normal, 1=upward
         [mat, bgMat].forEach(function(m, i){
           m.uniforms.uPointer.value.set(lensX, lensY);
           m.uniforms.uAspect.value = asp;
-          m.uniforms.uLensMag.value   = (i ? 0.35 : 0.45) * lensAmt;
-          m.uniforms.uLensGlow.value  = (i ? 0.40 : 0.45) * lensAmt;
-          m.uniforms.uLensDepth.value = (i ? 0.35 : 0.55) * lensAmt;
+          m.uniforms.uLensMag.value   = STAR.lensMag  * (i ? 0.8 : 1) * lensAmt;
+          m.uniforms.uLensGlow.value  = STAR.lensGlow * (i ? 0.9 : 1) * lensAmt;
+          m.uniforms.uLensDepth.value = STAR.lensDepth* (i ? 0.6 : 1) * lensAmt;
         });
       })();
       /* 메인 씬(#s0)에 있을 때만 별이 제자리에 모인다. 다른 씬으로 넘어가면

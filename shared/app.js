@@ -1546,13 +1546,31 @@ while(pi<TOTAL){
       pi++;
     }
 
+    /* ---- 씬을 떠날 때 쓸려나가는 자리 ----------------------------------
+       별마다 '제자리'(position) 말고 '쓸려나간 자리'를 하나 더 들고 있다가
+       uGather 하나로 두 자리 사이를 오간다. 1 = 제자리, 0 = 쓸려나간 상태.
+       delay 는 별마다 다른 시작 시점이다. 바깥쪽일수록 값이 커서 먼저 빠져나가고
+       돌아올 때는 가장 늦게 도착한다 — 코어부터 다시 뭉치는 결이 생긴다. */
+    const sweep=new Float32Array(TOTAL*3), gdelay=new Float32Array(TOTAL);
+    for(let i=0;i<TOTAL;i++){
+      const x=pos[i*3], y=pos[i*3+1];
+      const rad=Math.sqrt(x*x+y*y);
+      sweep[i*3]   = 16 + rad*1.4 + Math.random()*10;   /* 화면 오른쪽으로 */
+      sweep[i*3+1] = y*0.35 + (Math.random()-0.5)*5;
+      sweep[i*3+2] = (Math.random()-0.5)*4;
+      gdelay[i] = Math.min(1, rad/10)*0.7 + Math.random()*0.3;
+    }
+
     const geo=new THREE.BufferGeometry();
     geo.setAttribute('position',new THREE.BufferAttribute(pos.slice(),3));
     geo.setAttribute('color',new THREE.BufferAttribute(col,3));
+    geo.setAttribute('sweep',new THREE.BufferAttribute(sweep,3));
+    geo.setAttribute('delay',new THREE.BufferAttribute(gdelay,1));
     geo.attributes.position.setUsage(THREE.DynamicDrawUsage);
     const mat = new THREE.ShaderMaterial({
       uniforms: {
         uTime:  { value: 0.0 },
+        uGather:{ value: 1.0 },   /* 1 = 제자리, 0 = 쓸려나감 */
         uPixelRatio: { value: Math.min(devicePixelRatio, 2.0) * argoParticleScale() },
         /* 반짝임 — ARGO 토러스(shared/argo-torus.js)와 같은 방식·같은 속도대.
            uTwSpeed 느린 명멸(rad/s), uSpSpeed 짧은 섬광. 낮출수록 느긋하다. */
@@ -1561,17 +1579,25 @@ while(pi<TOTAL){
       },
       vertexShader: `
         attribute vec3 color;
+        attribute vec3 sweep;
+        attribute float delay;
         varying vec3  vColor;
         varying float vAlpha;
         varying float vSpark;
         uniform float uTime;
+        uniform float uGather;
         uniform float uPixelRatio;
         uniform float uTwSpeed;
         uniform float uSpSpeed;
 
         void main(){
           vColor = color;
-          vec4 mv = modelViewMatrix * vec4(position, 1.0);
+          /* delay 만큼 시점을 밀어 한꺼번에 움직이지 않게 한다.
+             0.45/0.55 는 '가장 늦은 별이 출발할 때 가장 이른 별은 이미 도착' 하는 비율. */
+          float g = clamp((uGather - delay * 0.45) / 0.55, 0.0, 1.0);
+          g = g * g * (3.0 - 2.0 * g);
+          vec3 P = position + sweep * (1.0 - g);
+          vec4 mv = modelViewMatrix * vec4(P, 1.0);
           gl_Position = projectionMatrix * mv;
           float dist = -mv.z;
           float safeDist = max(dist, 3.0);
@@ -1590,6 +1616,7 @@ while(pi<TOTAL){
           /* 짧은 섬광 — sin 을 26제곱으로 눌러 대부분 0, 아주 짧게만 1 에 닿는다 */
           vSpark = pow(max(0.0, sin(uTime * uSpSpeed * (0.7 + ph * 0.9) + ph * 31.4)), 26.0);
           vAlpha = min(1.0, vAlpha + vSpark * 0.85);
+          vAlpha *= g;            /* 쓸려나가면서 함께 흐려진다 */
         }
       `,
       fragmentShader: `
@@ -1679,19 +1706,33 @@ const BGPC=7200;
     bgGeo.setAttribute('position',new THREE.BufferAttribute(bgPos,3));
     bgGeo.setAttribute('color',new THREE.BufferAttribute(bgCol2,3));
     bgGeo.setAttribute('phase',new THREE.BufferAttribute(bgPhase,1));
+    /* 배경 별도 같은 방식으로 쓸려나간다. 성운보다 멀리, 더 흩어진 시점으로. */
+    const bgSweep=new Float32Array(BGPC*3), bgDelay=new Float32Array(BGPC);
+    for(let i=0;i<BGPC;i++){
+      bgSweep[i*3]   = 42 + Math.random()*26;
+      bgSweep[i*3+1] = (Math.random()-0.5)*12;
+      bgSweep[i*3+2] = (Math.random()-0.5)*8;
+      bgDelay[i] = Math.random();
+    }
+    bgGeo.setAttribute('sweep',new THREE.BufferAttribute(bgSweep,3));
+    bgGeo.setAttribute('delay',new THREE.BufferAttribute(bgDelay,1));
 
     const bgMat=new THREE.ShaderMaterial({
-      uniforms:{ uTime:{value:0}, uPixelRatio:{value:Math.min(devicePixelRatio,2.5) * argoParticleScale()},
+      uniforms:{ uTime:{value:0}, uGather:{value:1.0}, uPixelRatio:{value:Math.min(devicePixelRatio,2.5) * argoParticleScale()},
         /* 별 반짝임 — 낮출수록 느긋하다. 별마다 속도가 또 흩어지므로
            실제 주기는 이 값 기준 0.45~1.7배 사이로 퍼진다. */
         uTwSpeed:{value:0.16}, uSpSpeed:{value:0.28} },
       vertexShader:`
         attribute vec3 color;
         attribute float phase;
+        attribute vec3 sweep;
+        attribute float delay;
         varying vec3 vColor;
         varying float vTwinkle;
         varying float vSpark;
+        varying float vGather;
         uniform float uTime;
+        uniform float uGather;
         uniform float uPixelRatio;
         /* [버그] 아래에서 쓰는 uTwSpeed/uSpSpeed 선언이 빠져 있어 이 셰이더가
            컴파일에 실패했다 — 배경 별 7200개가 통째로 안 그려지고 있었다. */
@@ -1699,7 +1740,15 @@ const BGPC=7200;
         uniform float uSpSpeed;
         void main(){
           vColor = color;
-          vec4 mv = modelViewMatrix * vec4(position,1.0);
+          float g = clamp((uGather - delay * 0.45) / 0.55, 0.0, 1.0);
+          g = g * g * (3.0 - 2.0 * g);
+          vGather = g;
+          /* 제자리에 있을 때도 아주 조금씩 떠다닌다 — 배경이 정지 화면으로 보이지 않게.
+             진폭 0.07 은 별 하나 크기보다 작아서 '흐른다'가 아니라 '살아 있다'로 읽힌다. */
+          float wob = uTime * 0.13 + phase * 6.2831;
+          vec3 drift = vec3(sin(wob), cos(wob * 0.83), sin(wob * 0.61)) * 0.07;
+          vec3 P = position + drift + sweep * (1.0 - g);
+          vec4 mv = modelViewMatrix * vec4(P,1.0);
           gl_Position = projectionMatrix * mv;
           gl_PointSize = uPixelRatio * 3.96;   /* 1.2배 → 1.1배 더 (3.6) */
           /* [반짝임] 예전 0.55+0.45*sin 은 밝기가 0.55~1.0 사이만 오가서
@@ -1721,13 +1770,14 @@ const BGPC=7200;
         varying vec3 vColor;
         varying float vTwinkle;
         varying float vSpark;
+        varying float vGather;
         void main(){
           vec2 uv = gl_PointCoord - 0.5;
           float d = length(uv)*2.0;
           float edgeFade = 1.0 - smoothstep(0.8,1.0,d);
           if(d>1.05) discard;
           float core = exp(-d*d*7.0);
-          float a = core * (0.16 + vTwinkle*0.95 + vSpark*1.5) * edgeFade;
+          float a = core * (0.16 + vTwinkle*0.95 + vSpark*1.5) * edgeFade * vGather;
           /* 별도 같은 규칙 — 코어는 네온 핑크, 가장자리는 제 색 */
           vec3 neon = vec3(1.0, 0.176, 0.510);     /* #FF2D82 핫 핑크 */
           vec3 base = mix(vColor, neon, core*0.28);
@@ -2003,6 +2053,20 @@ let targetFlowDir = 0;  // 0=normal, 1=upward
       }
       bgPts.rotation.y=tt*0.006;
       bgMat.uniforms.uTime.value = tt;
+      /* 메인 씬(#s0)에 있을 때만 별이 제자리에 모인다. 다른 씬으로 넘어가면
+         쓸려나갔다가 돌아오면 다시 모인다. goScene 을 건드리지 않고 화면 상태만
+         보므로 딥링크·뒤로가기 등 모든 진입 경로에서 똑같이 동작한다.
+         나갈 때는 빠르게(0.055), 모일 때는 느긋하게(0.028) — 쓸려나가는 건
+         한순간이고 다시 자리를 잡는 건 시간이 걸리는 게 자연스럽다. */
+      (function(){
+        var s0 = document.getElementById('s0');
+        var want = (s0 && s0.classList.contains('active')) ? 1 : 0;
+        var g = mat.uniforms.uGather.value;
+        g += (want - g) * (want ? 0.028 : 0.055);
+        if(Math.abs(want - g) < 0.001) g = want;
+        mat.uniforms.uGather.value = g;
+        bgMat.uniforms.uGather.value = g;
+      })();
       renderer.render(scene,cam);
       /* [신호] 성운의 첫 프레임이 실제로 그려진 시점.
          로딩 오버레이(shared/argo-nav.js)가 이걸 기다렸다가 걷힌다 —

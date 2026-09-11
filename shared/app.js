@@ -1581,6 +1581,15 @@ while(pi<TOTAL){
       waveGrow:     0.055, /* 파동이 커지는 속도 */
       waveDecay:    0.955, /* 파동이 사라지는 속도 (1 에 가까울수록 오래 남는다) */
       waveGap:      0.035, /* 이만큼 움직일 때마다 파동을 하나 남긴다 */
+
+      /* ---- 커서에 따른 성운 회전 ----
+         카메라가 원점을 바라본 채 좌우·위아래로 도는 방식이라, 값이 클수록
+         성운을 옆에서 보는 각도가 깊어진다(= 입체로 읽힌다).
+         커서가 멈추면 returnIdle 초 뒤부터 정면으로 되돌아온다. */
+      parallaxX:  1.4,
+      parallaxY:  0.9,
+      returnIdle: 2.2,   /* 이 시간(초) 이상 멈추면 정면 복귀 시작 */
+      returnEase: 0.012, /* 정면으로 돌아오는 속도 */
     };
 
     /* hero : 진짜 별처럼 보이게 하는 소수의 밝은 별. 나머지는 성운의 살이 된다.
@@ -2146,15 +2155,20 @@ let targetFlowDir = 0;  // 0=normal, 1=upward
       tt+=0.004;
       curScale+=(targetScale-curScale)*0.04;
       curRotSpd+=(targetRotSpd-curRotSpd)*0.04;
+      /* 커서가 한동안 멈춰 있으면 각도를 0 으로 되돌린다 — 전시에서 아무도
+         안 만지는 동안 성운이 비스듬히 기울어진 채 굳어 있지 않게 한다. */
+      if(performance.now() - lastPointerT > STAR.returnIdle * 1000){
+        rawMox += (0 - rawMox) * STAR.returnEase;
+        rawMoy += (0 - rawMoy) * STAR.returnEase;
+      }
       const idleX=Math.sin(tt*0.37)*0.32 + Math.sin(tt*0.61+1.3)*0.14;
       const idleY=Math.cos(tt*0.29)*0.24 + Math.sin(tt*0.45+0.6)*0.12;
       mox=rawMox+idleX;
       moy=rawMoy+idleY;
-      /* [수정] 1.4/0.9 는 커서를 조금만 움직여도 화면 전체가 따라 헤엄쳤다.
-         인터랙션의 주역을 카메라에서 커서 렌즈로 옮기고, 시차는 깊이감을 주는
-         정도만 남긴다. */
-      cam.position.x+=(mox*0.42-cam.position.x)*0.045;
-      cam.position.y+=(moy*0.28-cam.position.y)*0.045;
+      /* 커서를 따라 성운을 돌려 본다 — 이게 없으면 파티클이 2D 판처럼 보인다.
+         카메라가 원점을 바라본 채 도는 구조라 실제로 옆면이 드러난다. */
+      cam.position.x+=(mox*STAR.parallaxX-cam.position.x)*0.045;
+      cam.position.y+=(moy*STAR.parallaxY-cam.position.y)*0.045;
       camPushPulse *= camDecayRate;
       cam.position.z = 7 - camPushPulse*1.6;
       curRotKick += (rotKick - curRotKick) * rotFollowRate;

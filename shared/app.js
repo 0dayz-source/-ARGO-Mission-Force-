@@ -1585,7 +1585,8 @@ while(pi<TOTAL){
         uLensRadius:{ value: 0.78 },   /* 넓게 — 경계가 보이지 않을 만큼 */
         uLensMag:{ value: 0.5 },
         uLensGlow:{ value: 0.45 },
-        uFlow:{ value: new THREE.Vector2(0,0) },
+        uLensDepth:{ value: 0.0 },
+        uWander:{ value: 0.16 },
         uPixelRatio: { value: Math.min(devicePixelRatio, 2.0) * argoParticleScale() },
         /* 반짝임 — ARGO 토러스(shared/argo-torus.js)와 같은 방식·같은 속도대.
            uTwSpeed 느린 명멸(rad/s), uSpSpeed 짧은 섬광. 낮출수록 느긋하다. */
@@ -1608,7 +1609,8 @@ while(pi<TOTAL){
         uniform float uLensRadius;
         uniform float uLensMag;
         uniform float uLensGlow;
-        uniform vec2  uFlow;        /* 커서가 움직인 방향·속도 */
+        uniform float uLensDepth;   /* 커서 쪽 별을 카메라로 당기는 양 */
+        uniform float uWander;      /* 별마다의 궤도 반경 */
         uniform float uPixelRatio;
         uniform float uTwSpeed;
         uniform float uSpSpeed;
@@ -1620,7 +1622,18 @@ while(pi<TOTAL){
           float g = clamp((uGather - delay * 0.45) / 0.55, 0.0, 1.0);
           g = g * g * (3.0 - 2.0 * g);
           vHero = hero;
-          vec3 P = position + sweep * (1.0 - g);
+          /* ---- 별마다 제 궤도 ----
+             지금까지는 제자리에 굳어 있고 커서가 전체를 한 덩어리로 밀었다 —
+             그래서 '레이어 하나가 통째로 미끄러지는' 인상이 됐다.
+             별마다 반경·속도·위상이 다 다른 작은 타원을 그리게 해서
+             하나하나가 개별로 살아 움직이게 한다. */
+          float ph = fract(sin(dot(position.xyz, vec3(12.9898, 78.233, 37.719))) * 43758.5453);
+          float h1 = fract(ph * 71.13 + 0.37);
+          float h2 = fract(ph * 29.71 + 0.81);
+          float an = uTime * (0.09 + h1 * 0.20) + ph * 62.83;
+          vec3  orb = vec3(cos(an), sin(an * 0.87 + h1 * 3.0) * 0.8, sin(an * 0.63) * 0.6)
+                    * (uWander * (0.35 + h2));
+          vec3 P = position + orb + sweep * (1.0 - g);
           vec4 mv = modelViewMatrix * vec4(P, 1.0);
           /* 커서와의 거리는 화면 좌표에서 잰다 — 깊이가 달라도 '커서 근처' 판정이 같다. */
           vec4 clip0 = projectionMatrix * mv;
@@ -1632,7 +1645,10 @@ while(pi<TOTAL){
              커서와 한 덩어리로 움직인다. */
           float q = length(toP) / max(uLensRadius, 0.001);
           float lens = exp(-q * q * 2.2);
-          mv.xy += uFlow * lens;
+          /* [수정] 옆으로 끌면 근처 별이 전부 같은 방향으로 움직여 레이어가
+             미끄러지는 것처럼 보인다. 대신 커서 쪽 별만 카메라로 조금 다가오게
+             한다 — 돋보기처럼 자연스럽게 커지고 밝아지되 자리는 흐트러지지 않는다. */
+          mv.z += lens * uLensDepth;
           gl_Position = projectionMatrix * mv;
           float dist = -mv.z;
           float safeDist = max(dist, 3.0);
@@ -1641,9 +1657,7 @@ while(pi<TOTAL){
           float nearFade = smoothstep(0.8, 3.0, dist);
           vAlpha = clamp(1.0 - dist * 0.04, 0.0, 1.0) * nearFade;
 
-          /* 입자마다 고정된 위상 — 별도 attribute 를 새로 굽지 않고
-             제자리 좌표에서 해시로 뽑는다(위치는 변하지만 프레임 간 거의 같다). */
-          float ph = fract(sin(dot(position.xyz, vec3(12.9898, 78.233, 37.719))) * 43758.5453);
+          /* ph 는 위에서 궤도용으로 이미 뽑았다 — 여기서 다시 선언하지 않는다. */
           /* 느린 명멸 — 속도도 입자마다 0.6~1.4배로 흩어 한 박자로 숨쉬지 않게.
              바닥을 0.15 남기는 이유: 성운은 이 페이지의 본체라 절반이 완전히
              사라지면 코어가 뚫린다. 깜빡임은 보이되 덩어리는 유지한다. */
@@ -1772,7 +1786,7 @@ const BGPC=7200;
     const bgMat=new THREE.ShaderMaterial({
       uniforms:{ uTime:{value:0}, uGather:{value:1.0},
         uPointer:{value:new THREE.Vector2(0,0)}, uAspect:{value:1.0},
-        uLensRadius:{value:0.78}, uLensMag:{value:0.4}, uLensGlow:{value:0.4}, uFlow:{value:new THREE.Vector2(0,0)},
+        uLensRadius:{value:0.78}, uLensMag:{value:0.4}, uLensGlow:{value:0.4}, uLensDepth:{value:0.0}, uWander:{value:0.38},
         uPixelRatio:{value:Math.min(devicePixelRatio,2.5) * argoParticleScale()},
         /* 별 반짝임 — 낮출수록 느긋하다. 별마다 속도가 또 흩어지므로
            실제 주기는 이 값 기준 0.45~1.7배 사이로 퍼진다. */
@@ -1795,7 +1809,8 @@ const BGPC=7200;
         uniform float uLensRadius;
         uniform float uLensMag;
         uniform float uLensGlow;
-        uniform vec2  uFlow;        /* 커서가 움직인 방향·속도 */
+        uniform float uLensDepth;   /* 커서 쪽 별을 카메라로 당기는 양 */
+        uniform float uWander;      /* 별마다의 궤도 반경 */
         uniform float uPixelRatio;
         /* [버그] 아래에서 쓰는 uTwSpeed/uSpSpeed 선언이 빠져 있어 이 셰이더가
            컴파일에 실패했다 — 배경 별 7200개가 통째로 안 그려지고 있었다. */
@@ -1818,7 +1833,7 @@ const BGPC=7200;
           vec2 toP = (ndc - uPointer) * vec2(uAspect, 1.0);
           float q = length(toP) / max(uLensRadius, 0.001);
           float lens = exp(-q * q * 2.2);
-          mv.xy += uFlow * lens;
+          mv.z += lens * uLensDepth;
           gl_Position = projectionMatrix * mv;
           gl_PointSize = uPixelRatio * 3.96 * (1.0 + hero * 3.2) * (1.0 + lens * uLensMag);
           vGather *= 1.0 + lens * uLensGlow;   /* 1.2배 → 1.1배 더 (3.6) */
@@ -2007,7 +2022,6 @@ let targetFlowDir = 0;  // 0=normal, 1=upward
     /* 커서 렌즈 상태 — 실제 커서(rawMox)를 늦게 따라가는 좌표와, 커서가
        멈춰 있을 때 렌즈를 끄기 위한 세기·마지막 이동 시각. */
     let lensX=0, lensY=0, lensAmt=0, lastPointerT=-1e9;
-    let flowX=0, flowY=0, prevPX=0, prevPY=0;   /* 커서 속도(흐름) */
     let lastMoveTime = performance.now();
     document.addEventListener('mousemove',function(e){
       rawMox=(e.clientX/innerWidth-0.5)*2;
@@ -2152,21 +2166,15 @@ let targetFlowDir = 0;  // 0=normal, 1=upward
         /* 렌즈 중심은 커서를 바짝 따라간다 — 너무 늦으면 커서와 따로 논다. */
         lensX += (rawMox - lensX) * 0.16;
         lensY += (rawMoy - lensY) * 0.16;
-        /* 커서 속도. 별이 커서가 가는 쪽으로 함께 흘러간다 — 이게 '물 흐르듯'의
-           정체다. 커서가 멈추면 속도가 0 이 되어 별도 제자리로 돌아간다. */
-        flowX += ((rawMox - prevPX) * 6.5 - flowX) * 0.12;
-        flowY += ((rawMoy - prevPY) * 6.5 - flowY) * 0.12;
-        prevPX = rawMox; prevPY = rawMoy;
         var want = (now - lastPointerT < 2500) ? 1 : 0;
         lensAmt += (want - lensAmt) * (want ? 0.06 : 0.02);
         var asp = innerWidth / Math.max(1, innerHeight);
         [mat, bgMat].forEach(function(m, i){
           m.uniforms.uPointer.value.set(lensX, lensY);
           m.uniforms.uAspect.value = asp;
-          m.uniforms.uLensMag.value  = (i ? 0.40 : 0.50) * lensAmt;
-          m.uniforms.uLensGlow.value = (i ? 0.40 : 0.45) * lensAmt;
-          m.uniforms.uFlow.value.set(flowX * (i ? 0.55 : 0.85) * lensAmt,
-                                     flowY * (i ? 0.55 : 0.85) * lensAmt);
+          m.uniforms.uLensMag.value   = (i ? 0.35 : 0.45) * lensAmt;
+          m.uniforms.uLensGlow.value  = (i ? 0.40 : 0.45) * lensAmt;
+          m.uniforms.uLensDepth.value = (i ? 0.35 : 0.55) * lensAmt;
         });
       })();
       /* 메인 씬(#s0)에 있을 때만 별이 제자리에 모인다. 다른 씬으로 넘어가면
@@ -2331,6 +2339,11 @@ if(document.getElementById('trail-cv')){
           cg:   bright>0.70?0.88:0.60,
           cb:   bright>0.70?0.68:0.32,
           x:r0*Math.cos(ang0), y:r0*Math.sin(ang0)*0.42,
+          /* hero : 성운·토러스와 같은 규칙. 이 은하 레이어에도 흰 코어와
+             십자 섬광을 단 별을 2% 섞어 '진짜 별' 이 박힌 것처럼 만든다. */
+          hero: Math.random()<0.02 ? 0.6+Math.random()*0.4 : 0,
+          twPh: Math.random()*Math.PI*2,
+          twSp: 0.6+Math.random()*0.9,
         };
         mwPts.push(pt);
         mwPrv.push({x:pt.x,y:pt.y});
@@ -2357,8 +2370,23 @@ if(document.getElementById('trail-cv')){
             mwCtx.strokeStyle='rgba(255,'+g255+','+b255+','+p.alpha*0.45+')';
             mwCtx.lineWidth=p.size*0.45;mwCtx.stroke();
           }
+          /* 별마다 다른 속도·위상으로 밝기가 오간다 — 레이어가 통째로
+             숨쉬지 않고 하나하나가 따로 반짝인다. */
+          const tw = 0.55 + 0.45*Math.sin(performance.now()*0.00042*p.twSp + p.twPh);
           mwCtx.beginPath();mwCtx.arc(sx,sy,p.size,0,Math.PI*2);
-          mwCtx.fillStyle='rgba(255,'+g255+','+b255+','+p.alpha+')';mwCtx.fill();
+          mwCtx.fillStyle='rgba(255,'+g255+','+b255+','+(p.alpha*tw)+')';mwCtx.fill();
+          if(p.hero){
+            const hr=p.size*1.6*p.hero, a=p.hero*tw;
+            mwCtx.fillStyle='rgba(255,255,255,'+(a*0.9)+')';
+            mwCtx.beginPath();mwCtx.arc(sx,sy,Math.max(0.7,p.size*0.75),0,Math.PI*2);mwCtx.fill();
+            const L=hr*5.5;
+            mwCtx.strokeStyle='rgba(255,250,252,'+(a*0.34)+')';
+            mwCtx.lineWidth=Math.max(0.5,hr*0.28);
+            mwCtx.beginPath();
+            mwCtx.moveTo(sx-L,sy);mwCtx.lineTo(sx+L,sy);
+            mwCtx.moveTo(sx,sy-L);mwCtx.lineTo(sx,sy+L);
+            mwCtx.stroke();
+          }
           if(p.size>2.0){
             const grd=mwCtx.createRadialGradient(sx,sy,0,sx,sy,p.size*1.8);
             grd.addColorStop(0,'rgba(255,'+g255+','+b255+',0.10)');

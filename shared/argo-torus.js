@@ -198,7 +198,8 @@
     var aScatter = new Float32Array(COUNT * 3);   /* 진입 시작점 */
     var aColor   = new Float32Array(COUNT * 3);
     var aSeed    = new Float32Array(COUNT);       /* 링 각도 u — 노드 연동에 쓴다 */
-    var aRand    = new Float32Array(COUNT);       /* 개체 편차 */
+    var aRand    = new Float32Array(COUNT);
+    var aHero = new Float32Array(COUNT);       /* 개체 편차 */
 
     /* [수정] 부유 입자가 넓게 퍼져 실루엣을 흐렸다. 껍질 비중을 올린다. */
     var iShell = Math.floor(COUNT * 0.74);
@@ -270,6 +271,10 @@
          깔리고 상위 몇 %만 2 를 넘어 별처럼 튄다. */
       lit *= 0.18 + Math.pow(Math.random(), 3.2) * 2.3;
       aColor[i * 3] = c[0] * lit; aColor[i * 3 + 1] = c[1] * lit; aColor[i * 3 + 2] = c[2] * lit;
+      /* hero : 메인 성운과 같은 규칙. 소수만 흰 코어와 회절 섬광을 달아
+         '빛나는 별' 로 읽히게 한다. 링 표면 쪽에 더 많이 둔다 — 부유 입자까지
+         반짝이면 링의 윤곽이 뭉개진다. */
+      if (Math.random() < (kind === 2 ? 0.004 : 0.016)) aHero[i] = 0.55 + Math.random() * 0.45;
     }
 
     var geo = new THREE.BufferGeometry();
@@ -278,6 +283,7 @@
     geo.setAttribute('aColor',   new THREE.BufferAttribute(aColor, 3));
     geo.setAttribute('aSeed',    new THREE.BufferAttribute(aSeed, 1));
     geo.setAttribute('aRand',    new THREE.BufferAttribute(aRand, 1));
+    geo.setAttribute('aHero',    new THREE.BufferAttribute(aHero, 1));
     /* 시작점이 아주 멀리 흩어져 있어 자동 바운딩스피어가 과하게 커진다.
        링 크기로 직접 잡아 프러스텀 컬링이 제대로 먹게 한다. */
     geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 0, 0), 4.2);
@@ -324,6 +330,8 @@
         uSpSpeed:{ value: 1.15 }
       },
       vertexShader: [
+        'attribute float aHero;',
+        'varying float vHero;',
         'attribute vec3 aScatter;',
         'attribute vec3 aColor;',
         'attribute float aSeed;',
@@ -445,6 +453,8 @@
         /* [수정] 레퍼런스는 점이 아주 작다 — 조밀해도 뭉개지지 않고 모래처럼 읽히고,
            본문 글자 위에 깔려도 가독성을 덜 해친다. 10.5→6.6, 상한 8.5→5.0 */
         '  gl_PointSize = clamp(uPR * (8.0 / dist) * (0.75 + dof * 1.2), uPR * 1.2, uPR * 6.0);',
+        '  gl_PointSize *= 1.0 + aHero * 5.0;',   // 섬광이 읽히려면 점이 충분히 커야 한다
+        '  vHero = aHero;',
         '  vPS = gl_PointSize;',
         /* 초점이 나갈수록, 그리고 개체 편차가 큰 것일수록 고리에 가깝다.
            전부 고리가 되면 지저분하므로 일부만 걸리게 aRand 를 곱한다. */
@@ -472,6 +482,7 @@
         '}'
       ].join('\n'),
       fragmentShader: [
+        'varying float vHero;',
         'varying vec3 vColor;',
         'varying float vAlpha;',
         'varying float vRing;',
@@ -479,7 +490,7 @@
         'void main(){',
         '  vec2 uv = gl_PointCoord - 0.5;',
         '  float d = length(uv) * 2.0;',
-        '  if(d > 1.0) discard;',
+        '  if(d > 1.0 && vHero <= 0.0) discard;',   // hero 는 섬광이 모서리까지 간다
         /* [보케] 레퍼런스의 입자는 솜털 같은 헤일로가 아니라 '납작한 원판' 이다 —
            가장자리만 안티에일리어싱하고 안쪽은 균일하게 채운다.
            [버그] 문턱을 0.86 처럼 고정하면 점이 작을 때 그 폭이 1픽셀도 안 돼
@@ -493,6 +504,18 @@
         '  float hollow = mix(1.0, smoothstep(0.16, 0.76, d), vRing);',
         '  float a = disc * hollow * vAlpha;',
         '  vec3 col = vColor * (1.0 + rim * (0.5 + 1.9 * vRing));',
+        /* hero : 납작한 원판 대신 타오르는 코어 + 가로·세로 회절 섬광.
+           토러스의 '모양' 은 입자 배치가 만드는 것이라 여기서 손대지 않는다 —
+           원형 링은 그대로고 그 위에 빛나는 별만 몇 개 얹힌다. */
+        '  if(vHero > 0.0){',
+        '    vec2 ha = abs(uv);',
+        '    float hc = exp(-d * d * 9.0);',
+        '    float spike = exp(-ha.y * 52.0) * exp(-ha.x * 4.0)',
+        '                + exp(-ha.x * 52.0) * exp(-ha.y * 4.0);',
+        '    col = mix(vColor, vec3(1.0), hc * 0.85) * (0.9 + hc * 1.3)',
+        '        + vec3(1.0, 0.95, 0.98) * spike * 0.5;',
+        '    a = min(1.0, (hc * 0.95 + spike * 0.5) * vAlpha * vHero);',
+        '  }',
         '  gl_FragColor = vec4(col, a);',
         '}'
       ].join('\n'),

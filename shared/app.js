@@ -1582,10 +1582,10 @@ while(pi<TOTAL){
            화면 전체가 따라 움직이는 대신 손이 닿은 자리만 반응한다. */
         uPointer:{ value: new THREE.Vector2(0,0) },
         uAspect:{ value: 1.0 },
-        uLensRadius:{ value: 0.34 },
-        uLensMag:{ value: 1.7 },
-        uLensGlow:{ value: 0.95 },
-        uLensPush:{ value: 0.22 },
+        uLensRadius:{ value: 0.78 },   /* 넓게 — 경계가 보이지 않을 만큼 */
+        uLensMag:{ value: 0.5 },
+        uLensGlow:{ value: 0.45 },
+        uFlow:{ value: new THREE.Vector2(0,0) },
         uPixelRatio: { value: Math.min(devicePixelRatio, 2.0) * argoParticleScale() },
         /* 반짝임 — ARGO 토러스(shared/argo-torus.js)와 같은 방식·같은 속도대.
            uTwSpeed 느린 명멸(rad/s), uSpSpeed 짧은 섬광. 낮출수록 느긋하다. */
@@ -1608,7 +1608,7 @@ while(pi<TOTAL){
         uniform float uLensRadius;
         uniform float uLensMag;
         uniform float uLensGlow;
-        uniform float uLensPush;
+        uniform vec2  uFlow;        /* 커서가 움직인 방향·속도 */
         uniform float uPixelRatio;
         uniform float uTwSpeed;
         uniform float uSpSpeed;
@@ -1626,10 +1626,13 @@ while(pi<TOTAL){
           vec4 clip0 = projectionMatrix * mv;
           vec2 ndc = clip0.xy / max(abs(clip0.w), 0.0001);
           vec2 toP = (ndc - uPointer) * vec2(uAspect, 1.0);
-          float lens = 1.0 - smoothstep(0.0, uLensRadius, length(toP));
-          lens *= lens;
-          /* 볼록 렌즈처럼 커서 바깥으로 살짝 부푼다 */
-          mv.xy += normalize(toP + vec2(0.0001)) * lens * uLensPush;
+          /* [수정] 제곱한 smoothstep 은 경계가 뚜렷해서 '원' 이 보였고, 바깥으로
+             밀어내는 항 때문에 중력장처럼 부풀었다. 가우시안으로 바꿔 경계를 없애고,
+             미는 대신 커서가 가는 쪽으로 함께 흐르게 한다 — 물살에 끌려가듯
+             커서와 한 덩어리로 움직인다. */
+          float q = length(toP) / max(uLensRadius, 0.001);
+          float lens = exp(-q * q * 2.2);
+          mv.xy += uFlow * lens;
           gl_Position = projectionMatrix * mv;
           float dist = -mv.z;
           float safeDist = max(dist, 3.0);
@@ -1769,7 +1772,7 @@ const BGPC=7200;
     const bgMat=new THREE.ShaderMaterial({
       uniforms:{ uTime:{value:0}, uGather:{value:1.0},
         uPointer:{value:new THREE.Vector2(0,0)}, uAspect:{value:1.0},
-        uLensRadius:{value:0.34}, uLensMag:{value:1.3}, uLensGlow:{value:0.8}, uLensPush:{value:0.14},
+        uLensRadius:{value:0.78}, uLensMag:{value:0.4}, uLensGlow:{value:0.4}, uFlow:{value:new THREE.Vector2(0,0)},
         uPixelRatio:{value:Math.min(devicePixelRatio,2.5) * argoParticleScale()},
         /* 별 반짝임 — 낮출수록 느긋하다. 별마다 속도가 또 흩어지므로
            실제 주기는 이 값 기준 0.45~1.7배 사이로 퍼진다. */
@@ -1792,7 +1795,7 @@ const BGPC=7200;
         uniform float uLensRadius;
         uniform float uLensMag;
         uniform float uLensGlow;
-        uniform float uLensPush;
+        uniform vec2  uFlow;        /* 커서가 움직인 방향·속도 */
         uniform float uPixelRatio;
         /* [버그] 아래에서 쓰는 uTwSpeed/uSpSpeed 선언이 빠져 있어 이 셰이더가
            컴파일에 실패했다 — 배경 별 7200개가 통째로 안 그려지고 있었다. */
@@ -1813,9 +1816,9 @@ const BGPC=7200;
           vec4 clip0 = projectionMatrix * mv;
           vec2 ndc = clip0.xy / max(abs(clip0.w), 0.0001);
           vec2 toP = (ndc - uPointer) * vec2(uAspect, 1.0);
-          float lens = 1.0 - smoothstep(0.0, uLensRadius, length(toP));
-          lens *= lens;
-          mv.xy += normalize(toP + vec2(0.0001)) * lens * uLensPush;
+          float q = length(toP) / max(uLensRadius, 0.001);
+          float lens = exp(-q * q * 2.2);
+          mv.xy += uFlow * lens;
           gl_Position = projectionMatrix * mv;
           gl_PointSize = uPixelRatio * 3.96 * (1.0 + hero * 3.2) * (1.0 + lens * uLensMag);
           vGather *= 1.0 + lens * uLensGlow;   /* 1.2배 → 1.1배 더 (3.6) */
@@ -2004,6 +2007,7 @@ let targetFlowDir = 0;  // 0=normal, 1=upward
     /* 커서 렌즈 상태 — 실제 커서(rawMox)를 늦게 따라가는 좌표와, 커서가
        멈춰 있을 때 렌즈를 끄기 위한 세기·마지막 이동 시각. */
     let lensX=0, lensY=0, lensAmt=0, lastPointerT=-1e9;
+    let flowX=0, flowY=0, prevPX=0, prevPY=0;   /* 커서 속도(흐름) */
     let lastMoveTime = performance.now();
     document.addEventListener('mousemove',function(e){
       rawMox=(e.clientX/innerWidth-0.5)*2;
@@ -2145,17 +2149,24 @@ let targetFlowDir = 0;  // 0=normal, 1=upward
          아무도 안 만지는 전시 상황에서 화면 가운데가 계속 부풀어 있다. */
       (function(){
         var now = performance.now();
-        lensX += (rawMox - lensX) * 0.085;
-        lensY += (rawMoy - lensY) * 0.085;
+        /* 렌즈 중심은 커서를 바짝 따라간다 — 너무 늦으면 커서와 따로 논다. */
+        lensX += (rawMox - lensX) * 0.16;
+        lensY += (rawMoy - lensY) * 0.16;
+        /* 커서 속도. 별이 커서가 가는 쪽으로 함께 흘러간다 — 이게 '물 흐르듯'의
+           정체다. 커서가 멈추면 속도가 0 이 되어 별도 제자리로 돌아간다. */
+        flowX += ((rawMox - prevPX) * 6.5 - flowX) * 0.12;
+        flowY += ((rawMoy - prevPY) * 6.5 - flowY) * 0.12;
+        prevPX = rawMox; prevPY = rawMoy;
         var want = (now - lastPointerT < 2500) ? 1 : 0;
         lensAmt += (want - lensAmt) * (want ? 0.06 : 0.02);
         var asp = innerWidth / Math.max(1, innerHeight);
         [mat, bgMat].forEach(function(m, i){
           m.uniforms.uPointer.value.set(lensX, lensY);
           m.uniforms.uAspect.value = asp;
-          m.uniforms.uLensMag.value  = (i ? 1.3  : 1.7 ) * lensAmt;
-          m.uniforms.uLensGlow.value = (i ? 0.8  : 0.95) * lensAmt;
-          m.uniforms.uLensPush.value = (i ? 0.14 : 0.22) * lensAmt;
+          m.uniforms.uLensMag.value  = (i ? 0.40 : 0.50) * lensAmt;
+          m.uniforms.uLensGlow.value = (i ? 0.40 : 0.45) * lensAmt;
+          m.uniforms.uFlow.value.set(flowX * (i ? 0.55 : 0.85) * lensAmt,
+                                     flowY * (i ? 0.55 : 0.85) * lensAmt);
         });
       })();
       /* 메인 씬(#s0)에 있을 때만 별이 제자리에 모인다. 다른 씬으로 넘어가면

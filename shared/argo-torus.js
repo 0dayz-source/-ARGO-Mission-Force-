@@ -315,6 +315,7 @@
         /* [수정] 1.9 는 너무 좁았다. fall 을 제곱해 쓰기 때문에 체감 반경은
            uRadius 의 절반쯤이다 — 값을 키워야 '퍼진다' 로 읽힌다. */
         uRadius: { value: 3.4 },    /* 이 반경 밖 입자는 전혀 반응하지 않는다 */
+        uGlow:   { value: 1.15 },   /* 커서 근처 입자가 밝아지는 양 */
         uSpread: { value: 1.05 },   /* 커서 바로 위 입자가 밀려나는 거리 */
         /* [3D] 밀려난 입자를 '화면 앞쪽'으로도 띄운다. 반경 방향으로만 밀면
            평면 위에서 번지는 것처럼 보인다 — 표면에서 솟아올라야 입체로 읽힌다.
@@ -338,6 +339,8 @@
         'attribute float aRand;',
         'uniform float uTime, uForm, uFade, uPR, uPush, uWave, uPulseA, uPulse, uDriftPh, uDriftAmp;',
         'uniform float uRadius, uSpread, uLift, uFocus, uDofRange, uTwSpeed, uSpSpeed;',
+        'uniform float uGlow;',
+        'varying float vGlow;',
         'uniform vec3 uCamL;',
         'uniform vec3 uMouse;',
         'uniform vec2 uRipOrig[4];',
@@ -404,6 +407,10 @@
         /* 반경 밖은 정확히 0 — exp 처럼 화면 절반까지 꼬리가 남지 않는다 */
         '  float fall = 1.0 - smoothstep(0.0, uRadius, dl);',
         '  fall *= fall;',                    /* 가장자리를 더 급하게 죽여 '근처' 를 좁힌다 */
+        /* [추가] 메인 화면처럼 커서 근처 입자가 커지고 밝아진다.
+           밀어내기(uPush)는 커서가 멈추면 0 이 되지만 발광은 '근처에 있는가' 만
+           보므로 uGlow 로 따로 둔다. */
+        '  vGlow = fall * uGlow;',
         '  pos += normalize(dm + vec3(1e-4)) * fall * uPush * uSpread;',
         /* 표면에서 화면 앞쪽으로 솟는다 — 이게 없으면 아무리 밀어도
            평면 위에서 번지는 그림이 된다(사용자 지적: "2D처럼 움직인다"). */
@@ -453,7 +460,7 @@
         /* [수정] 레퍼런스는 점이 아주 작다 — 조밀해도 뭉개지지 않고 모래처럼 읽히고,
            본문 글자 위에 깔려도 가독성을 덜 해친다. 10.5→6.6, 상한 8.5→5.0 */
         '  gl_PointSize = clamp(uPR * (8.0 / dist) * (0.75 + dof * 1.2), uPR * 1.2, uPR * 6.0);',
-        '  gl_PointSize *= 1.0 + aHero * 3.4;',   // 섬광이 읽히되 과하지 않게
+        '  gl_PointSize *= (1.0 + aHero * 3.4) * (1.0 + vGlow * 0.85);',
         '  vHero = aHero;',
         '  vPS = gl_PointSize;',
         /* 초점이 나갈수록, 그리고 개체 편차가 큰 것일수록 고리에 가깝다.
@@ -478,10 +485,12 @@
         '  float sp = pow(max(0.0, sin(uTime * uSpSpeed * (0.7 + twPh * 0.9) + twPh * 31.4)), 28.0);',
         '  vColor += vColor * sp * 2.6;',
         '  vAlpha = min(1.0, vAlpha + sp * 0.85);',
+        '  vAlpha *= 1.0 + vGlow;',   // 커서 근처는 발광한다
         '  vColor *= mix(1.30, 0.72, depth);',
         '}'
       ].join('\n'),
       fragmentShader: [
+        'varying float vGlow;',
         'varying float vHero;',
         'varying vec3 vColor;',
         'varying float vAlpha;',
@@ -509,6 +518,7 @@
         '  float glow = exp(-d * d * 2.3);',
         '  a = min(1.0, a + glow * vAlpha * 0.22);',
         '  vec3 col = vColor * (1.0 + rim * (0.5 + 1.9 * vRing) + glow * 0.55);',
+        '  col = mix(col, vec3(1.0, 0.96, 0.99), clamp(vGlow * 0.45, 0.0, 0.7) * glow);',
         /* hero : 납작한 원판 대신 타오르는 코어 + 가로·세로 회절 섬광.
            토러스의 '모양' 은 입자 배치가 만드는 것이라 여기서 손대지 않는다 —
            원형 링은 그대로고 그 위에 빛나는 별만 몇 개 얹힌다. */

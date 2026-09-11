@@ -1558,18 +1558,29 @@ while(pi<TOTAL){
     const STAR = {
       heroCore:   0.005,   /* 성운 코어 쪽에서 hero(빛나는 별)가 되는 비율 */
       heroOuter:  0.0015,  /* 성운 바깥쪽 비율 */
-      heroSize:   1.5,     /* hero 별이 보통 입자의 몇 배로 커지는가 */
+      heroSize:   2.2,     /* hero 별이 보통 입자의 몇 배로 커지는가 */
       bgHero:     0.003,   /* 배경 별의 hero 비율 */
-      bgHeroSize: 2.0,
+      bgHeroSize: 2.9,
       spike:      0.30,    /* 십자 섬광 세기 — 올리면 눈에 띄고 피로해진다 */
-      blinkNeb:   0.22,    /* 성운 섬광 빈도 (낮을수록 뜸하게 터진다) */
-      blinkBg:    0.16,    /* 배경 별 섬광 빈도 */
+      blinkNeb:   0.073,   /* 성운 섬광 빈도 (낮을수록 뜸하게 터진다) */
+      blinkBg:    0.053,   /* 배경 별 섬광 빈도 */
       wander:     0.16,    /* 별마다의 궤도 반경 (성운) */
       bgWander:   0.38,    /* 별마다의 궤도 반경 (배경) */
       lensRadius: 0.78,    /* 커서 렌즈 크기 — 작을수록 원이 보인다 */
       lensDepth:  0.55,    /* 커서 쪽 별을 카메라로 당기는 양 */
       lensGlow:   0.45,
       lensMag:    0.45,
+
+      /* ---- 커서 파동(liquid) ----
+         CANDIDATE GALLERY 사진 위의 물결 효과(shared/argo-ripple.js)와 같은 구조다.
+         커서가 지나간 자리마다 원형 파동이 하나 생겨서 커지며 사라지고, 별은
+         자기 자리에 닿은 파동만큼 밀린다 — 자리마다 방향이 달라 레이어가
+         통째로 미끄러지지 않고 물살이 훑고 가는 그림이 된다. */
+      waveStrength: 0.40,  /* 파동이 별을 미는 양 */
+      waveGlow:     1.30,  /* 파동이 지나갈 때 밝아지는 양 */
+      waveGrow:     0.055, /* 파동이 커지는 속도 */
+      waveDecay:    0.955, /* 파동이 사라지는 속도 (1 에 가까울수록 오래 남는다) */
+      waveGap:      0.035, /* 이만큼 움직일 때마다 파동을 하나 남긴다 */
     };
 
     /* hero : 진짜 별처럼 보이게 하는 소수의 밝은 별. 나머지는 성운의 살이 된다.
@@ -1609,6 +1620,9 @@ while(pi<TOTAL){
         uLensDepth:{ value: 0.0 },
         uWander:{ value: STAR.wander },
         uHeroSize:{ value: STAR.heroSize },
+        uWaves:{ value: Array.from({length:8}, function(){ return new THREE.Vector4(0,0,0.1,0); }) },
+        uWaveStrength:{ value: STAR.waveStrength },
+        uWaveGlow:{ value: STAR.waveGlow },
         uSpike:{ value: STAR.spike },
         uPixelRatio: { value: Math.min(devicePixelRatio, 2.0) * argoParticleScale() },
         /* 반짝임 — ARGO 토러스(shared/argo-torus.js)와 같은 방식·같은 속도대.
@@ -1635,6 +1649,9 @@ while(pi<TOTAL){
         uniform float uLensDepth;   /* 커서 쪽 별을 카메라로 당기는 양 */
         uniform float uWander;      /* 별마다의 궤도 반경 */
         uniform float uHeroSize;    /* hero 별 확대 배수 */
+        uniform vec4  uWaves[8];    /* 커서가 남긴 파동 : xy 중심, z 반경, w 세기 */
+        uniform float uWaveStrength;
+        uniform float uWaveGlow;
         uniform float uPixelRatio;
         uniform float uTwSpeed;
         uniform float uSpSpeed;
@@ -1672,12 +1689,30 @@ while(pi<TOTAL){
           /* [수정] 옆으로 끌면 근처 별이 전부 같은 방향으로 움직여 레이어가
              미끄러지는 것처럼 보인다. 대신 커서 쪽 별만 카메라로 조금 다가오게
              한다 — 돋보기처럼 자연스럽게 커지고 밝아지되 자리는 흐트러지지 않는다. */
+          /* ---- 커서 파동 ----
+             파동마다 중심이 다르므로 별이 받는 방향·양이 자리마다 다르다.
+             ripple 의 브러시 수식(exp 감쇠 + 동심 고리)을 그대로 옮겼다. */
+          vec2  wDisp = vec2(0.0);
+          float wGlow = 0.0;
+          for(int wi = 0; wi < 8; wi++){
+            vec4 w = uWaves[wi];
+            if(w.w <= 0.002) continue;
+            vec2  dv = (ndc - w.xy) * vec2(uAspect, 1.0);
+            float rr = length(dv) / max(w.z, 0.001);
+            if(rr > 1.0) continue;
+            float brush = exp(-rr * rr * 5.0) * (0.55 + 0.45 * cos(sqrt(rr) * 12.566));
+            brush = max(brush, 0.0) * w.w;
+            float th = brush * 2.2;                       /* swirl — 소용돌이 방향 */
+            wDisp += vec2(sin(th), cos(th)) * brush;
+            wGlow += brush;
+          }
+          mv.xy += wDisp * uWaveStrength;
           mv.z += lens * uLensDepth;
           gl_Position = projectionMatrix * mv;
           float dist = -mv.z;
           float safeDist = max(dist, 3.0);
           gl_PointSize = min(uPixelRatio * (35.64 / safeDist), uPixelRatio * 12.54);  /* 1.2배 → 1.1배 더 (32.4/11.4) */
-          gl_PointSize *= (1.0 + hero * uHeroSize) * (1.0 + lens * uLensMag);
+          gl_PointSize *= (1.0 + hero * uHeroSize) * (1.0 + lens * uLensMag + wGlow * 0.9);
           float nearFade = smoothstep(0.8, 3.0, dist);
           vAlpha = clamp(1.0 - dist * 0.04, 0.0, 1.0) * nearFade;
 
@@ -1690,7 +1725,7 @@ while(pi<TOTAL){
           /* 짧은 섬광 — sin 을 26제곱으로 눌러 대부분 0, 아주 짧게만 1 에 닿는다 */
           vSpark = pow(max(0.0, sin(uTime * uSpSpeed * (0.7 + ph * 0.9) + ph * 31.4)), 26.0);
           vAlpha = min(1.0, vAlpha + vSpark * 0.45);
-          vAlpha *= 1.0 + lens * uLensGlow;   /* 커서 근처는 밝아진다 */
+          vAlpha *= 1.0 + lens * uLensGlow + wGlow * uWaveGlow;   /* 커서 근처와 파동이 지나간 자리가 밝아진다 */
           vAlpha *= g;            /* 쓸려나가면서 함께 흐려진다 */
         }
       `,
@@ -1811,7 +1846,9 @@ const BGPC=7200;
     const bgMat=new THREE.ShaderMaterial({
       uniforms:{ uTime:{value:0}, uGather:{value:1.0},
         uPointer:{value:new THREE.Vector2(0,0)}, uAspect:{value:1.0},
-        uLensRadius:{value:STAR.lensRadius}, uLensMag:{value:STAR.lensMag*0.8}, uLensGlow:{value:STAR.lensGlow*0.9}, uLensDepth:{value:0.0}, uWander:{value:STAR.bgWander}, uHeroSize:{value:STAR.bgHeroSize}, uSpike:{value:STAR.spike},
+        uLensRadius:{value:STAR.lensRadius}, uLensMag:{value:STAR.lensMag*0.8}, uLensGlow:{value:STAR.lensGlow*0.9}, uLensDepth:{value:0.0}, uWander:{value:STAR.bgWander}, uHeroSize:{value:STAR.bgHeroSize},
+        uWaves:{value:Array.from({length:8},function(){return new THREE.Vector4(0,0,0.1,0);})},
+        uWaveStrength:{value:STAR.waveStrength*0.7}, uWaveGlow:{value:STAR.waveGlow*0.8}, uSpike:{value:STAR.spike},
         uPixelRatio:{value:Math.min(devicePixelRatio,2.5) * argoParticleScale()},
         /* 별 반짝임 — 낮출수록 느긋하다. 별마다 속도가 또 흩어지므로
            실제 주기는 이 값 기준 0.45~1.7배 사이로 퍼진다. */
@@ -1837,6 +1874,9 @@ const BGPC=7200;
         uniform float uLensDepth;   /* 커서 쪽 별을 카메라로 당기는 양 */
         uniform float uWander;      /* 별마다의 궤도 반경 */
         uniform float uHeroSize;    /* hero 별 확대 배수 */
+        uniform vec4  uWaves[8];    /* 커서가 남긴 파동 : xy 중심, z 반경, w 세기 */
+        uniform float uWaveStrength;
+        uniform float uWaveGlow;
         uniform float uPixelRatio;
         /* [버그] 아래에서 쓰는 uTwSpeed/uSpSpeed 선언이 빠져 있어 이 셰이더가
            컴파일에 실패했다 — 배경 별 7200개가 통째로 안 그려지고 있었다. */
@@ -1859,10 +1899,28 @@ const BGPC=7200;
           vec2 toP = (ndc - uPointer) * vec2(uAspect, 1.0);
           float q = length(toP) / max(uLensRadius, 0.001);
           float lens = exp(-q * q * 2.2);
+          /* ---- 커서 파동 ----
+             파동마다 중심이 다르므로 별이 받는 방향·양이 자리마다 다르다.
+             ripple 의 브러시 수식(exp 감쇠 + 동심 고리)을 그대로 옮겼다. */
+          vec2  wDisp = vec2(0.0);
+          float wGlow = 0.0;
+          for(int wi = 0; wi < 8; wi++){
+            vec4 w = uWaves[wi];
+            if(w.w <= 0.002) continue;
+            vec2  dv = (ndc - w.xy) * vec2(uAspect, 1.0);
+            float rr = length(dv) / max(w.z, 0.001);
+            if(rr > 1.0) continue;
+            float brush = exp(-rr * rr * 5.0) * (0.55 + 0.45 * cos(sqrt(rr) * 12.566));
+            brush = max(brush, 0.0) * w.w;
+            float th = brush * 2.2;                       /* swirl — 소용돌이 방향 */
+            wDisp += vec2(sin(th), cos(th)) * brush;
+            wGlow += brush;
+          }
+          mv.xy += wDisp * uWaveStrength;
           mv.z += lens * uLensDepth;
           gl_Position = projectionMatrix * mv;
-          gl_PointSize = uPixelRatio * 3.96 * (1.0 + hero * uHeroSize) * (1.0 + lens * uLensMag);
-          vGather *= 1.0 + lens * uLensGlow;   /* 1.2배 → 1.1배 더 (3.6) */
+          gl_PointSize = uPixelRatio * 3.96 * (1.0 + hero * uHeroSize) * (1.0 + lens * uLensMag + wGlow * 0.9);
+          vGather *= 1.0 + lens * uLensGlow + wGlow * uWaveGlow;   /* 1.2배 → 1.1배 더 (3.6) */
           /* [반짝임] 예전 0.55+0.45*sin 은 밝기가 0.55~1.0 사이만 오가서
              '숨쉬는' 정도였지 반짝이는 걸로 안 보였다. 전 구간(0~1)을 쓴다.
 
@@ -2049,11 +2107,22 @@ let targetFlowDir = 0;  // 0=normal, 1=upward
     /* 커서 렌즈 상태 — 실제 커서(rawMox)를 늦게 따라가는 좌표와, 커서가
        멈춰 있을 때 렌즈를 끄기 위한 세기·마지막 이동 시각. */
     let lensX=0, lensY=0, lensAmt=0, lastPointerT=-1e9;
+    /* 커서가 남긴 파동 8개를 돌려 쓴다. x,y = 화면 좌표, z = 반경, w = 세기. */
+    const waveRing = Array.from({length:8}, function(){ return new THREE.Vector4(0,0,0.1,0); });
+    let waveIdx = 0, waveLastX = 0, waveLastY = 0;
     let lastMoveTime = performance.now();
     document.addEventListener('mousemove',function(e){
       rawMox=(e.clientX/innerWidth-0.5)*2;
       rawMoy=-(e.clientY/innerHeight-0.5)*2;
       lastPointerT=performance.now();
+      /* 커서가 일정 거리 이상 움직일 때마다 그 자리에 파동을 하나 남긴다.
+         ripple 원본이 pointermove 궤적을 따라 브러시를 뿌리는 것과 같다. */
+      var _dx=rawMox-waveLastX, _dy=rawMoy-waveLastY;
+      if(_dx*_dx+_dy*_dy > STAR.waveGap*STAR.waveGap){
+        waveLastX=rawMox; waveLastY=rawMoy;
+        var w=waveRing[waveIdx]; waveIdx=(waveIdx+1)%waveRing.length;
+        w.set(rawMox, rawMoy, 0.06, 1.0);
+      }
       lastMoveTime = performance.now();
     });
 
@@ -2195,6 +2264,13 @@ let targetFlowDir = 0;  // 0=normal, 1=upward
         lensY += (rawMoy - lensY) * 0.16;
         var want = (now - lastPointerT < 2500) ? 1 : 0;
         lensAmt += (want - lensAmt) * (want ? 0.06 : 0.02);
+        /* 파동은 커지면서 옅어진다 — 물결이 번져 나가듯 */
+        for(var wi=0; wi<waveRing.length; wi++){
+          var w=waveRing[wi];
+          if(w.w<=0.002){ w.w=0; continue; }
+          w.z += (0.62 - w.z) * STAR.waveGrow;
+          w.w *= STAR.waveDecay;
+        }
         var asp = innerWidth / Math.max(1, innerHeight);
         [mat, bgMat].forEach(function(m, i){
           m.uniforms.uPointer.value.set(lensX, lensY);
@@ -2202,6 +2278,8 @@ let targetFlowDir = 0;  // 0=normal, 1=upward
           m.uniforms.uLensMag.value   = STAR.lensMag  * (i ? 0.8 : 1) * lensAmt;
           m.uniforms.uLensGlow.value  = STAR.lensGlow * (i ? 0.9 : 1) * lensAmt;
           m.uniforms.uLensDepth.value = STAR.lensDepth* (i ? 0.6 : 1) * lensAmt;
+          var tgt = m.uniforms.uWaves.value;
+          for(var wj=0; wj<tgt.length; wj++) tgt[wj].copy(waveRing[wj]);
         });
       })();
       /* 메인 씬(#s0)에 있을 때만 별이 제자리에 모인다. 다른 씬으로 넘어가면

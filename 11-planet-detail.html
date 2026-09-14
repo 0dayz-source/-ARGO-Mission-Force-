@@ -1386,8 +1386,20 @@
          화면 밖이라 물리에 포함되지 않은 패널이 뒤늦게 들어와 제자리에 그대로
          남는다 — 어떤 건 떨어지고 어떤 건 안 떨어지는 그림이 된다.
          떨어지는 동안에는 트랙을 그 자리에 세워 둔다. */
-      if(!tele.classList.contains('tele-falling')){
-        track.style.transform='translateX('+(-tp*Math.max(0,dist))+'px)';
+      /* 낙하 중에는 트랙을 세워 둔다 — 그래야 시작 시점에 물리에 들어간 패널만
+         화면에 남아 전부 같이 떨어진다. 세워 둔 값과 살아 있는 값을 둘 다
+         남겨 두면, 복귀 이징(reset)이 그 사이를 메우며 되돌린다. */
+      window.__teleLiveTx = -tp*Math.max(0,dist);
+      /* [안전장치] 복귀 이징은 rAF 로 도는데, 그 사이 탭이 백그라운드로 가면
+         rAF 가 멈춰 세워 둔 값이 영원히 안 풀린다 — 트랙이 굳어 버린다.
+         낙하가 끝난 뒤 복귀 시간(1.25초)의 두 배가 지나면 강제로 놓는다. */
+      if(window.__teleFrozenTx !== undefined &&
+         !tele.classList.contains('tele-falling') &&
+         performance.now() - (window.__teleFrozenAt||0) > 2600){
+        window.__teleFrozenTx = undefined;
+      }
+      if(window.__teleFrozenTx === undefined){
+        track.style.transform='translateX('+window.__teleLiveTx+'px)';
       }
       if(railGrad&&railEl){
         var RW=railEl.clientWidth||1, win=RW*0.32;
@@ -2689,7 +2701,7 @@ void main(){ vec2 p = gl_PointCoord - 0.5; float l = length(p); if (l > 0.5) dis
   /* 화면 밖으로 내보내지 않는다 — ARGO 로고 높이에 천장을 두고 거기에 눌러 붙게 한다.
      그래서 중력은 유지하되(계속 천장을 누르는 힘) 반발을 낮춰 튕기지 않고 정착하게 했다. */
   /* [되돌림] 화성 실제값(0.38 = 3.72/9.81)은 연출상 너무 느려서 이전 값으로 복귀 */
-  var GRAVITY=0.93;         /* 0.62 → 1.5배 */
+  var GRAVITY=0.42;         /* 0.93 은 눈으로 따라가기엔 너무 빨랐다 */
   /* 패널 안의 모든 텍스트 블록 + 헤더/힌트. 레일(빔)만 바닥 기준선으로 남긴다. */
   /* 패널 안의 모든 텍스트 블록 + 헤더/힌트 + 패널 사이 세로선 */
   var SEL='.pd-tele-head > span,.pd-tele-hint,.pd-panel-idx,.pd-panel-cat,.pd-panel-label,.pd-panel-val,.pd-panel-note,.pd-panel-rule';
@@ -2702,6 +2714,7 @@ void main(){ vec2 p = gl_PointCoord - 0.5; float l = length(p); if (l > 0.5) dis
     pnl.insertBefore(ln,pnl.firstChild);
   });
 
+  var trackEl=document.querySelector('.pd-tele-track');
   var Engine=Matter.Engine, Bodies=Matter.Bodies, World=Matter.World, Body=Matter.Body;
   var engine=null, items=[], raf=null, falling=false;
 
@@ -2731,6 +2744,9 @@ void main(){ vec2 p = gl_PointCoord - 0.5; float l = length(p); if (l > 0.5) dis
 
     falling=true;
     sec.classList.add('tele-falling');
+    /* 트랙을 지금 자리에 세워 둔다. onScroll 은 이 값이 있는 동안 트랙을 건드리지 않는다. */
+    window.__teleFrozenTx = window.__teleLiveTx || 0;
+    window.__teleFrozenAt = performance.now();
 
     engine=Engine.create();
     engine.enableSleeping=true;               /* 정착한 바디는 재우고 CPU 를 놓는다 */
@@ -2760,15 +2776,16 @@ void main(){ vec2 p = gl_PointCoord - 0.5; float l = length(p); if (l > 0.5) dis
       it.body=Bodies.rectangle(it.x0,it.y0,it.w,it.h,
         /* 천장에 부딪혀 튀지 않고 눌러 붙도록 반발을 낮추고 마찰을 올렸다 */
         {restitution:0.06, frictionAir:0.02, friction:0.5, sleepThreshold:40});
-      /* 살짝 흔들리며 뜨기 시작하는 정도의 초기 속도 + 요소마다 조금씩 다른 타이밍 */
-      /* 초기 속도를 크게 주면 발동 순간 '팍' 튀어 부드럽지 않다.
-         거의 정지 상태에서 중력이 서서히 끌어올리게 낮췄다. */
-      Body.setVelocity(it.body,{x:(Math.random()-0.5)*0.35, y:-(0.05+Math.random()*0.22)});
+      /* [수정] 위로 띄우는 초기 속도(y 가 음수)를 주면 올라갔다 내려오는 사이
+         한 박자 멈춘 것처럼 보였다 — 사용자가 말한 '멈칫'. 위아래 어느 쪽으로도
+         치우치지 않는 아주 작은 흔들림만 남기고 중력이 바로 끌어내리게 한다. */
+      Body.setVelocity(it.body,{x:(Math.random()-0.5)*0.28, y:(Math.random()-0.5)*0.06});
       Body.setAngularVelocity(it.body,(Math.random()-0.5)*0.016);
       it.el.classList.add('tele-fall-item');
       list.push(it.body);
     });
     World.add(engine.world,list);
+    lastStep=0;
     if(!raf) raf=requestAnimationFrame(step);
   }
   /* 검증/디버그용: rAF 가 멈춘 환경에서 물리 상태를 확인할 수 있게 */
@@ -2791,10 +2808,16 @@ void main(){ vec2 p = gl_PointCoord - 0.5; float l = length(p); if (l > 0.5) dis
     }
     return gone;
   }
-  function step(){
+  var lastStep=0;
+  function step(now){
     raf=null;
     if(!falling||!engine)return;
-    Engine.update(engine,1000/60);
+    /* [수정] 프레임마다 1000/60 을 고정으로 넣으면 프레임이 밀릴 때 물리가
+       같이 밀려 뚝뚝 끊겨 보인다. 실제 경과 시간을 쓰되 한 프레임이 크게
+       밀렸을 때 폭주하지 않게 33ms 로 자른다. */
+    var dt = lastStep ? Math.min(now - lastStep, 33) : 16.7;
+    lastStep = now;
+    Engine.update(engine, dt);
     /* 전부 천장에 정착(sleep)했으면 루프를 놓는다 — 상태는 그대로 유지된다 */
     if(paint()<items.length) raf=requestAnimationFrame(step);
   }
@@ -2829,9 +2852,16 @@ void main(){ vec2 p = gl_PointCoord - 0.5; float l = length(p); if (l > 0.5) dis
         o.el.style.transform='translate('+(o.x*f/cz0).toFixed(2)+'px,'+(o.y*f/cz0).toFixed(2)+
           'px) rotate('+(o.a*f).toFixed(4)+'rad)';
       }
+      /* 세워 뒀던 트랙도 같은 곡선으로 제자리에 되돌린다 — 여기서 안 하면
+         스크롤이 멈춘 순간 트랙이 그 자리에 굳거나 한 번에 튄다. */
+      if(trackEl && window.__teleFrozenTx !== undefined){
+        var liveTx = window.__teleLiveTx || 0;
+        trackEl.style.transform='translateX('+(liveTx+(window.__teleFrozenTx-liveTx)*f)+'px)';
+      }
       if(k<1){ backRaf=requestAnimationFrame(frame); }
       else{
         backRaf=0;
+        window.__teleFrozenTx=undefined;   /* 이제 onScroll 이 다시 트랙을 맡는다 */
         for(var m=0;m<back.length;m++){
           var e=back[m];
           e.el.classList.remove('tele-fall-item');

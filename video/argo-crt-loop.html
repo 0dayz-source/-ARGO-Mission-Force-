@@ -1,0 +1,469 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<title>ARGO — CRT BROADCAST LOOP</title>
+<style>
+  /* 800×1280 고정. 세로형 모니터(256×140cm, 디붐 타임즈게이트)에 그대로 걸린다.
+     화면 밖 여백은 검정 — 전시장에서 테두리가 보이지 않게. */
+  html,body{margin:0;height:100%;background:#000;overflow:hidden}
+  body{display:grid;place-items:center}
+  #stage{position:relative;width:800px;height:1280px;background:#000}
+  #stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  /* 브라우저 창이 작으면 비율을 지킨 채 줄여 본다(전시에서는 800×1280 그대로) */
+  @media (max-height:1300px){ #stage{transform:scale(var(--fit,1));transform-origin:center} }
+  #rec{position:fixed;left:12px;bottom:12px;z-index:9;font:11px ui-monospace,monospace;
+       color:#FF2D82;background:#0a0306;border:1px solid #FF2D82;padding:6px 10px;cursor:pointer;opacity:.25}
+  #rec:hover{opacity:1}
+</style></head><body>
+<div id="stage"><canvas id="out"></canvas></div>
+<button id="rec">● REC 60s</button>
+<script>
+/* ============================================================================
+   ARGO — CONCEPTUAL BROADCAST LOOP
+   800×1280 · 60초 · 끊김 없는 루프 · CRT 포스트 프로세스
+
+   구조
+     1) 오프스크린 2D 캔버스에 '화면 내용'을 그린다 (장면 페인터)
+     2) WebGL 한 패스가 그 텍스처를 곡률·주사선·삼색 마스크·할레이션으로 굽는다
+   CRT 셰이더는 designcode threeui CrtBackground(terminal)의 프래그먼트를
+   세로 화면과 ARGO 색에 맞춰 옮긴 것이다.
+
+   장면 (초)
+     00-11  BOOT        ARGO 메인프레임 부팅 로그 — 컴퓨터 안으로 들어간다
+     11-23  BLUEPRINT   검정 배경 · 흰색만. 지구→화성 전이 궤도 청사진
+     23-35  SYSTEMS     6축 심리 적성 매트릭스
+     35-47  INTAKE      후보자 기록 · 게놈 스캔
+     47-60  DEPARTURE   출발. 마지막에 CRT 전원이 꺼지듯 수평선으로 접히고,
+                        0초에서 다시 켜지며 이어진다(루프 이음매가 검정 두 프레임)
+   ========================================================================== */
+const W = 800, H = 1280, DUR = 60;
+
+/* ---- ARGO 팔레트 (shared/styles.css v5 Neon Spectrum) ---- */
+const C = {
+  hot:'#FF2D82', rose:'#FF3D68', peach:'#FF9A7A', magenta:'#FF27C3',
+  ice:'#D4FAFF', dust:'#9A8E96', deep:'#5C0E4A', blue:'#5B8DEF',
+  paper:'#FFFFFF', void:'#07040A'
+};
+const MONO = 'ui-monospace, "SF Mono", Menlo, Consolas, monospace';
+
+/* ============================ CRT 셰이더 ============================ */
+const VS = 'attribute vec2 aPos;void main(){gl_Position=vec4(aPos,0.,1.);}';
+const FS = `precision highp float;
+uniform sampler2D uTex; uniform vec2 uRes; uniform float uTime;
+uniform float uScan,uScanDepth,uTriad,uGrille,uChroma,uBar,uFlicker,uGrain,uVignette,uGain,uHalo,uOff;
+uniform vec2 uCurve; uniform vec3 uSheen,uRoom;
+float hash(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
+vec2 curve(vec2 uv){uv=uv*2.-1.;vec2 o=uv.yx*uv.yx;uv+=uv*o*uCurve;return uv*.5+.5;}
+void main(){
+  vec2 fuv = gl_FragCoord.xy/uRes;
+  /* 전원이 꺼질 때 세로로 접힌다 — uOff 0=정상, 1=완전히 닫힘 */
+  if(uOff>0.001){ float k=1.0-uOff; fuv.y=(fuv.y-0.5)/max(k*k,0.0012)+0.5; }
+  vec2 uv = curve(fuv); float t=uTime;
+  vec2 inb=step(vec2(0.),uv)*step(uv,vec2(1.)); float inside=inb.x*inb.y;
+  vec2 ed=min(uv,1.-uv); inside*=smoothstep(0.,0.016,min(ed.x,ed.y));
+  vec2 dir=uv-.5; float d2=dot(dir,dir);
+  vec2 ao=dir*(.0010+.0075*d2)*uChroma;
+  vec3 col;
+  col.r=texture2D(uTex,uv+ao).r; col.g=texture2D(uTex,uv).g; col.b=texture2D(uTex,uv-ao).b;
+  /* 형광체 할레이션 — 밝은 글자가 유리 안으로 번진다 */
+  float s=.0034;
+  vec3 wide=texture2D(uTex,uv+vec2(s,0.)).rgb+texture2D(uTex,uv+vec2(-s,0.)).rgb
+           +texture2D(uTex,uv+vec2(0.,s)).rgb+texture2D(uTex,uv+vec2(0.,-s)).rgb
+           +texture2D(uTex,uv+vec2(s,s)*.72).rgb+texture2D(uTex,uv+vec2(-s,-s)*.72).rgb;
+  col += wide*(uHalo/6.);
+  float sl=sin(uv.y*3.14159265*uScan+t*4.);
+  col*=mix(1.-uScanDepth,1.,sl*sl);
+  float gx=gl_FragCoord.x*(6.2831853/max(uTriad,1.));
+  vec3 grille=(1.-uGrille)+uGrille*cos(gx+vec3(0.,2.094,4.188));
+  col*=mix(vec3(1.),grille,step(.001,uGrille));
+  col*=uGain;
+  float bar=fract(uv.y*.5-t*.07); bar=smoothstep(0.,.05,bar)*smoothstep(.18,.05,bar);
+  col+=bar*uBar;
+  float sheen=smoothstep(.62,0.,distance(uv,vec2(.5,.12)));
+  col+=sheen*.030*uSheen;
+  float vig=smoothstep(.99,.28,length((uv-.5)*vec2(1.02,1.0)));
+  col*=mix(1.-uVignette,1.,vig);
+  col*=1.-uFlicker*sin(t*8.);
+  col+=(hash(fuv+fract(t*.37))-.5)*uGrain;
+  float spill=smoothstep(.85,.18,length(fuv-.5))*.05;
+  col=mix(uRoom+uSheen*spill*.42,col,inside);
+  col=max(col,uRoom*.34);
+  gl_FragColor=vec4(col,1.);
+}`;
+
+/* ============================ 셋업 ============================ */
+const out = document.getElementById('out');
+out.width = W; out.height = H;
+const gl = out.getContext('webgl',{antialias:false,alpha:false,preserveDrawingBuffer:true});
+const scr = document.createElement('canvas'); scr.width=W; scr.height=H;
+const g = scr.getContext('2d');
+
+function sh(type,src){const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);
+  if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));return s;}
+const prog = gl.createProgram();
+gl.attachShader(prog,sh(gl.VERTEX_SHADER,VS)); gl.attachShader(prog,sh(gl.FRAGMENT_SHADER,FS));
+gl.linkProgram(prog); gl.useProgram(prog);
+const buf=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,buf);
+gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
+const loc=gl.getAttribLocation(prog,'aPos'); gl.enableVertexAttribArray(loc);
+gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
+const U = n => gl.getUniformLocation(prog,n);
+const tex=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,tex);
+gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+gl.uniform1i(U('uTex'),0);
+gl.viewport(0,0,W,H); gl.uniform2f(U('uRes'),W,H);
+/* 세로 화면이라 곡률은 가로보다 세로를 조금 더 준다 */
+gl.uniform2f(U('uCurve'),0.075,0.125);
+gl.uniform1f(U('uScan'),700); gl.uniform1f(U('uScanDepth'),0.26);
+gl.uniform1f(U('uTriad'),3.1); gl.uniform1f(U('uGrille'),0.26);
+gl.uniform1f(U('uChroma'),1.0); gl.uniform1f(U('uBar'),0.038);
+gl.uniform1f(U('uFlicker'),0.020); gl.uniform1f(U('uGrain'),0.020);
+gl.uniform1f(U('uVignette'),0.56); gl.uniform1f(U('uGain'),1.30);
+gl.uniform1f(U('uHalo'),0.13);
+gl.uniform3f(U('uSheen'),1.0,0.62,0.78);
+gl.uniform3f(U('uRoom'),0.030,0.010,0.020);
+
+/* ============================ 그리기 도우미 ============================ */
+const f = (w,sz)=> g.font = `${w} ${sz}px ${MONO}`;
+function glowText(txt,x,y,size,color,weight=600,blur=null){
+  f(weight,size);
+  g.shadowColor=color; g.shadowBlur = blur==null ? size*0.45 : blur;
+  g.fillStyle=color; g.fillText(txt,x,y);
+  g.shadowBlur=0; g.fillText(txt,x,y);   /* 두 번째 패스로 심지를 또렷하게 */
+}
+function line(x1,y1,x2,y2,color,w=1,glow=0){
+  g.strokeStyle=color; g.lineWidth=w;
+  if(glow){g.shadowColor=color;g.shadowBlur=glow;}
+  g.beginPath();g.moveTo(x1,y1);g.lineTo(x2,y2);g.stroke();g.shadowBlur=0;
+}
+const ease = t => t<0 ? 0 : t>1 ? 1 : t*t*(3-2*t);
+const dots = n => '·'.repeat(n);
+/* 구간 진행도 — 장면 안에서 0→1 */
+const seg = (t,a,b) => Math.max(0, Math.min(1,(t-a)/(b-a)));
+
+/* ============================ 1. BOOT ============================ */
+const BOOT = [
+  [['ARGO MAINFRAME','h'],['   v4.2068','d']],
+  [['(c) 2068  TERRAFORMING SELECTION COMMITTEE','d']],
+  [['TFSC-04 / SELECTION DIVISION   SOL 0687','d']],
+  [],
+  [['Linking deep space relay '],[dots(9)+' ','d'],['OK','a']],
+  [['Neural intake  0x000-0x0FF '],[dots(4)+' ','d'],['ONLINE ','p'],['OK','a']],
+  [['Pinging candidate signatures '],[dots(2)+' ','d'],['847,392 found','p']],
+  [],
+  [['nav0  OPERATOR UPLINK SECURE ','d'],[dots(3)+' ','d'],['READY','a']],
+  [['psy0  APTITUDE MATRIX  6 AXIS ','d'],[dots(2)+' ','d'],['READY','a']],
+  [['bio0  GENOME IMAGING  256 BIT ','d'],[dots(2)+' ','d'],['LINK','a']],
+  [['orb0  TRANSFER WINDOW  T-38d ','d'],[dots(3)+' ','d'],['ARMED','a']],
+  [],
+  [['Mounting /dev/will -> ROOT: '],[dots(4)+' ','d'],['OK','a']],
+  [['Loading adaptation profile '],[dots(5)+' ','d'],['OK','a']],
+  [['Locating Mars sector 07 '],[dots(7)+' ','d'],['99.9%','p']],
+  [],
+  [['SELECTION ANOMALY  '],['detected.','h']],
+  [['subject  UNREGISTERED   status  ','d'],['awake','h']],
+  [],
+  [['can you leave earth: ','p']],
+];
+const TONE = { p:C.peach, d:'#8A5A62', a:C.hot, h:C.ice };
+const BOOT_CHARS = BOOT.reduce((n,l)=>n+l.reduce((m,s)=>m+s[0].length,0),0);
+const BOOT_COLS  = Math.max(...BOOT.map(l=>l.reduce((m,s)=>m+s[0].length,0)));
+
+function sceneBoot(t){
+  g.fillStyle='#0A0308'; g.fillRect(0,0,W,H);
+  const size = Math.min(22, (W*0.86)/(BOOT_COLS*0.60));
+  f(600,size); const cw = g.measureText('M').width, lh = size*1.72;
+  const x0 = Math.round((W - BOOT_COLS*cw)/2), y0 = 250;
+  /* 타이핑 — 3.2초에 걸쳐 전부 찍고 나머지는 커서만 깜빡인다 */
+  const reveal = Math.floor(BOOT_CHARS * ease(seg(t,0.8,7.2)));
+  g.textAlign='left'; g.textBaseline='top';
+  let left = reveal, y = y0, cx = x0, cy = y0;
+  for(const ln of BOOT){
+    let x = x0, drawn = 0;
+    for(const [txt,tone] of ln){
+      let s = txt; const room = left - drawn;
+      if(room <= 0) break;
+      if(room < s.length) s = s.slice(0,room);
+      if(s) glowText(s,x,y,size,TONE[tone||'p'],600,size*0.38);
+      x += cw*s.length; drawn += txt.length;
+    }
+    cx = x; cy = y;
+    left -= ln.reduce((m,s)=>m+s[0].length,0);
+    y += lh;
+    if(left <= 0) break;
+  }
+  if(Math.floor(t*2.4)%2===0){
+    g.shadowColor=C.ice; g.shadowBlur=size*0.5; g.fillStyle=C.ice;
+    g.fillRect(cx,cy+size*0.08,cw*0.9,size*0.92); g.shadowBlur=0;
+    g.fillRect(cx,cy+size*0.08,cw*0.9,size*0.92);
+  }
+  /* 상단 머리글 */
+  glowText('◆ ARGO BROADCAST',48,96,15,C.hot,600);
+  g.textAlign='right'; glowText('REC  2068-05-29',W-48,96,15,'#8A5A62',600); g.textAlign='left';
+}
+
+/* ============================ 2. BLUEPRINT (흑백) ============================ */
+function sceneBlueprint(t){
+  g.fillStyle='#000'; g.fillRect(0,0,W,H);
+  const w = C.paper, dim = 'rgba(255,255,255,0.34)', faint='rgba(255,255,255,0.14)';
+  const p = seg(t,0,9.5);
+
+  /* 격자 */
+  g.strokeStyle=faint; g.lineWidth=1;
+  for(let x=80;x<W-60;x+=48){g.beginPath();g.moveTo(x,150);g.lineTo(x,H-170);g.stroke();}
+  for(let y=150;y<H-170;y+=48){g.beginPath();g.moveTo(80,y);g.lineTo(W-60,y);g.stroke();}
+
+  g.textAlign='left'; g.textBaseline='top';
+  glowText('TRANSFER GEOMETRY',64,120,17,w,600,10);
+  g.textAlign='right'; glowText('SHEET 02 / 04',W-64,120,17,dim,600,0); g.textAlign='left';
+
+  const cx=W/2, cy=700, rE=118, rM=268;
+  /* 두 궤도 */
+  g.strokeStyle=dim; g.lineWidth=1.2;
+  for(const r of [rE,rM]){ g.beginPath(); g.arc(cx,cy,r,0,Math.PI*2); g.stroke(); }
+  /* 전이 타원 — 진행도만큼 그려 나간다 */
+  const a=(rE+rM)/2, b=Math.sqrt(rE*rM), ang=ease(p)*Math.PI;
+  g.strokeStyle=w; g.lineWidth=2.1; g.shadowColor=w; g.shadowBlur=14;
+  g.beginPath();
+  for(let i=0;i<=180;i++){
+    const th=Math.PI*i/180; if(th>ang)break;
+    const X=cx+Math.cos(th+Math.PI)*a+(a-rE), Y=cy+Math.sin(th+Math.PI)*b;
+    i?g.lineTo(X,Y):g.moveTo(X,Y);
+  }
+  g.stroke(); g.shadowBlur=0;
+  /* 두 행성과 진행 중인 선체 */
+  const dot=(X,Y,r,fill)=>{g.beginPath();g.arc(X,Y,r,0,Math.PI*2);g.fillStyle=fill;g.shadowColor=w;g.shadowBlur=12;g.fill();g.shadowBlur=0;};
+  dot(cx-rE,cy,7,w); dot(cx+rM,cy,11,'#000');
+  g.strokeStyle=w;g.lineWidth=1.6;g.beginPath();g.arc(cx+rM,cy,11,0,Math.PI*2);g.stroke();
+  if(p>0.02){
+    const th=ang-0.001;
+    const X=cx+Math.cos(th+Math.PI)*a+(a-rE), Y=cy+Math.sin(th+Math.PI)*b;
+    dot(X,Y,4.5,w);
+    g.strokeStyle='rgba(255,255,255,0.5)';g.lineWidth=1;
+    g.beginPath();g.moveTo(X,Y);g.lineTo(X, cy+rM+56);g.stroke();
+    glowText((210*p).toFixed(0).padStart(3,'0')+' d',X+10,Y-26,15,w,600,8);
+  }
+  /* 치수선 */
+  const dimLine=(x1,x2,y,label)=>{
+    g.strokeStyle=dim;g.lineWidth=1;
+    g.beginPath();g.moveTo(x1,y);g.lineTo(x2,y);g.moveTo(x1,y-7);g.lineTo(x1,y+7);g.moveTo(x2,y-7);g.lineTo(x2,y+7);g.stroke();
+    g.textAlign='center'; glowText(label,(x1+x2)/2,y+12,14,dim,600,0); g.textAlign='left';
+  };
+  dimLine(cx-rE,cx+rM,cy+rM+96,'227.9 M KM');
+
+  /* 주석 */
+  const notes=[['EARTH DEPARTURE','ORBITAL VELOCITY  29.78 KM/S'],
+               ['TRANSFER  210 DAYS','COMMS DELAY  UP TO 24 MIN'],
+               ['MARS ARRIVAL','SURFACE GRAVITY  0.38 x EARTH'],
+               ['RETURN','NONE']];
+  let ny=H-330;
+  notes.forEach(([a1,b1],i)=>{
+    const on = seg(t,1.4+i*1.5, 2.4+i*1.5);
+    if(on<=0) return;
+    g.globalAlpha = on;
+    line(64,ny+9,88,ny+9,w,1.4,8);
+    glowText(a1,100,ny,16,w,600,8);
+    g.textAlign='right'; glowText(b1,W-64,ny,14,dim,400,0); g.textAlign='left';
+    g.globalAlpha=1; ny+=46;
+  });
+  g.textAlign='center';
+  glowText('⊹  CAN YOU LEAVE EARTH  ⊹',W/2,H-150,19,w,600,14);
+  g.textAlign='left';
+}
+
+/* ============================ 3. SYSTEMS ============================ */
+const SYS = [
+  ['01','ISOLATION ENDURANCE','AUT / ISO'],
+  ['02','NEUROTICISM FLOOR','NEU'],
+  ['03','AUTONOMOUS DECISION THRESHOLD','AUT / CR'],
+  ['04','COLLECTIVE PRIORITY INDEX','COL / GO'],
+  ['05','IDENTITY DISPLACEMENT TOLERANCE','IDE'],
+  ['06','GENERATIVE COMMITMENT','GEN'],
+];
+function sceneSystems(t){
+  g.fillStyle='#0A0308'; g.fillRect(0,0,W,H);
+  g.textAlign='left'; g.textBaseline='top';
+  glowText('◆ CORE ARCHITECTURE',48,96,15,C.hot,600);
+  g.textAlign='right'; glowText('PSYCH · 6 AXIS',W-48,96,15,'#8A5A62',600); g.textAlign='left';
+
+  const title = 'SIX SYSTEMS.';
+  glowText(title,64,200,46,C.hot,800,26);
+  glowText('ONE MISSION.',64,258,46,C.peach,800,26);
+
+  let y=400;
+  SYS.forEach(([n,name,tag],i)=>{
+    const on = ease(seg(t,0.6+i*1.05, 1.9+i*1.05));
+    if(on<=0){ y+=112; return; }
+    g.globalAlpha=on;
+    glowText('SYS · '+n,64,y,14,'#8A5A62',600,0);
+    g.textAlign='right'; glowText(tag,W-64,y,13,C.deep==='#5C0E4A'?'#7A4A62':'#7A4A62',600,0); g.textAlign='left';
+    glowText(name,64,y+24,Math.min(23, (W-128)/(name.length*0.62)),C.ice,600,10);
+    /* 스캔 바 — 값이 채워졌다가 미세하게 호흡한다 */
+    const v = 0.42+0.5*Math.abs(Math.sin(t*0.55+i*1.1));
+    line(64,y+68,W-64,y+68,'rgba(255,45,130,0.18)',2);
+    line(64,y+68,64+(W-128)*v*on,y+68,C.hot,2,12);
+    g.globalAlpha=1; y+=112;
+  });
+}
+
+/* ============================ 4. INTAKE ============================ */
+function sceneIntake(t){
+  g.fillStyle='#0A0308'; g.fillRect(0,0,W,H);
+  g.textAlign='left'; g.textBaseline='top';
+  glowText('◆ CANDIDATE INTAKE',48,96,15,C.hot,600);
+  g.textAlign='right'; glowText('PHASE 02 / 03',W-48,96,15,'#8A5A62',600); g.textAlign='left';
+
+  /* 스캔 프레임 */
+  const bx=88, by=230, bw=W-176, bh=520;
+  g.strokeStyle='rgba(255,45,130,0.35)'; g.lineWidth=1.4; g.strokeRect(bx,by,bw,bh);
+  [[bx,by,1,1],[bx+bw,by,-1,1],[bx,by+bh,1,-1],[bx+bw,by+bh,-1,-1]].forEach(([X,Y,sx,sy])=>{
+    line(X,Y,X+28*sx,Y,C.peach,2.2,10); line(X,Y,X,Y+28*sy,C.peach,2.2,10);
+  });
+  /* 이중나선 */
+  const n=110, amp=bw*0.30, midX=bx+bw/2;
+  for(let i=0;i<n;i++){
+    const u=i/(n-1), Y=by+30+u*(bh-60), ph=u*Math.PI*5 - t*1.5;
+    const x1=midX+Math.sin(ph)*amp, x2=midX+Math.sin(ph+Math.PI)*amp;
+    const near=(Math.cos(ph)+1)/2;
+    g.globalAlpha=0.22+0.65*near;
+    if(i%4===0) line(x1,Y,x2,Y,'rgba(212,250,255,0.30)',1);
+    const r=1.6+2.6*near;
+    g.fillStyle = near>0.62 ? C.ice : C.hot;
+    g.shadowColor=g.fillStyle; g.shadowBlur=10;
+    g.beginPath();g.arc(x1,Y,r,0,Math.PI*2);g.fill();
+    g.beginPath();g.arc(x2,Y,r*0.8,0,Math.PI*2);g.fill();
+    g.shadowBlur=0;
+  }
+  g.globalAlpha=1;
+  /* 스캔 라인 */
+  const sy = by + ((t*0.30)%1)*bh;
+  line(bx,sy,bx+bw,sy,C.ice,1.6,18);
+
+  /* 기록 */
+  const rows=[['CANDIDATE ID','TF-520-3602'],['ORIGIN','SEOUL · 37.5665N 126.9780E'],
+              ['GENOME MARKERS','2,400 SEQUENCED'],['ADAPTATION SCORE','0.82'],
+              ['STATUS','CLEARED FOR PHASE 03']];
+  let y=H-380;
+  rows.forEach(([k,v],i)=>{
+    const on=ease(seg(t,0.8+i*1.25, 2.0+i*1.25)); if(on<=0)return;
+    g.globalAlpha=on;
+    glowText(k,64,y,14,'#8A5A62',600,0);
+    g.textAlign='right'; glowText(v,W-64,y,17,i===4?C.hot:C.ice,600,10); g.textAlign='left';
+    line(64,y+28,W-64,y+28,'rgba(255,45,130,0.13)',1);
+    g.globalAlpha=1; y+=58;
+  });
+}
+
+/* ============================ 5. DEPARTURE ============================ */
+const STARS = Array.from({length:340},()=>({a:Math.random()*Math.PI*2, r:Math.random(), s:0.3+Math.random()*0.9}));
+function sceneDeparture(t){
+  g.fillStyle='#07040A'; g.fillRect(0,0,W,H);
+  const cx=W/2, cy=H*0.44, p=seg(t,0,13);
+  /* 가속하는 별 — 중심에서 뻗어 나간다 */
+  STARS.forEach((s,i)=>{
+    const rr = ((s.r + t*0.055*s.s) % 1);
+    const R = rr*rr * 980, R2 = Math.max(0, R - (28+120*rr*p));
+    const X=cx+Math.cos(s.a)*R, Y=cy+Math.sin(s.a)*R;
+    const X2=cx+Math.cos(s.a)*R2, Y2=cy+Math.sin(s.a)*R2;
+    const al = Math.min(1, rr*2.4)*(0.30+0.70*s.s);
+    g.globalAlpha=al;
+    const col = i%17===0 ? C.ice : i%5===0 ? C.peach : C.hot;
+    line(X2,Y2,X,Y,col,0.8+1.9*rr, 8*rr);
+  });
+  g.globalAlpha=1;
+  /* 지평선 */
+  const hy=H*0.72;
+  line(0,hy,W,hy,'rgba(255,154,122,0.55)',1.4,20);
+  g.textAlign='center'; g.textBaseline='top';
+  const a1=ease(seg(t,1.0,3.0));
+  g.globalAlpha=a1;
+  glowText('THE SECOND HORIZON',W/2,hy+64,34,C.ice,800,22);
+  glowText('IS OPEN.',W/2,hy+110,34,C.peach,800,22);
+  g.globalAlpha=1;
+  const a2=ease(seg(t,3.6,5.4));
+  g.globalAlpha=a2;
+  glowText('GATE 02 · UNLOCKED   TRANSFER AUTHORIZED',W/2,hy+180,14,'#8A5A62',600,0);
+  glowText('RETURN    NONE',W/2,hy+206,14,C.hot,600,8);
+  g.globalAlpha=1;
+  const a3=ease(seg(t,6.2,8.4));
+  g.globalAlpha=a3;
+  glowText('MISSION FORCE ARGO',W/2,H-190,26,C.hot,800,20);
+  glowText('TERRAFORMING SELECTION COMMITTEE',W/2,H-150,13,'#8A5A62',600,0);
+  g.globalAlpha=1;
+  g.textAlign='left';
+}
+
+/* ============================ 타임라인 ============================ */
+/* 장면 사이는 검은 프레임 한 번으로 끊는다 — CRT 채널이 바뀌는 느낌 */
+const CUT = 0.12;
+function paint(t){
+  if      (t < 11) sceneBoot(t);
+  else if (t < 23) sceneBlueprint(t-11);
+  else if (t < 35) sceneSystems(t-23);
+  else if (t < 47) sceneIntake(t-35);
+  else             sceneDeparture(t-47);
+  /* 전환 순간의 하얀 섬광 + 검정 */
+  for(const b of [11,23,35,47]){
+    const d = t-b;
+    if(d>-CUT && d<CUT){
+      const k = 1-Math.abs(d)/CUT;
+      g.fillStyle=`rgba(255,255,255,${(k*k*0.55).toFixed(3)})`; g.fillRect(0,0,W,H);
+      g.fillStyle=`rgba(0,0,0,${(k*0.9).toFixed(3)})`; g.fillRect(0,0,W,H);
+    }
+  }
+}
+/* 루프 이음매 : 59.2초부터 전원이 꺼지듯 접히고 0초에서 다시 켜진다 */
+function offAmount(t){
+  if(t > DUR-0.8) return ease((t-(DUR-0.8))/0.8);
+  if(t < 0.55)    return 1-ease(t/0.55);
+  return 0;
+}
+
+let t0 = performance.now(), forced = null;
+function frame(now){
+  const t = forced!=null ? forced : ((now-t0)/1000) % DUR;
+  paint(t);
+  gl.bindTexture(gl.TEXTURE_2D,tex);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,scr);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false);
+  gl.uniform1f(U('uTime'),t);
+  gl.uniform1f(U('uOff'),offAmount(t));
+  gl.drawArrays(gl.TRIANGLES,0,3);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+window.__argoSeek = s => { forced = s; };          /* 검수용 : 특정 초로 고정 */
+window.__argoPlay = () => { forced = null; t0 = performance.now(); };
+
+/* ============================ 화면 맞춤 ============================ */
+function fit(){
+  const s = Math.min(1, Math.min(innerWidth/W, innerHeight/H));
+  document.getElementById('stage').style.setProperty('--fit', s);
+}
+fit(); addEventListener('resize',fit);
+
+/* ============================ 녹화 ============================ */
+/* 캔버스를 그대로 60초 녹화해 파일로 저장한다. 크롬이 mp4 를 지원하면 mp4,
+   아니면 webm 으로 떨어진다(webm 은 무료 도구로 mp4 변환 가능). */
+document.getElementById('rec').onclick = function(){
+  const btn=this;
+  const types=['video/mp4;codecs=avc1.640034','video/mp4','video/webm;codecs=vp9','video/webm'];
+  const mime=types.find(m=>MediaRecorder.isTypeSupported(m));
+  if(!mime){ btn.textContent='NOT SUPPORTED'; return; }
+  const chunks=[], rec=new MediaRecorder(out.captureStream(60),{mimeType:mime,videoBitsPerSecond:16e6});
+  rec.ondataavailable=e=>e.data.size&&chunks.push(e.data);
+  rec.onstop=()=>{
+    const blob=new Blob(chunks,{type:mime});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='argo-crt-loop.'+(mime.includes('mp4')?'mp4':'webm');
+    a.click(); btn.textContent='● REC 60s';
+  };
+  /* 0초에서 시작해야 루프 이음매가 정확히 맞는다 */
+  window.__argoPlay();
+  rec.start(); btn.textContent='RECORDING…';
+  setTimeout(()=>rec.stop(), DUR*1000);
+};
+</script></body></html>

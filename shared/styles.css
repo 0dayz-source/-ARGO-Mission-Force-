@@ -33,7 +33,12 @@ html{zoom:var(--z,1)}
 .lp-h,
 .lg-btn,.rp-icon-btn,.scroll-btn{zoom:calc(var(--z-soft,1) / var(--z,1))}
 
-ㅊ*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}:root{
+/* [삭제] 'ㅊ*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}' 가
+   여기 있었다. 맨 앞의 'ㅊ'(U+314A) 때문에 셀렉터가 무효라 규칙 전체가 버려졌고,
+   문서는 처음부터 content-box 로 동작해 왔다(브라우저에서 확인). 지금 디자인이
+   그 위에 맞춰져 있으므로 되살리지 않고, 아무 일도 하지 않던 줄만 걷어낸다.
+   border-box 가 필요한 곳은 .gb-form 등에 개별로 준다. */
+:root{
   /* ============================================================
      ARGO 컬러 시스템 v5 — Neon Spectrum
      레퍼런스: 사용자 지정 네온 팔레트(피치→코랄→핑크→마젠타 + 아이스/스텔라 블루).

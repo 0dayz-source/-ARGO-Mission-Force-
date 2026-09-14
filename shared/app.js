@@ -489,7 +489,7 @@ window.goWebcam=goWebcam;
 /* 오버레이(후보 DB·시티·행성·결과·참여 모달)가 열려 있으면 휠은 그 안쪽 것이다.
    가드가 없으면 오버레이를 보다가 스크롤한 순간 MARS 로 끌려 나간다. */
 function overlayOpen(){
-  return !!document.querySelector('#origin-overlay.open,#planet-overlay.open,#join-modal.open,#result-overlay.open');
+  return !!document.querySelector('#origin-overlay.open,#result-overlay.open');
 }
 let lw=0;
 /* 스크롤 경로 : 메인(0) ↕ ARGO INDEX(11) ↕ 후보자 사진(10) ↓ MARS
@@ -664,8 +664,6 @@ document.getElementById('btn-about').addEventListener('click',()=>{
   if(window.ArgoReveal) ArgoReveal.to(()=>goScene(11,true),{variant:'rectangle',start:'bottom-up',blur:true,duration:760});
   else goScene(11);
 });
-function closeJoin(){document.getElementById('join-modal').classList.remove('open')}
-function submitJoin(btn){const o=btn.textContent;btn.textContent='TRANSMITTING...';btn.style.pointerEvents='none';setTimeout(()=>{btn.textContent='✓ RECEIVED';btn.style.color='var(--white-hot)';btn.style.borderColor='rgba(92,14,74,.4)'},1200);setTimeout(()=>{closeJoin();btn.textContent=o;btn.style.color='';btn.style.borderColor='';btn.style.pointerEvents=''},3000);}
 document.querySelectorAll('.lp-link').forEach(el=>{
   el.addEventListener('mouseenter',()=>{if(window.setAccentColor)window.setAccentColor(el.dataset.col)});
   el.addEventListener('mouseleave',()=>{if(window.setAccentColor)window.setAccentColor('default')});
@@ -1175,21 +1173,6 @@ function startOriginFloat(){
     _originFloatRAF = requestAnimationFrame(step);
   }
   step();
-}
-function openPlanetOverlay(){
-  const el=document.getElementById('planet-overlay');
-  window.clearTimeout(el._closeTimer);
-  el.classList.remove('open','closing');
-  void el.offsetWidth;
-  requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('open')));
-}
-function closePlanetOverlay(){
-  const el=document.getElementById('planet-overlay');
-  if(!el.classList.contains('open')) return;
-  window.clearTimeout(el._closeTimer);
-  el.classList.add('closing');
-  el.classList.remove('open');
-  el._closeTimer=window.setTimeout(()=>{el.classList.remove('closing');},980);
 }
 function openOriginOverlay(){
   const el=document.getElementById('origin-overlay');
@@ -3303,13 +3286,11 @@ initDetailGraphs();
     requestAnimationFrame(()=>{ el.classList.remove('open'); });
     el._closeTimer=window.setTimeout(()=>{
       el.classList.remove('closing');
-      if(!document.querySelector('#origin-overlay.open,#planet-overlay.open,#join-modal.open,#result-overlay.open'))
+      if(!document.querySelector('#origin-overlay.open,#result-overlay.open'))
         document.body.classList.remove('overlay-open');
       if(typeof after==='function') after();
     },DURATION);
   }
-  window.openPlanetOverlay=function(){openModal('planet-overlay')};
-  window.closePlanetOverlay=function(){closeModal('planet-overlay')};
   window.openOriginOverlay=function(){openModal('origin-overlay', function(){ if(window.populateOriginList) window.populateOriginList(); });};
   window.closeOriginOverlay=function(){closeModal('origin-overlay', function(){ if(window._originFloatRAF){ cancelAnimationFrame(window._originFloatRAF); window._originFloatRAF=null; } });};
 })();

@@ -1382,7 +1382,13 @@
       var tp=clamp((-rect.top/cz)/(tele.offsetHeight-vh));
       window.__teleProgress=tp;   /* tele-fall-fx 가 읽는다 — 레이아웃 재측정 없이 */
       var dist=track.scrollWidth-vw+vw*0.08;
-      track.style.transform='translateX('+(-tp*Math.max(0,dist))+'px)';
+      /* [버그] 낙하가 시작된 뒤에도 트랙이 계속 옆으로 밀리면, 시작 시점에
+         화면 밖이라 물리에 포함되지 않은 패널이 뒤늦게 들어와 제자리에 그대로
+         남는다 — 어떤 건 떨어지고 어떤 건 안 떨어지는 그림이 된다.
+         떨어지는 동안에는 트랙을 그 자리에 세워 둔다. */
+      if(!tele.classList.contains('tele-falling')){
+        track.style.transform='translateX('+(-tp*Math.max(0,dist))+'px)';
+      }
       if(railGrad&&railEl){
         var RW=railEl.clientWidth||1, win=RW*0.32;
         var cx=tp*RW;
@@ -2741,9 +2747,13 @@ void main(){ vec2 p = gl_PointCoord - 0.5; float l = length(p); if (l > 0.5) dis
       ceilY=Math.max(8, lr.bottom-pr.top);
     }
     var ceil=Bodies.rectangle(W/2, ceilY-30, W*3, 60, wall);   /* 60 두께의 절반이 ceilY 에 닿는다 */
-    var floor=Bodies.rectangle(W/2,H+30,W*2,60,wall);
-    var lw=Bodies.rectangle(-30,H/2,60,H*3,wall);
-    var rw=Bodies.rectangle(W+30,H/2,60,H*3,wall);
+    /* [버그] 바닥을 핀 높이(H)에 맞추면, 핀이 화면보다 크거나 핀 윗부분이
+       화면 위로 올라가 있을 때 요소가 화면 아래로 떨어져 잘린다(사용자 보고).
+       화면 바닥과 핀 바닥 중 위쪽을 바닥으로 삼아 항상 보이는 안에서 멈추게 한다. */
+    var floorY=Math.min(H, innerHeight - pr.top);
+    var floor=Bodies.rectangle(W/2,floorY+30,W*2,60,wall);
+    var lw=Bodies.rectangle(-30,floorY/2,60,H*3,wall);
+    var rw=Bodies.rectangle(W+30,floorY/2,60,H*3,wall);
 
     var list=[ceil,floor,lw,rw];
     items.forEach(function(it){

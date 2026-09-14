@@ -10,6 +10,7 @@
   #rec:hover{opacity:1}
 </style></head><body>
 <div id="stage"><canvas id="out"></canvas></div>
+<video id="clip" src="assets/geometric.mp4" muted loop autoplay playsinline preload="auto" style="position:absolute;left:-9999px;top:0;width:2px;height:2px;opacity:0.01"></video>
 <button id="rec">● REC 60s</button>
 <script>
 /* ============================================================================
@@ -153,11 +154,15 @@ const mass=(v)=>`rgba(255,255,255,${v})`;
 
 /* ---------------------------------------------------- 기관 도면 꾸밈 요소 */
 /* 여백 자·모서리 정합 마크·도면 번호 블록. 실제 엔지니어링 시트의 문법이다. */
-function chrome(title,sheet,rev,note){
+function chrome(title,sheet,rev,note,border){
   const m=34;
-  g.strokeStyle='rgba(255,255,255,.30)'; g.lineWidth=1;
-  g.strokeRect(m,m,W-m*2,H-m*2);
-  g.strokeRect(m+7,m+7,W-(m+7)*2,H-(m+7)*2);
+  /* [수정] 테두리 사각형은 첫 시트(SHEET 01)에만 남긴다 — 매 장면마다 있으면
+     같은 액자가 반복돼 답답하다. 여백 좌표와 정합 마크는 그대로 둔다. */
+  if(border){
+    g.strokeStyle='rgba(255,255,255,.30)'; g.lineWidth=1;
+    g.strokeRect(m,m,W-m*2,H-m*2);
+    g.strokeRect(m+7,m+7,W-(m+7)*2,H-(m+7)*2);
+  }
   /* 여백 좌표 — 세로는 A..H, 가로는 1..6 */
   const rowsN=8, colsN=6;
   for(let i=0;i<rowsN;i++){const y=m+7+(H-(m+7)*2)*(i+0.5)/rowsN;
@@ -534,7 +539,7 @@ function s02(t){
   g.fillStyle='#000'; g.fillRect(0,0,W,H);
   const k=E(seg(t,0.05,1.5));
   craft(330,236,986,k);
-  chrome('ARG-IV  DEEP SPACE VEHICLE','SHEET 01','D','ISSUED FOR REVIEW · MASS PROPERTIES PRELIMINARY');
+  chrome('ARG-IV  DEEP SPACE VEHICLE','SHEET 01','D','ISSUED FOR REVIEW · MASS PROPERTIES PRELIMINARY',true);
   const on=E(seg(t,1.2,2.3));
   if(on>0){ g.globalAlpha=on;
     callout(1,330,268,540,250,'COMMAND MODULE','12 CREW · 4.2 m');
@@ -600,50 +605,42 @@ function s03(t){
     g.globalAlpha=1; y+=40;});
 }
 
-/* ============ 04  TRACKING FIELD  (레퍼런스 4·5) ======================== */
-/* 검정 위 흰색만. 화살표 커서가 흩뿌려지고, 긴 직선이 화면을 가로지르고,
-   점선 동심 타원 위에 데이터 태그가 지시선으로 붙는다. 미세 좌표는 기울어 붙고
-   × 마크와 네모 글자가 사이를 메운다. */
-const TAGS=[[ '45.314','469.269'],['13.097','132.185'],['52.826','938.030'],
-            ['30.739','310.185'],['1.622','16.372'],['48.900','491.440'],
-            ['26.427','266.405'],['8.870','89.503']];
+/* ================== 04  ARCHIVE PLATE  (영상 삽입) ====================== */
+/* 화살표 커서 페이지를 걷어내고 외부 영상을 그대로 방송에 태운다.
+   장면 시간으로 재생 위치를 직접 몰아 주므로 루프마다 같은 구간이 나온다. */
+const CLIP=document.getElementById('clip');
+let clipReady=false;
+CLIP.addEventListener('loadedmetadata',()=>{clipReady=true;});
+CLIP.play().catch(()=>{});
 function s04(t){
   g.fillStyle='#000'; g.fillRect(0,0,W,H);
-  const k=E(seg(t,0,1.6)), cx=W/2, cy=H*0.46;
-  /* 점선 동심 타원 */
-  g.globalAlpha=0.8*k; dottedRings(cx,cy,350,7,t); g.globalAlpha=1;
-  /* 중심 원 + 가로 밴드 — 레퍼런스의 큰 원과 수평선 */
-  g.strokeStyle='#fff'; g.lineWidth=1.5; g.shadowColor='#fff'; g.shadowBlur=8;
-  g.beginPath(); g.arc(cx,cy,250*k,0,6.2832); g.stroke(); g.shadowBlur=0;
-  for(const dy of [-96,-40,40,96]) L(70,cy+dy,W-70,cy+dy,'rgba(255,255,255,.55)',1);
-  L(70,cy-96,70,cy+96,'rgba(255,255,255,.55)',1); L(W-70,cy-96,W-70,cy+96,'rgba(255,255,255,.55)',1);
-  /* 화면을 가로지르는 긴 직선 */
-  for(let i=0;i<5;i++){
-    const h=Math.abs(Math.sin(i*53.7)*43758.5453)%1;
-    const x1=-100+h*W*1.3, y1=-80, x2=x1+(h-0.5)*900, y2=H+80;
-    g.globalAlpha=0.5+0.5*h; L(x1,y1,x2,y2,'#fff',1.2); }
+  if(!clipReady){
+    /* 영상이 아직 안 붙었으면 검은 화면 대신 대기 판을 그린다 —
+       전시 중 네트워크가 늦어도 한 장면이 통째로 비지 않게. */
+    g.globalAlpha=0.5+0.5*Math.abs(Math.sin(t*2));
+    T('LOADING ARCHIVE PLATE',W/2,H/2-10,14,C.w,600,8,'center');
+    g.globalAlpha=1;
+    dottedRings(W/2,H/2,200,4,t,1);
+  }
+  if(clipReady){
+    /* 장면 길이(6.8초)에 맞춰 재생 구간을 고정한다 */
+    const want=Math.min(CLIP.duration-0.05, t*0.92);
+    if(Math.abs(CLIP.currentTime-want)>0.34){ try{CLIP.currentTime=want;}catch(e){} }
+    if(CLIP.paused) CLIP.play().catch(()=>{});
+    /* 세로 화면을 꽉 채우고 좌우를 잘라 낸다 */
+    const vw=CLIP.videoWidth||1080, vh=CLIP.videoHeight||1350;
+    const sc=Math.max(W/vw,H/vh), dw=vw*sc, dh=vh*sc;
+    g.drawImage(CLIP,(W-dw)/2,(H-dh)/2,dw,dh);
+  }
+  /* 방송 자막만 얇게 — 액자는 두지 않는다 */
+  const k=E(seg(t,0.2,1.0));
+  g.globalAlpha=k;
+  T('◆ ARCHIVE PLATE',52,96,13,C.w,600,6);
+  T('REEL 928 · PORTRAIT',W-52,96,10,'rgba(255,255,255,.6)',400,0,'right');
+  L(52,H-96,W-52,H-96,'rgba(255,255,255,.45)',1);
+  T('TFSC-04  ·  GEOMETRIC SURVEY',52,H-86,9.5,'rgba(255,255,255,.7)',600);
+  T('SOL 0687',W-52,H-86,9.5,'rgba(255,255,255,.5)',400,0,'right');
   g.globalAlpha=1;
-  crossMarks(t);
-  /* 네모 글자 */
-  [['E',250,520],['S',470,470],['E',560,640],['S',330,700],['E',600,560]].forEach(([c,x,y],i)=>{
-    if(E(seg(t,0.5+i*0.12,0.8+i*0.12))>0.5) boxedGlyph(x,y,c,17); });
-  microCoords(t,30,0.6*k);
-  cursorScatter(t,k);
-  /* 데이터 태그 — 오른쪽으로 지시선이 뻗어 수치가 달린다 */
-  TAGS.forEach((v,i)=>{
-    const on=E(seg(t,0.4+i*0.16,0.9+i*0.16)); if(!on)return;
-    const a2=-1.15+i*0.30, ox=cx+Math.cos(a2)*250, oy=cy+Math.sin(a2)*250;
-    g.globalAlpha=on; dataTag(ox,oy, W-140, 250+i*88, v[0], v[1]); g.globalAlpha=1; });
-  /* 표제 — ANOMALY 시트의 조판 */
-  T('TRACKING FIELD',58,88,26,'#fff',800,10);
-  L(300,100,W-58,100,'rgba(255,255,255,.7)',1.4);
-  T('ARGO / TFSC-04',58,120,9.5,'rgba(255,255,255,.55)',400);
-  T('NR. 04 — NEGATIV',W-58,120,9.5,'rgba(255,255,255,.55)',400,0,'right');
-  L(58,H-86,W-58,H-86,'rgba(255,255,255,.7)',1.4);
-  T('ORBITAL SURVEY',58,H-76,9.5,'rgba(255,255,255,.62)',600);
-  T('847,392 SIGNATURES',W/2,H-76,9.5,'rgba(255,255,255,.62)',600,0,'center');
-  T('SOL 0687',W-58,H-76,9.5,'rgba(255,255,255,.62)',600,0,'right');
-  if(t>2.4) tearBands(t,0.7);
 }
 
 /* ==================== 05  SURFACE SECTION  (25.0-32.0) =================== */
@@ -990,7 +987,7 @@ const BEATS=[
   [0.0 , s01, 1.00, 0.00, 0.00],
   [5.2 , s02, 0.22, 1.00, 0.00],
   [12.6, s03, 0.22, 1.00, 0.00],
-  [19.6, s04, 0.24, 0.00, 0.00],
+  [19.6, s04, 0.30, 0.00, 0.00],
   [26.4, s05, 0.22, 1.00, 0.00],
   [33.4, s06, 0.22, 1.00, 0.00],
   [40.4, s07, 0.22, 1.00, 0.00],

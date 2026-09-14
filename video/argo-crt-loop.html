@@ -134,14 +134,15 @@ function L(x1,y1,x2,y2,col=C.w,w=1,glow=0){
 }
 /* 번호 지시선 — 레퍼런스 2 의 핵심 문법 */
 function callout(n,ax,ay,bx,by,label,sub){
-  g.strokeStyle='rgba(255,255,255,.72)'; g.lineWidth=1;
+  /* [수정] 레퍼런스의 지시선은 머리카락처럼 가늘고 라벨은 아주 작다.
+     굵은 선에 큰 라벨을 쓰면 도면이 아니라 인포그래픽으로 읽힌다. */
+  g.strokeStyle='rgba(255,255,255,.62)'; g.lineWidth=0.7;
   g.beginPath();g.moveTo(ax,ay);g.lineTo(bx,by);g.stroke();
-  g.fillStyle=C.w; g.fillRect(ax-2.5,ay-2.5,5,5);
-  g.strokeStyle=C.w; g.beginPath(); g.arc(bx,by,3.2,0,6.2832); g.stroke();
-  const r = bx>ax ? 'left':'right', ox = bx>ax? 9:-9;
-  T(String(n),bx+ox,by-16,11,'rgba(255,255,255,.6)',600,0,r);
-  T(label,bx+ox,by-4,13,C.w,600,0,r);
-  if(sub) T(sub,bx+ox,by+11,10,'rgba(255,255,255,.52)',400,0,r);
+  g.fillStyle=C.w; g.fillRect(ax-1.6,ay-1.6,3.2,3.2);
+  const r = bx>ax ? 'left':'right', ox = bx>ax? 6:-6;
+  T(String(n),bx+ox,by-12,7.5,'rgba(255,255,255,.55)',400,0,r);
+  T(label,bx+ox,by-3,9.2,C.w,600,0,r);
+  if(sub) T(sub,bx+ox,by+8,7.4,'rgba(255,255,255,.48)',400,0,r);
 }
 /* 촘촘한 사양 블록 */
 function spec(x,y,rows,size=8.2){
@@ -466,10 +467,18 @@ function craft(cx,top,bot,k){
   g.fillStyle=mass(.9); g.fillRect(cx-24,dy+h*0.012,48,4);
 
   /* --- 척추 : 트러스 --- */
+  /* [수정] 레퍼런스의 구조물은 통짜 흰 덩어리가 아니라 밀도가 다른 스티플 기둥이
+     겹쳐 있다. 세로 기둥을 밀도별로 칠하고 그 위에 가로 격판을 얹는다. */
   const sy=dy+h*0.035, sh=h*0.44;
-  g.fillStyle=mass(.55); g.fillRect(cx-sp,sy,sp*2,sh);
+  const colw=(sp*2)/9;
+  for(let c2=0;c2<9;c2++){
+    const d2=[.85,.32,.62,.20,.95,.20,.62,.32,.85][c2];
+    g.fillStyle=mass(d2); g.fillRect(cx-sp+c2*colw,sy,colw-0.6,sh);
+  }
   g.strokeStyle='#000'; g.lineWidth=1;
-  for(let i=0;i<44;i++){const y=sy+sh*i/44; L(cx-sp,y,cx+sp,y,'#000',1);}
+  for(let i=0;i<88;i++){const y=sy+sh*i/88; L(cx-sp,y,cx+sp,y,'#000',i%4?0.7:1.4);}
+  for(let i=0;i<11;i++){const y=sy+sh*(i+0.5)/11;
+    g.fillStyle=mass(1); g.fillRect(cx-sp-5,y,sp*2+10,2.4);}
   /* 사선 트러스 */
   g.strokeStyle='rgba(0,0,0,.9)'; g.lineWidth=1.4;
   for(let i=0;i<22;i++){const y=sy+sh*i/22, y2=sy+sh*(i+1)/22;
@@ -545,6 +554,16 @@ function s02(t){
     stepList(530,922,['Truss deploy','Ring spin-up','Radiator extend','Coil charge','Tank transfer','Trim burn'],E(seg(t,2.2,4.6)));
     panel(58,900,190,120,'MASS','t');
     readout(70,922,[['DRY','214.0'],['PROP','1,240.0'],['CREW','1.1'],['CARGO','62.4'],['TOTAL','1,517.5']]);
+    g.globalAlpha=1; }
+  /* 레퍼런스의 '??? / WISHES TO COMMUNICATE' 같은 주석. 기술 도면 위에 기계가
+     아니라 의지를 가진 것에 대한 말이 얹힌다 — 이 어긋남이 개념이 된다. */
+  const nk=E(seg(t,2.8,4.0));
+  if(nk>0){ g.globalAlpha=nk;
+    T('???',548,286,8.6,'rgba(255,255,255,.80)',600);
+    T('IT DOES NOT INTEND',548,297,8.6,'rgba(255,255,255,.80)',600);
+    T('TO COME BACK',548,308,8.6,'rgba(255,255,255,.80)',600);
+    T('7 × (PATIENT)',150,648,8,'rgba(255,255,255,.70)',600);
+    T('STILL LISTENING',150,659,8,'rgba(255,255,255,.52)',400);
     g.globalAlpha=1; }
 }
 

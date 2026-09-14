@@ -10,9 +10,11 @@
   #rec:hover{opacity:1}
 </style></head><body>
 <div id="stage"><canvas id="out"></canvas></div>
-<video id="story2" src="assets/story2.mp4" muted loop autoplay playsinline preload="auto" style="position:absolute;left:-9999px;top:0;width:2px;height:2px;opacity:0.01"></video>
-<video id="story" src="assets/story.mp4" muted loop autoplay playsinline preload="auto" style="position:absolute;left:-9999px;top:0;width:2px;height:2px;opacity:0.01"></video>
-<video id="clip" src="assets/geometric.mp4" muted loop autoplay playsinline preload="auto" style="position:absolute;left:-9999px;top:0;width:2px;height:2px;opacity:0.01"></video>
+<video id="p938" src="assets/p938.mp4" muted loop autoplay playsinline preload="auto" style="position:absolute;left:-9999px;top:0;width:2px;height:2px;opacity:0.01"></video>
+<video id="p787a" src="assets/p787a.mp4" muted loop autoplay playsinline preload="auto" style="position:absolute;left:-9999px;top:0;width:2px;height:2px;opacity:0.01"></video>
+<video id="p787b" src="assets/p787b.mp4" muted loop autoplay playsinline preload="auto" style="position:absolute;left:-9999px;top:0;width:2px;height:2px;opacity:0.01"></video>
+<video id="p720" src="assets/p720.mp4" muted loop autoplay playsinline preload="auto" style="position:absolute;left:-9999px;top:0;width:2px;height:2px;opacity:0.01"></video>
+<video id="p548" src="assets/p548.mp4" muted loop autoplay playsinline preload="auto" style="position:absolute;left:-9999px;top:0;width:2px;height:2px;opacity:0.01"></video>
 <button id="rec">● REC 60s</button>
 <script>
 /* ============================================================================
@@ -454,7 +456,8 @@ function s01(t){
    계산하므로 루프를 돌 때마다 같은 구간이 나온다 — 이어 붙인 자리가 흔들리지 않는다.
    글자는 전부 꾸밈이다. 설명하는 문장은 두지 않는다 — 코드·규격 조각만 남긴다. */
 const VID={};
-['story','story2','clip'].forEach(id=>{
+const PLATES=['p938','p787a','p787b','p720','p548'];
+PLATES.forEach(id=>{
   const v=document.getElementById(id);
   VID[id]={el:v, ready:false};
   v.addEventListener('loadedmetadata',()=>{VID[id].ready=true;});
@@ -476,7 +479,7 @@ function plate(id, t, rate, tag, code){
     const sc=Math.max(W/vw,H/vh), dw=vw*sc, dh=vh*sc;
     g.drawImage(v,(W-dw)/2,(H-dh)/2,dw,dh);
   }
-  /* 꾸밈 글자 — 규격 조각만 */
+  /* 꾸밈 글자 — 규격 조각만. 설명하는 문장은 두지 않는다. */
   const k=E(seg(t,0.25,1.1)); g.globalAlpha=k*0.9;
   T('◆',52,94,11,C.w,600,5);
   T(tag,70,95,10,C.w,600,4);
@@ -485,369 +488,30 @@ function plate(id, t, rate, tag, code){
   T('TFSC-04',52,H-84,8.6,'rgba(255,255,255,.62)',600);
   T('SOL 0687',W/2,H-84,8.6,'rgba(255,255,255,.45)',400,0,'center');
   T(rate.toFixed(2)+'×',W-52,H-84,8.6,'rgba(255,255,255,.45)',400,0,'right');
-  /* 모서리 정합 마크만 — 액자는 두지 않는다 */
   for(const [X,Y] of [[46,86],[W-46,86],[46,H-84],[W-46,H-84]]){
     g.strokeStyle='rgba(255,255,255,.5)';g.lineWidth=1;
     g.beginPath();g.moveTo(X-6,Y);g.lineTo(X+6,Y);g.moveTo(X,Y-6);g.lineTo(X,Y+6);g.stroke();}
   g.globalAlpha=1;
 }
-const s02 = t => plate('story',  t, 0.50, 'PLATE 753','1080×1920  H.264');
-const s03 = t => plate('story2', t, 0.45, 'PLATE 720','1080×1920  H.264');
-const s04 = t => plate('clip',   t, 0.75, 'PLATE 928','1080×1350  H.264');
-
-/* ==================== 05  SURFACE SECTION  (25.0-32.0) =================== */
-function s05(t){
-  g.fillStyle='#000'; g.fillRect(0,0,W,H);
-  T('HABITAT · SECTION A-A',52,110,17,C.w,600,8);
-  T('SHEET 03 / 06',W-52,110,13,'rgba(255,255,255,.5)',600,0,'right');
-  L(52,140,W-52,140,'rgba(255,255,255,.35)',1);
-  const gy=760, k=E(seg(t,0.1,1.4));
-  /* 지표면 */
-  g.fillStyle=mass(.34); g.fillRect(0,gy,W,H-gy);
-  g.strokeStyle='#000'; g.lineWidth=1;
-  for(let y=gy;y<H;y+=7){g.beginPath();g.moveTo(0,y);g.lineTo(W,y);g.stroke();}
-  L(0,gy,W,gy,C.w,1.6,8);
-  /* 돔 3기 — 순차로 선다 */
-  const domes=[[210,150],[420,190],[622,120]];
-  domes.forEach(([cx,r],i)=>{
-    const kk=E(seg(t,0.3+i*0.45,1.3+i*0.45)); if(!kk)return;
-    g.save(); g.beginPath(); g.rect(cx-r,gy-r*kk,r*2,r*kk); g.clip();
-    g.fillStyle=mass(.58); g.beginPath(); g.arc(cx,gy,r,Math.PI,0); g.fill();
-    g.strokeStyle='#000'; g.lineWidth=1.2;
-    for(let a=0;a<=10;a++){const th=Math.PI+a*Math.PI/10;
-      g.beginPath();g.moveTo(cx,gy);g.lineTo(cx+Math.cos(th)*r,gy+Math.sin(th)*r);g.stroke();}
-    for(let rr=r*.22;rr<r;rr+=r*.22){g.beginPath();g.arc(cx,gy,rr,Math.PI,0);g.stroke();}
-    g.restore();
-    g.strokeStyle=C.w;g.lineWidth=1.6;g.shadowColor=C.w;g.shadowBlur=8;
-    g.beginPath();g.arc(cx,gy,r,Math.PI,0);g.stroke();g.shadowBlur=0;
-  });
-  /* 연결 터널 */
-  const kt=E(seg(t,1.7,2.4));
-  if(kt){g.fillStyle=mass(.5); g.fillRect(210,gy-34,(622-210)*kt,26);
-    g.strokeStyle='#000';for(let x=210;x<210+(622-210)*kt;x+=8){g.beginPath();g.moveTo(x,gy-34);g.lineTo(x,gy-8);g.stroke();}}
-  /* 지하층 */
-  const kb=E(seg(t,2.0,3.0));
-  if(kb){g.strokeStyle='rgba(255,255,255,.6)';g.lineWidth=1.2;g.setLineDash([5,5]);
-    for(let i=1;i<=3;i++){const y=gy+i*66*kb; g.beginPath();g.moveTo(120,y);g.lineTo(700,y);g.stroke();}
-    g.setLineDash([]);
-    T('SUB-LEVEL 01  REGOLITH SHIELD  2.4 m',128,gy+44,10,'rgba(255,255,255,.55)',400);
-    T('SUB-LEVEL 02  ICE EXTRACTION',128,gy+110,10,'rgba(255,255,255,.55)',400);
-    T('SUB-LEVEL 03  POWER · 4 × KILOPOWER',128,gy+176,10,'rgba(255,255,255,.55)',400);}
-  const on=E(seg(t,1.2,2.2));
-  if(on){g.globalAlpha=on;
-    callout(1,210,gy-150,90,430,'PRESSURE DOME','120 kPa');
-    callout(2,420,gy-190,560,360,'AGRI VOLUME','1.1 ha');
-    callout(3,622,gy-120,700,470,'AIRLOCK CLUSTER','4 PORT');
-    g.globalAlpha=1;}
-  spec(52,180,['ATMOS .... 0.6% EARTH','THERM .... -63 C AVG','ROT ...... 24.6 HRS','GRAV ..... 0.38 x EARTH']);
-}
-
-/* ====================== 06  SIX SYSTEMS  (32.0-38.0) ===================== */
-const SYS=[['01','ISOLATION','AUT/ISO',.86],['02','NEUROTICISM','NEU',.62],
-           ['03','AUTONOMY','AUT/CR',.79],['04','COLLECTIVE','COL/GO',.71],
-           ['05','IDENTITY','IDE',.83],['06','GENERATIVE','GEN',.68]];
-function s06(t){
-  g.fillStyle='#000'; g.fillRect(0,0,W,H);
-  chrome('APTITUDE MATRIX  6-AXIS','SHEET 05','C','TOLERANCE  ±0.02 · SAMPLE 847,392 · CONFIDENCE 0.97');
-  /* 육각 레이더 — 축마다 눈금·라벨·값 */
-  const cx=W/2, cy=560, R=236;
-  const k=E(seg(t,0.05,1.1));
-  for(let ring=1;ring<=5;ring++){
-    g.strokeStyle= ring===5?'rgba(255,255,255,.55)':'rgba(255,255,255,.16)'; g.lineWidth=1;
-    g.beginPath();
-    for(let i=0;i<=6;i++){const a2=-Math.PI/2+i*Math.PI/3, rr=R*ring/5;
-      const X=cx+Math.cos(a2)*rr, Y=cy+Math.sin(a2)*rr; i?g.lineTo(X,Y):g.moveTo(X,Y);}
-    g.stroke();
-    if(ring<5) T((ring*20)+'',cx+6,cy-R*ring/5-6,8,'rgba(255,255,255,.35)',400);
-  }
-  SYS.forEach((_,i)=>{const a2=-Math.PI/2+i*Math.PI/3;
-    L(cx,cy,cx+Math.cos(a2)*R,cy+Math.sin(a2)*R,'rgba(255,255,255,.26)',1);
-    for(let m2=1;m2<=10;m2++){const rr=R*m2/10, nx=Math.cos(a2), ny=Math.sin(a2);
-      L(cx+nx*rr-ny*3,cy+ny*rr+nx*3,cx+nx*rr+ny*3,cy+ny*rr-nx*3,'rgba(255,255,255,.34)',1);}});
-  /* 값 다각형 — 미세하게 호흡한다 */
-  const vals=SYS.map(([,,,v],i)=>v*(0.94+0.06*Math.sin(t*1.6+i*1.3)));
-  g.beginPath();
-  vals.forEach((v,i)=>{const a2=-Math.PI/2+i*Math.PI/3, rr=R*v*k;
-    const X=cx+Math.cos(a2)*rr, Y=cy+Math.sin(a2)*rr; i?g.lineTo(X,Y):g.moveTo(X,Y);});
-  g.closePath();
-  g.fillStyle='rgba(255,255,255,.10)'; g.fill();
-  g.strokeStyle=C.w; g.lineWidth=2.2; g.shadowColor=C.w; g.shadowBlur=14; g.stroke(); g.shadowBlur=0;
-  vals.forEach((v,i)=>{const a2=-Math.PI/2+i*Math.PI/3, rr=R*v*k;
-    const X=cx+Math.cos(a2)*rr, Y=cy+Math.sin(a2)*rr;
-    g.fillStyle=C.w; g.fillRect(X-3,Y-3,6,6);
-    const lx=cx+Math.cos(a2)*(R+34), ly=cy+Math.sin(a2)*(R+34);
-    const al = Math.abs(Math.cos(a2))<0.2 ? 'center' : (Math.cos(a2)>0?'left':'right');
-    T(SYS[i][1],lx,ly-14,13,C.w,600,6,al);
-    T(SYS[i][2]+'  '+(v*100).toFixed(1),lx,ly+2,9.5,'rgba(255,255,255,.55)',400,0,al);});
-  /* 트래킹 — 한 축씩 돌아가며 잠근다 */
-  const idx=Math.floor(t*1.1)%6, a3=-Math.PI/2+idx*Math.PI/3, rr=R*vals[idx]*k;
-  const tx=cx+Math.cos(a3)*rr, ty=cy+Math.sin(a3)*rr;
-  track(tx-44,ty-30,88,60,'AX-'+SYS[idx][0], (t*3%1)<0.5?'TRACKING':'LOCKED', C.w, t*2.4);
-  /* 표제 */
-  T('SIX SYSTEMS.',58,880,42,C.w,800,0);
-  T('ONE MISSION.',58,928,42,'rgba(255,255,255,.42)',800,0);
-  /* 축별 막대 — 기관 보고서의 하단 표 */
-  let y=1000;
-  SYS.forEach(([n,name,tag,v],i)=>{
-    const on=E(seg(t,0.5+i*0.10,0.9+i*0.10)); if(!on)return;
-    g.globalAlpha=on;
-    T(n,58,y,10,'rgba(255,255,255,.5)',600);
-    T(name,84,y,10.5,C.w,600);
-    L(240,y+6,W-120,y+6,'rgba(255,255,255,.16)',3);
-    L(240,y+6,240+(W-360)*vals[i],y+6,C.w,3,8);
-    T((vals[i]*100).toFixed(1),W-58,y-2,10,C.w,600,0,'right');
-    g.globalAlpha=1; y+=22;});
-}
-
-/* ==================== 07  DESCENT PROFILE  (38.0-44.5) =================== */
-function s07(t){
-  g.fillStyle='#000'; g.fillRect(0,0,W,H);
-  chrome('EDL · SEC 07','SHEET 04','B','3σ NOT SHOWN');
-  const x0=90,x1=W-70,y0=240,y1=780, p=E(seg(t,0.1,2.6));
-  /* 축 */
-  g.strokeStyle='rgba(255,255,255,.4)';g.lineWidth=1;
-  g.beginPath();g.moveTo(x0,y0);g.lineTo(x0,y1);g.lineTo(x1,y1);g.stroke();
-  for(let i=0;i<=6;i++){const y=y1-(y1-y0)*i/6;
-    L(x0-6,y,x0,y,'rgba(255,255,255,.4)',1);
-    T((i*20)+' km',x0-12,y-6,9,'rgba(255,255,255,.5)',400,0,'right');
-    L(x0,y,x1,y,'rgba(255,255,255,.08)',1);}
-  for(let i=0;i<=7;i++){const x=x0+(x1-x0)*i/7;
-    L(x,y1,x,y1+6,'rgba(255,255,255,.4)',1);
-    T((i*60)+'s',x,y1+10,9,'rgba(255,255,255,.5)',400,0,'center');}
-  /* 강하 곡선 */
-  g.strokeStyle=C.w;g.lineWidth=2.2;g.shadowColor=C.w;g.shadowBlur=10;g.beginPath();
-  let lx=0,ly=0;
-  for(let i=0;i<=240;i++){const u=i/240; if(u>p)break;
-    const alt=Math.pow(1-u,2.6)*(1-0.06*Math.sin(u*22));
-    const X=x0+(x1-x0)*u, Y=y1-(y1-y0)*alt; i?g.lineTo(X,Y):g.moveTo(X,Y); lx=X;ly=Y;}
-  g.stroke();g.shadowBlur=0;
-  if(p>.02){g.fillStyle=C.w;g.beginPath();g.arc(lx,ly,4.5,0,6.2832);g.fill();}
-  /* 이벤트 */
-  const ev=[[0.06,'EI','125 km · 5.9 km/s'],[0.32,'PEAK q','1,450 K'],
-            [0.58,'RETRO','2.1 km/s'],[0.82,'GEAR','480 m'],[0.97,'TD','0.6 m/s']];
-  ev.forEach(([u,lab,sub],i)=>{
-    if(p<u) return;
-    const alt=Math.pow(1-u,2.6), X=x0+(x1-x0)*u, Y=y1-(y1-y0)*alt;
-    g.fillStyle=C.w; g.fillRect(X-2.5,Y-2.5,5,5);
-    const up=i%2===0;
-    L(X,Y,X,up?Y-46:Y+46,'rgba(255,255,255,.6)',1);
-    T(lab,X+6,up?Y-60:Y+34,11,C.w,600,0, X>W*0.7?'right':'left');
-    T(sub,X+6,up?Y-47:Y+47,9,'rgba(255,255,255,.55)',400,0, X>W*0.7?'right':'left');
-  });
-  /* 보조 곡선 — 속도와 감속도를 같은 판에 겹쳐 그린다 */
-  const sub=(f2,al,dash)=>{
-    g.setLineDash(dash); g.strokeStyle=`rgba(255,255,255,${al})`; g.lineWidth=1.3; g.beginPath();
-    for(let i=0;i<=200;i++){const u=i/200; if(u>p)break;
-      const X=x0+(x1-x0)*u, Y=y1-(y1-y0)*f2(u); i?g.lineTo(X,Y):g.moveTo(X,Y);}
-    g.stroke(); g.setLineDash([]);};
-  sub(u=>Math.pow(1-u,1.1)*0.86, .55, [6,4]);                       /* 속도 */
-  sub(u=>Math.exp(-Math.pow((u-0.36)*4.2,2))*0.62, .42, [2,4]);     /* 감속도 */
-  T('ALTITUDE',x0+8,y0+4,8.4,'#fff',600);
-  T('VELOCITY',x0+8,y0+16,8.4,'rgba(255,255,255,.55)',600);
-  T('DECEL',x0+8,y0+28,8.4,'rgba(255,255,255,.42)',600);
-  /* 패널 가구 */
-  const pk=E(seg(t,1.6,2.8));
-  if(pk>0){ g.globalAlpha=pk;
-    panel(58,840,214,132,'SEQUENCE','05 STEPS');
-    stepList(70,862,['EI','PEAK q','RETRO','GEAR','TD'],E(seg(t,1.8,4.2)));
-    panel(292,840,214,132,'VEHICLE','t · kg/m2');
-    readout(304,862,[['ENTRY MASS','62.4'],['BALLISTIC','118'],['DECEL PEAK','4.2 g'],
-                     ['CEP','48 m'],['SITE','SEC 07']]);
-    panel(526,840,216,132,'TELEMETRY','3 CH');
-    wave(538,862,190,26,t,0,0); wave(538,896,190,26,t,2.1,2); wave(538,930,190,26,t,4.3,1);
-    g.globalAlpha=1; }
-  T('⊹  18.4N  77.5E',58,H-96,9.5,'rgba(255,255,255,.45)',400);
-}
-
-/* ====================== 08  CANDIDATE  (44.5-50.0) ======================= */
-function s08(t){
-  g.fillStyle='#000'; g.fillRect(0,0,W,H);
-  /* 레퍼런스 3 : 화면 전체를 숫자 글리프로 덮고 그 위로 피사체가 드러난다 */
-  glyphField(t,15,0.34*E(seg(t,0.1,1.2)));
-  T('◆ CANDIDATE INTAKE',52,104,14,C.hot,600,6);
-  T('PHASE 02 / 03',W-52,104,12,C.dust,600,0,'right');
-  const bx=64,by=200,bw=W-128,bh=560;
-  g.strokeStyle='rgba(255,45,130,.30)';g.lineWidth=1.3;g.strokeRect(bx,by,bw,bh);
-  [[bx,by,1,1],[bx+bw,by,-1,1],[bx,by+bh,1,-1],[bx+bw,by+bh,-1,-1]].forEach(([X,Y,sx,sy])=>{
-    L(X,Y,X+30*sx,Y,C.peach,2.2,10); L(X,Y,X,Y+30*sy,C.peach,2.2,10);});
-  const n=120, amp=bw*.30, mid=bx+bw/2;
-  for(let i=0;i<n;i++){const u=i/(n-1),Y=by+26+u*(bh-52),ph=u*Math.PI*5-t*3.2;
-    const x1=mid+Math.sin(ph)*amp,x2=mid+Math.sin(ph+Math.PI)*amp,near=(Math.cos(ph)+1)/2;
-    g.globalAlpha=.22+.7*near;
-    if(i%4===0)L(x1,Y,x2,Y,'rgba(212,250,255,.28)',1);
-    const r=1.6+2.8*near; g.fillStyle=near>.62?C.ice:C.hot; g.shadowColor=g.fillStyle;g.shadowBlur=10;
-    g.beginPath();g.arc(x1,Y,r,0,6.2832);g.fill();g.beginPath();g.arc(x2,Y,r*.8,0,6.2832);g.fill();g.shadowBlur=0;}
-  g.globalAlpha=1;
-  L(bx,by+((t*.55)%1)*bh,bx+bw,by+((t*.55)%1)*bh,C.ice,1.6,18);
-  const rows=[['CANDIDATE ID','TF-520-3602'],['ORIGIN','SEOUL · 37.5665N 126.9780E'],
-              ['GENOME MARKERS','2,400 SEQUENCED'],['STATUS','CLEARED']];
-  let y=H-300;
-  rows.forEach(([k,v],i)=>{const on=E(seg(t,0.15+i*.36,0.6+i*.36)); if(!on)return;
-    g.globalAlpha=on; T(k,52,y,13,C.dust,600);
-    T(v,W-52,y,17,i===3?C.hot:C.ice,600,9,'right');
-    L(52,y+28,W-52,y+28,'rgba(255,45,130,.13)',1); g.globalAlpha=1; y+=56;});
-}
-
-/* ====================== 09  HORIZON  (전면 재작업) ======================= */
-/* 촌스러웠던 큰 글자 두 줄을 걷어내고, 관측 기록처럼 다시 짰다.
-   화성 지평선 위로 해가 뜨는 장면을 트래킹 HUD 와 ASCII 로 관측한다. */
-function s09(t){
-  g.fillStyle='#000'; g.fillRect(0,0,W,H);
-  const hy=H*0.62, k=E(seg(t,0.1,3.2));
-  /* 지평선 아래 — 디더 지형 */
-  g.fillStyle=mass(.20); g.fillRect(0,hy,W,H-hy);
-  g.strokeStyle='#000';g.lineWidth=1;
-  for(let y=hy;y<H;y+=6){g.beginPath();g.moveTo(0,y);g.lineTo(W,y);g.stroke();}
-  /* 능선 */
-  g.fillStyle=mass(.34); g.beginPath(); g.moveTo(0,hy);
-  for(let x=0;x<=W;x+=8){ g.lineTo(x, hy - 14*Math.sin(x*0.008) - 9*Math.sin(x*0.021+1.7)); }
-  g.lineTo(W,hy+60); g.lineTo(0,hy+60); g.closePath(); g.fill();
-  L(0,hy,W,hy,C.w,1.4,10);
-  /* 떠오르는 원반 */
-  const sy = hy - 150*k, r=104;
-  g.save(); g.beginPath(); g.rect(0,0,W,hy); g.clip();
-  g.strokeStyle=C.w; g.lineWidth=1.6; g.shadowColor=C.w; g.shadowBlur=22;
-  g.beginPath(); g.arc(W/2, sy, r, 0, 6.2832); g.stroke(); g.shadowBlur=0;
-  g.fillStyle=mass(.14); g.beginPath(); g.arc(W/2, sy, r, 0, 6.2832); g.fill();
-  for(let i=-3;i<=3;i++){ const rr=r*Math.cos(i*0.38);
-    g.strokeStyle='rgba(255,255,255,.45)';
-    g.beginPath(); g.ellipse(W/2, sy+r*Math.sin(i*0.38), rr, rr*0.16, 0,0,6.2832); g.stroke(); }
-  for(let i=0;i<8;i++){ const ph=t*0.5+i*Math.PI/8, sx=Math.abs(Math.cos(ph));
-    g.beginPath(); g.ellipse(W/2, sy, r*sx, r, 0,0,6.2832); g.stroke(); }
-  g.restore();
-  /* 광선 */
-  for(let i=0;i<26;i++){ const a2=i*6.2832/26 + t*0.1;
-    g.globalAlpha=0.10+0.14*Math.abs(Math.sin(a2*3+t));
-    L(W/2+Math.cos(a2)*r*1.1, sy+Math.sin(a2)*r*1.1,
-      W/2+Math.cos(a2)*r*(2.2+0.6*Math.sin(a2*5)), sy+Math.sin(a2)*r*(2.2+0.6*Math.sin(a2*5)), C.w,1,6); }
-  g.globalAlpha=1;
-  track(W/2-r-26, sy-r-26, (r+26)*2, (r+26)*2, 'OBJ/SOL', 'ACQ', C.w, t*1.6);
-  chrome('SUNRISE · SEC 07','SHEET 06','A','06:41:18 LMST');
-  /* 관측 기록 */
-  const rows=[['AZIMUTH','094.2°'],['ELEVATION','+02.8°'],['IRRADIANCE','586 W/m²'],
-              ['SOL COUNT','0687'],['GATE 02','UNLOCKED']];
-  let y=H-330;
-  rows.forEach(([kk,v],i)=>{const on=E(seg(t,0.7+i*.3,1.1+i*.3)); if(!on)return;
-    g.globalAlpha=on; L(58,y+8,80,y+8,C.w,1.3,6);
-    T(kk,92,y,12,C.w,600,5); T(v,W-58,y,12,'rgba(255,255,255,.62)',400,0,'right');
-    g.globalAlpha=1; y+=30;});
-  const on=E(seg(t,2.6,3.6)); g.globalAlpha=on;
-  /* 문장이 아니라 상태 표시로 — 글자는 꾸밈이지 설명이 아니다 */
-  T('SECOND HORIZON',58,H-176,17,C.w,600,9);
-  T('STATE  OPEN',58,H-154,10,'rgba(255,255,255,.62)',600);
-  T('RETURN  ——',W-58,H-154,10,'rgba(255,255,255,.45)',400,0,'right');
-  g.globalAlpha=1;
-}
-
-/* ==================== 10  ARGO NEBULA  (전면 재작업) ==================== */
-/* MARS 페이지 히어로의 성운을 그대로 옮겼다 — K 갈래 분포 + 바깥 구.
-   흩어진 상태에서 모여 들고, ASCII 와 트래킹이 그 위에 얹힌다. */
-const NEB=(function(){
-  const N=2600, P=[], K=5, TAU=6.2831853;
-  for(let i=0;i<N;i++){
-    let x,y,z,c;
-    if(i<N*0.62){                              /* 갈래 — 코어에서 뻗는다 */
-      const th=TAU*Math.random(), ph=(Math.random()-0.5)*Math.PI*0.88;
-      const base=Math.pow(Math.abs(Math.cos(K*th)),2.4);
-      const r=(0.6+Math.random()*0.9)*2.25*base;
-      x=r*Math.cos(th)*Math.cos(ph); y=r*Math.sin(th)*Math.cos(ph); z=r*Math.sin(ph)*0.55;
-      const e=Math.min(r/1.55,1);
-      c = e<0.35?C.peach : e<0.62?C.rose : e<0.86?C.hot : (Math.random()<0.85?C.magenta:C.ice);
-    }else{                                     /* 바깥 구 */
-      const th=TAU*Math.random(), ph=Math.acos(2*Math.random()-1);
-      const r=1.1+Math.pow(Math.random(),0.7)*8.6;
-      x=r*Math.sin(ph)*Math.cos(th); y=r*Math.sin(ph)*Math.sin(th)*1.15; z=r*Math.cos(ph)*0.85;
-      const v=Math.random();
-      c = v<0.5?C.hot : v<0.72?C.rose : v<0.86?C.peach : v<0.95?C.blue : C.ice;
-    }
-    P.push({x,y,z,c, s:Math.random(), hero:Math.random()<0.012,
-            sx:(Math.random()-0.5)*40, sy:(Math.random()-0.5)*40, sz:(Math.random()-0.5)*40});
-  }
-  return P;
-})();
-function s10(t){
-  g.fillStyle='#07040A'; g.fillRect(0,0,W,H);
-  const cx=W/2, cy=H*0.44, k=E(seg(t,0.0,3.4)), rot=t*0.22;
-  const cs=Math.cos(rot), sn=Math.sin(rot);
-  g.globalCompositeOperation='lighter';
-  for(const p of NEB){
-    const X0=p.x+(p.sx-p.x)*(1-k), Y0=p.y+(p.sy-p.y)*(1-k), Z0=p.z+(p.sz-p.z)*(1-k);
-    const x=X0*cs - Z0*sn, z=X0*sn + Z0*cs, y=Y0;
-    const d=z+16, sc=560/d; if(d<=1) continue;
-    const sx=cx+x*sc, sy=cy+y*sc;
-    if(sx<-20||sx>W+20||sy<-20||sy>H+20) continue;
-    const tw=0.55+0.45*Math.sin(t*1.1*(0.6+p.s)+p.s*62.8);
-    const r=(p.hero?2.6:1.05)*(sc/34)*(0.6+0.7*p.s);
-    g.globalAlpha=Math.min(1,(0.16+0.8*tw)*Math.min(1,sc/16));
-    g.fillStyle=p.c;
-    g.beginPath(); g.arc(sx,sy,Math.max(0.5,r),0,6.2832); g.fill();
-    if(p.hero){ g.strokeStyle=C.ice; g.lineWidth=0.9; g.globalAlpha*=0.7;
-      L(sx-r*4,sy,sx+r*4,sy,C.ice,0.9,0); L(sx,sy-r*4,sx,sy+r*4,C.ice,0.9,0); }
-  }
-  g.globalCompositeOperation='source-over'; g.globalAlpha=1;
-  /* 코어 */
-  const gr=g.createRadialGradient(cx,cy,0,cx,cy,120*k);
-  gr.addColorStop(0,'rgba(255,255,255,.55)'); gr.addColorStop(0.4,'rgba(255,45,130,.18)');
-  gr.addColorStop(1,'rgba(255,45,130,0)');
-  g.fillStyle=gr; g.beginPath(); g.arc(cx,cy,120*k,0,6.2832); g.fill();
-  /* ASCII 판독 — 성운을 글자로 다시 읽는다 */
-  const aOn=E(seg(t,1.6,3.0));
-  if(aOn>0.01){
-    const rows=asciiOf((c,w2,h2)=>{
-      c.fillStyle='#000'; c.fillRect(0,0,w2,h2);
-      const gr2=c.createRadialGradient(w2/2,h2*0.42,0,w2/2,h2*0.42,h2*0.34);
-      gr2.addColorStop(0,'#fff'); gr2.addColorStop(0.35,'#999'); gr2.addColorStop(1,'#000');
-      c.fillStyle=gr2; c.fillRect(0,0,w2,h2);
-      c.fillStyle='#fff';
-      for(let i=0;i<5;i++){const a2=rot+i*1.2566;
-        c.save(); c.translate(w2/2,h2*0.42); c.rotate(a2); c.fillRect(0,-1,w2*0.34,2); c.restore();}
-    },52,68,t);
-    g.globalAlpha=aOn*0.38;
-    drawAscii(rows, 58, 190, (W-116)/52, 13.4, C.ice);
-    g.globalAlpha=1;
-  }
-  /* [수정] 배경 화살표 심볼과 미세 좌표를 걷어냈다 — 성운을 가리고 구식으로 읽혔다.
-     대신 관측 장비의 패널 가구만 남겨 '무엇을 보고 있는가' 로 읽히게 한다. */
-  const kk=E(seg(t,1.8,3.4));
-  g.globalAlpha=0.42*kk; dottedRings(cx,cy,330,4,t,0.92); g.globalAlpha=1;
-  /* 측정 지시선 — 성운의 몇 점만 집는다 */
-  [['1.284','CORE LUM'],['0.382','ARM 04'],['2.917','HALO']].forEach((v,i)=>{
-    const on=E(seg(t,2.2+i*0.34,2.9+i*0.34)); if(!on)return;
-    const a2=-1.05+i*0.86, ox=cx+Math.cos(a2)*190, oy=cy+Math.sin(a2)*190;
-    g.globalAlpha=on*0.9; dataTag(ox,oy,W-116,296+i*80,v[0],v[1]); g.globalAlpha=1; });
-  track(cx-172,cy-172,344,344,'ARG-IV / CORE','TRACKING',C.hot,t*1.2);
-  /* 패널 가구 — 레퍼런스 12·13 */
-  const pk=E(seg(t,3.0,4.2));
-  if(pk>0){ g.globalAlpha=pk;
-    panel(58,H-282,214,120,'OBSERVATION','LIVE');
-    readout(70,H-260,[['SOL','0687'],['EXPOSURE','1/48 s'],['GAIN','+6 dB'],
-                      ['SPECTRUM','420-680 nm'],['FRAME','04 / 04']]);
-    panel(292,H-282,214,120,'LAYERS','05');
-    layerList(304,H-256,['PARTICLE FIELD','CORE BLOOM','ASCII READ','TRACK MARKS','GRID'],t);
-    panel(526,H-282,216,120,'SIGNAL','3 CH');
-    wave(538,H-256,190,26,t,0,0); wave(538,H-222,190,26,t,1.7,1); wave(538,H-188,190,26,t,3.1,2);
-    g.globalAlpha=1; }
-  /* 표제는 아주 작게 한 줄만 — 큰 글씨는 걷어냈다 */
-  const o1=E(seg(t,3.6,4.8)); g.globalAlpha=o1;
-  L(58,H-138,W-58,H-138,'rgba(255,255,255,.45)',1.2);
-  T('ARG-IV  ·  TERRAFORMING SELECTION COMMITTEE',58,H-128,9.5,'rgba(255,255,255,.72)',600);
-  T('SOL 0687',W-58,H-128,9.5,'rgba(255,255,255,.55)',400,0,'right');
-  g.globalAlpha=1;
-}
+const sA = t => plate('p938', t, 0.50,'PLATE 938','1080×1920  H.264');
+const sB = t => plate('p787a',t, 0.60,'PLATE 787','1080×1920  H.264');
+const sC = t => plate('p787b',t, 0.45,'PLATE 787-B','1080×1920  H.264');
+const sD = t => plate('p720', t, 0.55,'PLATE 720','1080×1920  H.264');
+const sE = t => plate('p548', t, 0.70,'PLATE 548','1080×1920  H.264');
 
 /* ---------------------------------------------------------------- 타임라인 */
 /* 여섯 장면 × 10초. 페이지가 많아 1분 안에 이동이 잦다는 지적에 따라
    SECTION A-A · 육각 매트릭스 · 마지막 성운 장면을 걷어냈다.
    [start, painter, crt세기, dither세기, 채널분리] */
 const BEATS=[
-  /* 영상 셋과 도면 둘을 번갈아 놓아 밀도가 오르내리게 한다.
-     영상은 속도를 각각 다르게 줘 같은 질감이 이어지지 않게 했다. */
-  [0.0 , s01, 1.00, 0.00, 0.00],   /* BOOT        8s  터미널      */
-  [8.0 , s02, 0.30, 0.00, 0.00],   /* PLATE 753  11s  영상 0.50×  */
-  [19.0, s07, 0.22, 1.00, 0.00],   /* EDL         9s  도면        */
-  [28.0, s03, 0.30, 0.00, 0.00],   /* PLATE 720  11s  영상 0.45×  */
-  [39.0, s09, 0.26, 1.00, 0.00],   /* HORIZON     9s  도면        */
-  [48.0, s04, 0.30, 0.00, 0.00],   /* PLATE 928  12s  영상 0.75×  */
+  /* 터미널 한 장으로 세계를 열고, 다섯 플레이트가 이어진다.
+     길이와 배속을 조금씩 다르게 줘 같은 호흡이 반복되지 않게 했다. */
+  [0.0 , s01, 1.00, 0.00, 0.00],   /* BOOT       8.0s            */
+  [8.0 , sA , 0.30, 0.00, 0.00],   /* PLATE 938 10.5s  0.50×     */
+  [18.5, sB , 0.30, 0.00, 0.00],   /* PLATE 787  9.5s  0.60×     */
+  [28.0, sC , 0.30, 0.00, 0.00],   /* PLATE 787B 10.0s 0.45×     */
+  [38.0, sD , 0.30, 0.00, 0.00],   /* PLATE 720 11.0s  0.55×     */
+  [49.0, sE , 0.30, 0.00, 0.00],   /* PLATE 548 11.0s  0.70×     */
 ];
 /* 전환 : 미끄러지는 대신 그냥 위에 덮어씌운다.
    장면마다 CRT 곡률이 달라 밀어 넣으면 곡면이 펴지는 게 보였다.

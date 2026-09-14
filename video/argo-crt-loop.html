@@ -654,12 +654,23 @@ document.getElementById('rec').onclick=function(){
   const types=['video/mp4;codecs=avc1.640034','video/mp4','video/webm;codecs=vp9','video/webm'];
   const mime=types.find(m=>MediaRecorder.isTypeSupported(m));
   if(!mime){btn.textContent='NOT SUPPORTED';return;}
+  /* [중요] 크롬은 탭이 뒤에 있으면 영상을 디코딩하지 않는다. 그 상태로 녹화하면
+     플레이트가 전부 빈 화면으로 60초가 찍힌다. 여섯 편이 다 준비되기 전에는 막는다. */
+  const vs=[...document.querySelectorAll('video')];
+  const notReady=vs.filter(v=>v.readyState<2);
+  if(notReady.length){
+    btn.textContent='창을 앞으로 ('+(vs.length-notReady.length)+'/'+vs.length+')';
+    setTimeout(()=>{btn.textContent='\u25cf REC 60s';},2600); return;
+  }
   const chunks=[], rec=new MediaRecorder(out.captureStream(60),{mimeType:mime,videoBitsPerSecond:16e6});
   rec.ondataavailable=e=>e.data.size&&chunks.push(e.data);
   rec.onstop=()=>{const blob=new Blob(chunks,{type:mime}),a=document.createElement('a');
     a.href=URL.createObjectURL(blob); a.download='argo-crt-loop.'+(mime.includes('mp4')?'mp4':'webm');
     a.click(); btn.textContent='● REC 60s';};
-  window.__argoPlay(); rec.start(); btn.textContent='RECORDING…';
-  setTimeout(()=>rec.stop(),DUR*1000);
+  window.__argoPlay(); rec.start(); 
+  const t0r=performance.now();
+  const tick=setInterval(()=>{const left=DUR-(performance.now()-t0r)/1000;
+    btn.textContent='REC '+Math.max(0,left).toFixed(0)+'s';},250);
+  setTimeout(()=>{clearInterval(tick); rec.stop();},DUR*1000);
 };
 </script></body></html>

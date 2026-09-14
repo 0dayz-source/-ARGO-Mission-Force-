@@ -10,6 +10,7 @@
   #rec:hover{opacity:1}
 </style></head><body>
 <div id="stage"><canvas id="out"></canvas></div>
+<video id="story2" src="assets/story2.mp4" muted loop autoplay playsinline preload="auto" style="position:absolute;left:-9999px;top:0;width:2px;height:2px;opacity:0.01"></video>
 <video id="story" src="assets/story.mp4" muted loop autoplay playsinline preload="auto" style="position:absolute;left:-9999px;top:0;width:2px;height:2px;opacity:0.01"></video>
 <video id="clip" src="assets/geometric.mp4" muted loop autoplay playsinline preload="auto" style="position:absolute;left:-9999px;top:0;width:2px;height:2px;opacity:0.01"></video>
 <button id="rec">● REC 60s</button>
@@ -430,7 +431,7 @@ const BOOT=[
  'mounting /dev/will -> ROOT: ................. OK',
  'loading adaptation profile .................. OK',
  'locating mars sector 07 ..................... 99.9%','',
- 'SELECTION ANOMALY detected.  subject UNREGISTERED  status AWAKE','',
+ 'SELECTION ANOMALY   SUBJ UNREGISTERED   STATE AWAKE','',
  'can you leave earth: '];
 function s01(t){
   g.fillStyle='#0A0308'; g.fillRect(0,0,W,H);
@@ -448,106 +449,51 @@ function s01(t){
   T('2068-05-29',W-52,120,13,C.dust,600,0,'right');
 }
 
-/* ================== 02  SIGNAL PLATE  (영상 · 0.5배) ==================== */
-/* 우주선 도면을 걷어내고 외부 영상을 태운다. 원본 모션이 빨라 절반 속도로 돌린다.
-   재생 위치를 장면 시간에서 직접 계산하므로 루프마다 같은 구간이 나온다. */
-const STORY=document.getElementById('story');
-let storyReady=false;
-STORY.addEventListener('loadedmetadata',()=>{storyReady=true;});
-STORY.playbackRate=0.5; STORY.play().catch(()=>{});
-function s02(t){
+/* ===================== 영상 플레이트 (공용) ============================= */
+/* 세 편의 외부 영상을 같은 규칙으로 태운다. 재생 위치를 장면 시간에서 직접
+   계산하므로 루프를 돌 때마다 같은 구간이 나온다 — 이어 붙인 자리가 흔들리지 않는다.
+   글자는 전부 꾸밈이다. 설명하는 문장은 두지 않는다 — 코드·규격 조각만 남긴다. */
+const VID={};
+['story','story2','clip'].forEach(id=>{
+  const v=document.getElementById(id);
+  VID[id]={el:v, ready:false};
+  v.addEventListener('loadedmetadata',()=>{VID[id].ready=true;});
+  v.play().catch(()=>{});
+});
+function plate(id, t, rate, tag, code){
+  const V=VID[id], v=V.el;
   g.fillStyle='#000'; g.fillRect(0,0,W,H);
-  if(!storyReady){
-    g.globalAlpha=0.5+0.5*Math.abs(Math.sin(t*2));
-    T('LOADING SIGNAL PLATE',W/2,H/2-10,14,C.w,600,8,'center'); g.globalAlpha=1;
-    dottedRings(W/2,H/2,200,4,t,1);
-  }else{
-    const want=Math.min(STORY.duration-0.05, t*0.5);   /* 0.5배 */
-    if(Math.abs(STORY.currentTime-want)>0.34){ try{STORY.currentTime=want;}catch(e){} }
-    if(STORY.paused) STORY.play().catch(()=>{});
-    const vw=STORY.videoWidth||1080, vh=STORY.videoHeight||1920;
-    const sc=Math.max(W/vw,H/vh), dw=vw*sc, dh=vh*sc;
-    g.drawImage(STORY,(W-dw)/2,(H-dh)/2,dw,dh);
-  }
-  const k=E(seg(t,0.2,1.0)); g.globalAlpha=k;
-  T('◆ SIGNAL PLATE',52,96,13,C.w,600,6);
-  T('REEL 753 · STORY',W-52,96,10,'rgba(255,255,255,.6)',400,0,'right');
-  L(52,H-96,W-52,H-96,'rgba(255,255,255,.45)',1);
-  T('TFSC-04  ·  TRANSMISSION INTERCEPT',52,H-86,9.5,'rgba(255,255,255,.7)',600);
-  T('0.5×  SOL 0687',W-52,H-86,9.5,'rgba(255,255,255,.5)',400,0,'right');
-  g.globalAlpha=1;
-}
-
-/* ======================= 03  MARS ORBIT  (12.2-19.0) ===================== */
-function s03(t){
-  g.fillStyle='#000'; g.fillRect(0,0,W,H);
-  T('TRANSFER GEOMETRY',52,110,17,C.w,600,8);
-  T('SHEET 02 / 06',W-52,110,13,'rgba(255,255,255,.5)',600,0,'right');
-  L(52,140,W-52,140,'rgba(255,255,255,.35)',1);
-  const cx=W/2, cy=620, rE=120, rM=268, p=E(seg(t,0.15,3.2));
-  g.strokeStyle='rgba(255,255,255,.26)'; g.lineWidth=1;
-  for(const r of [rE,rM]){g.beginPath();g.arc(cx,cy,r,0,6.2832);g.stroke();}
-  /* 각도 눈금 */
-  for(let i=0;i<72;i++){const a=i*6.2832/72, o=i%6?4:9;
-    L(cx+Math.cos(a)*(rM+6),cy+Math.sin(a)*(rM+6),cx+Math.cos(a)*(rM+6+o),cy+Math.sin(a)*(rM+6+o),'rgba(255,255,255,.32)',1);}
-  const a=(rE+rM)/2, bb=Math.sqrt(rE*rM), ang=p*Math.PI;
-  g.strokeStyle=C.w; g.lineWidth=2.2; g.shadowColor=C.w; g.shadowBlur=12; g.beginPath();
-  for(let i=0;i<=200;i++){const th=Math.PI*i/200; if(th>ang)break;
-    const X=cx+Math.cos(th+Math.PI)*a+(a-rE), Y=cy+Math.sin(th+Math.PI)*bb; i?g.lineTo(X,Y):g.moveTo(X,Y);}
-  g.stroke(); g.shadowBlur=0;
-  const dot=(X,Y,r,fill)=>{g.beginPath();g.arc(X,Y,r,0,6.2832);g.fillStyle=fill;g.fill();};
-  dot(cx-rE,cy,7,C.w); g.strokeStyle=C.w;g.lineWidth=1.6;g.beginPath();g.arc(cx+rM,cy,12,0,6.2832);g.stroke();
-  if(p>.02){const th=ang-.001,X=cx+Math.cos(th+Math.PI)*a+(a-rE),Y=cy+Math.sin(th+Math.PI)*bb;
-    dot(X,Y,4.5,C.w); L(X,Y,X,cy+rM+70,'rgba(255,255,255,.5)',1);
-    T(Math.round(210*p).toString().padStart(3,'0')+' d',X+10,Y-24,14,C.w,600,6);}
-  T('EARTH',cx-rE,cy+18,11,'rgba(255,255,255,.6)',600,0,'center');
-  T('MARS',cx+rM,cy+22,11,'rgba(255,255,255,.6)',600,0,'center');
-  const rows=[['DEPARTURE V∞','2.94 KM/S'],['TRANSFER','210 DAYS'],['ARRIVAL V∞','2.65 KM/S'],
-              ['COMMS DELAY','UP TO 24 MIN'],['RETURN','NONE']];
-  let y=990;
-  rows.forEach(([k,v],i)=>{const on=E(seg(t,1.0+i*.42,1.7+i*.42)); if(!on)return;
-    g.globalAlpha=on; L(52,y+9,76,y+9,C.w,1.3,6);
-    T(k,88,y,14,C.w,600,6); T(v,W-52,y,13,'rgba(255,255,255,.6)',400,0,'right');
-    g.globalAlpha=1; y+=40;});
-}
-
-/* ================== 04  ARCHIVE PLATE  (영상 삽입) ====================== */
-/* 화살표 커서 페이지를 걷어내고 외부 영상을 그대로 방송에 태운다.
-   장면 시간으로 재생 위치를 직접 몰아 주므로 루프마다 같은 구간이 나온다. */
-const CLIP=document.getElementById('clip');
-let clipReady=false;
-CLIP.addEventListener('loadedmetadata',()=>{clipReady=true;});
-CLIP.play().catch(()=>{});
-function s04(t){
-  g.fillStyle='#000'; g.fillRect(0,0,W,H);
-  if(!clipReady){
-    /* 영상이 아직 안 붙었으면 검은 화면 대신 대기 판을 그린다 —
-       전시 중 네트워크가 늦어도 한 장면이 통째로 비지 않게. */
-    g.globalAlpha=0.5+0.5*Math.abs(Math.sin(t*2));
-    T('LOADING ARCHIVE PLATE',W/2,H/2-10,14,C.w,600,8,'center');
+  if(!V.ready){
+    g.globalAlpha=0.35+0.35*Math.abs(Math.sin(t*2.4));
+    dottedRings(W/2,H/2,190,4,t,1);
+    T('····',W/2,H/2-8,18,C.w,600,6,'center');
     g.globalAlpha=1;
-    dottedRings(W/2,H/2,200,4,t,1);
-  }
-  if(clipReady){
-    /* 장면 길이(6.8초)에 맞춰 재생 구간을 고정한다 */
-    const want=Math.min(CLIP.duration-0.05, t*0.92);
-    if(Math.abs(CLIP.currentTime-want)>0.34){ try{CLIP.currentTime=want;}catch(e){} }
-    if(CLIP.paused) CLIP.play().catch(()=>{});
-    /* 세로 화면을 꽉 채우고 좌우를 잘라 낸다 */
-    const vw=CLIP.videoWidth||1080, vh=CLIP.videoHeight||1350;
+  }else{
+    const want=Math.min(v.duration-0.05, t*rate);
+    if(Math.abs(v.currentTime-want)>0.34){ try{v.currentTime=want;}catch(e){} }
+    if(v.paused) v.play().catch(()=>{});
+    const vw=v.videoWidth||1080, vh=v.videoHeight||1920;
     const sc=Math.max(W/vw,H/vh), dw=vw*sc, dh=vh*sc;
-    g.drawImage(CLIP,(W-dw)/2,(H-dh)/2,dw,dh);
+    g.drawImage(v,(W-dw)/2,(H-dh)/2,dw,dh);
   }
-  /* 방송 자막만 얇게 — 액자는 두지 않는다 */
-  const k=E(seg(t,0.2,1.0));
-  g.globalAlpha=k;
-  T('◆ ARCHIVE PLATE',52,96,13,C.w,600,6);
-  T('REEL 928 · PORTRAIT',W-52,96,10,'rgba(255,255,255,.6)',400,0,'right');
-  L(52,H-96,W-52,H-96,'rgba(255,255,255,.45)',1);
-  T('TFSC-04  ·  GEOMETRIC SURVEY',52,H-86,9.5,'rgba(255,255,255,.7)',600);
-  T('SOL 0687',W-52,H-86,9.5,'rgba(255,255,255,.5)',400,0,'right');
+  /* 꾸밈 글자 — 규격 조각만 */
+  const k=E(seg(t,0.25,1.1)); g.globalAlpha=k*0.9;
+  T('◆',52,94,11,C.w,600,5);
+  T(tag,70,95,10,C.w,600,4);
+  T(code,W-52,95,9,'rgba(255,255,255,.55)',400,0,'right');
+  L(52,H-92,W-52,H-92,'rgba(255,255,255,.38)',1);
+  T('TFSC-04',52,H-84,8.6,'rgba(255,255,255,.62)',600);
+  T('SOL 0687',W/2,H-84,8.6,'rgba(255,255,255,.45)',400,0,'center');
+  T(rate.toFixed(2)+'×',W-52,H-84,8.6,'rgba(255,255,255,.45)',400,0,'right');
+  /* 모서리 정합 마크만 — 액자는 두지 않는다 */
+  for(const [X,Y] of [[46,86],[W-46,86],[46,H-84],[W-46,H-84]]){
+    g.strokeStyle='rgba(255,255,255,.5)';g.lineWidth=1;
+    g.beginPath();g.moveTo(X-6,Y);g.lineTo(X+6,Y);g.moveTo(X,Y-6);g.lineTo(X,Y+6);g.stroke();}
   g.globalAlpha=1;
 }
+const s02 = t => plate('story',  t, 0.50, 'PLATE 753','1080×1920  H.264');
+const s03 = t => plate('story2', t, 0.45, 'PLATE 720','1080×1920  H.264');
+const s04 = t => plate('clip',   t, 0.75, 'PLATE 928','1080×1350  H.264');
 
 /* ==================== 05  SURFACE SECTION  (25.0-32.0) =================== */
 function s05(t){
@@ -656,7 +602,7 @@ function s06(t){
 /* ==================== 07  DESCENT PROFILE  (38.0-44.5) =================== */
 function s07(t){
   g.fillStyle='#000'; g.fillRect(0,0,W,H);
-  chrome('ENTRY · DESCENT · LANDING','SHEET 04','B','NOMINAL PROFILE · 3-SIGMA DISPERSION NOT SHOWN');
+  chrome('EDL · SEC 07','SHEET 04','B','3σ NOT SHOWN');
   const x0=90,x1=W-70,y0=240,y1=780, p=E(seg(t,0.1,2.6));
   /* 축 */
   g.strokeStyle='rgba(255,255,255,.4)';g.lineWidth=1;
@@ -677,8 +623,8 @@ function s07(t){
   g.stroke();g.shadowBlur=0;
   if(p>.02){g.fillStyle=C.w;g.beginPath();g.arc(lx,ly,4.5,0,6.2832);g.fill();}
   /* 이벤트 */
-  const ev=[[0.06,'ENTRY INTERFACE','125 km · 5.9 km/s'],[0.32,'PEAK HEATING','1,450 K'],
-            [0.58,'SUPERSONIC RETRO','2.1 km/s'],[0.82,'GEAR DEPLOY','480 m'],[0.97,'TOUCHDOWN','0.6 m/s']];
+  const ev=[[0.06,'EI','125 km · 5.9 km/s'],[0.32,'PEAK q','1,450 K'],
+            [0.58,'RETRO','2.1 km/s'],[0.82,'GEAR','480 m'],[0.97,'TD','0.6 m/s']];
   ev.forEach(([u,lab,sub],i)=>{
     if(p<u) return;
     const alt=Math.pow(1-u,2.6), X=x0+(x1-x0)*u, Y=y1-(y1-y0)*alt;
@@ -703,14 +649,14 @@ function s07(t){
   const pk=E(seg(t,1.6,2.8));
   if(pk>0){ g.globalAlpha=pk;
     panel(58,840,214,132,'SEQUENCE','05 STEPS');
-    stepList(70,862,['Entry interface','Peak heating','Supersonic retro','Gear deploy','Touchdown'],E(seg(t,1.8,4.2)));
+    stepList(70,862,['EI','PEAK q','RETRO','GEAR','TD'],E(seg(t,1.8,4.2)));
     panel(292,840,214,132,'VEHICLE','t · kg/m2');
     readout(304,862,[['ENTRY MASS','62.4'],['BALLISTIC','118'],['DECEL PEAK','4.2 g'],
                      ['CEP','48 m'],['SITE','SEC 07']]);
     panel(526,840,216,132,'TELEMETRY','3 CH');
     wave(538,862,190,26,t,0,0); wave(538,896,190,26,t,2.1,2); wave(538,930,190,26,t,4.3,1);
     g.globalAlpha=1; }
-  T('⊹  ALL VALUES NOMINAL   ·   18.4N  77.5E',58,H-96,10,'rgba(255,255,255,.45)',400);
+  T('⊹  18.4N  77.5E',58,H-96,9.5,'rgba(255,255,255,.45)',400);
 }
 
 /* ====================== 08  CANDIDATE  (44.5-50.0) ======================= */
@@ -775,8 +721,8 @@ function s09(t){
     L(W/2+Math.cos(a2)*r*1.1, sy+Math.sin(a2)*r*1.1,
       W/2+Math.cos(a2)*r*(2.2+0.6*Math.sin(a2*5)), sy+Math.sin(a2)*r*(2.2+0.6*Math.sin(a2*5)), C.w,1,6); }
   g.globalAlpha=1;
-  track(W/2-r-26, sy-r-26, (r+26)*2, (r+26)*2, 'OBJ / SOL', 'ACQUIRED', C.w, t*1.6);
-  chrome('SUNRISE · SECTOR 07','SHEET 06','A','OBSERVED 2068-05-29  06:41:18 LMST');
+  track(W/2-r-26, sy-r-26, (r+26)*2, (r+26)*2, 'OBJ/SOL', 'ACQ', C.w, t*1.6);
+  chrome('SUNRISE · SEC 07','SHEET 06','A','06:41:18 LMST');
   /* 관측 기록 */
   const rows=[['AZIMUTH','094.2°'],['ELEVATION','+02.8°'],['IRRADIANCE','586 W/m²'],
               ['SOL COUNT','0687'],['GATE 02','UNLOCKED']];
@@ -786,8 +732,10 @@ function s09(t){
     T(kk,92,y,12,C.w,600,5); T(v,W-58,y,12,'rgba(255,255,255,.62)',400,0,'right');
     g.globalAlpha=1; y+=30;});
   const on=E(seg(t,2.6,3.6)); g.globalAlpha=on;
-  T('THE SECOND HORIZON IS OPEN',58,H-172,19,C.w,600,10);
-  T('TRANSFER AUTHORIZED   ·   RETURN  NONE',58,H-148,10,'rgba(255,255,255,.55)',400);
+  /* 문장이 아니라 상태 표시로 — 글자는 꾸밈이지 설명이 아니다 */
+  T('SECOND HORIZON',58,H-176,17,C.w,600,9);
+  T('STATE  OPEN',58,H-154,10,'rgba(255,255,255,.62)',600);
+  T('RETURN  ——',W-58,H-154,10,'rgba(255,255,255,.45)',400,0,'right');
   g.globalAlpha=1;
 }
 
@@ -892,12 +840,14 @@ function s10(t){
    SECTION A-A · 육각 매트릭스 · 마지막 성운 장면을 걷어냈다.
    [start, painter, crt세기, dither세기, 채널분리] */
 const BEATS=[
-  [0.0 , s01, 1.00, 0.00, 0.00],   /* BOOT            */
-  [10.0, s02, 0.30, 0.00, 0.00],   /* SIGNAL PLATE    영상 0.5배 */
-  [20.0, s03, 0.22, 1.00, 0.00],   /* TRANSFER GEOM   */
-  [30.0, s04, 0.30, 0.00, 0.00],   /* ARCHIVE PLATE   영상 */
-  [40.0, s07, 0.22, 1.00, 0.00],   /* ENTRY DESCENT   */
-  [50.0, s09, 0.26, 1.00, 0.00],   /* HORIZON         */
+  /* 영상 셋과 도면 둘을 번갈아 놓아 밀도가 오르내리게 한다.
+     영상은 속도를 각각 다르게 줘 같은 질감이 이어지지 않게 했다. */
+  [0.0 , s01, 1.00, 0.00, 0.00],   /* BOOT        8s  터미널      */
+  [8.0 , s02, 0.30, 0.00, 0.00],   /* PLATE 753  11s  영상 0.50×  */
+  [19.0, s07, 0.22, 1.00, 0.00],   /* EDL         9s  도면        */
+  [28.0, s03, 0.30, 0.00, 0.00],   /* PLATE 720  11s  영상 0.45×  */
+  [39.0, s09, 0.26, 1.00, 0.00],   /* HORIZON     9s  도면        */
+  [48.0, s04, 0.30, 0.00, 0.00],   /* PLATE 928  12s  영상 0.75×  */
 ];
 /* 전환 : 미끄러지는 대신 그냥 위에 덮어씌운다.
    장면마다 CRT 곡률이 달라 밀어 넣으면 곡면이 펴지는 게 보였다.

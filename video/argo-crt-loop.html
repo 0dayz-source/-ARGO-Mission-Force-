@@ -40,8 +40,18 @@ const MONO='ui-monospace,"SF Mono",Menlo,Consolas,monospace';
 const VS='attribute vec2 aPos;void main(){gl_Position=vec4(aPos,0.,1.);}';
 const FS=`precision highp float;
 uniform sampler2D uTex; uniform vec2 uRes; uniform float uTime;
-uniform float uCrt,uDither,uOff,uSep,uTrans,uMono,uPink;
+uniform float uCrt,uDither,uOff,uSep,uTrans;
+uniform float uLift,uGainC,uGamma,uSat,uHue,uShad,uHigh;
 float hash(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
+vec3 hueRot(vec3 c, float a){
+  /* 색상만 돌린다 — 채도와 밝기는 유지된다. YIQ 축 회전. */
+  float u=cos(a), w=sin(a);
+  mat3 m = mat3(0.299,0.587,0.114, 0.596,-0.274,-0.322, 0.211,-0.523,0.312);
+  mat3 i = mat3(1.0,0.956,0.621, 1.0,-0.272,-0.647, 1.0,-1.106,1.703);
+  vec3 yiq = m*c;
+  vec3 r = vec3(yiq.x, yiq.y*u - yiq.z*w, yiq.y*w + yiq.z*u);
+  return i*r;
+}
 float bayer(vec2 a){
   vec2 p=floor(mod(a,4.0)); float i=p.y*4.0+p.x; float m;
   if(i<1.)m=0.;else if(i<2.)m=8.;else if(i<3.)m=2.;else if(i<4.)m=10.;
@@ -92,17 +102,19 @@ void main(){
   col*=1.-0.022*uCrt*sin(t*8.);
   col+=(hash(fuv+fract(t*.37))-.5)*(0.018+0.045*uSep+0.10*uTrans);
   col+=trBlock*0.10;
-  /* ---- 톤 ----
-     uMono : 휘도만 남겨 흑백으로. uPink : 휘도를 검정→ARGO 핫핑크→흰색 램프에 태운다.
-     원본 영상들의 색이 제각각이라 이 두 톤으로 통일해야 한 시리즈로 읽힌다. */
-  float lum2=dot(col,vec3(0.2126,0.7152,0.0722));
-  col=mix(col,vec3(lum2),uMono);
-  if(uPink>0.001){
-    float l2=clamp(lum2,0.0,1.0);
-    vec3 duo = l2<0.5 ? mix(vec3(0.020,0.004,0.012), vec3(1.0,0.176,0.510), l2*2.0)
-                      : mix(vec3(1.0,0.176,0.510),   vec3(1.0,0.86,0.93),  (l2-0.5)*2.0);
-    col=mix(col,duo,uPink);
-  }
+  /* ---- 컬러 그레이딩 ----
+     단색으로 뭉개지 않는다. 원본의 색은 살리되 대비를 올려 검정을 진짜 검정으로
+     내리고, 색상을 ARGO 팔레트 쪽으로 돌린 다음 그림자·하이라이트에 각각
+     딥플럼과 아이스를 얹는다. 오렌지·블루·민트 같은 서브 컬러도 그대로 살아남는다. */
+  col = max(col - uLift, 0.0) * uGainC;          /* 블랙 포인트를 깎고 다시 벌린다 */
+  col = pow(clamp(col,0.0,1.0), vec3(uGamma));   /* 감마로 중간톤을 눌러 대비를 세운다 */
+  col = hueRot(col, uHue);                       /* ARGO 색상환 쪽으로 */
+  float lum2 = dot(col, vec3(0.2126,0.7152,0.0722));
+  col = mix(vec3(lum2), col, uSat);              /* 채도는 올린다(1 이상) */
+  /* 스플릿 톤 : 그림자는 딥 플럼(#5C0E4A), 하이라이트는 아이스(#D4FAFF) */
+  col += vec3(0.36,0.055,0.29) * (1.0-lum2) * uShad;
+  col = mix(col, vec3(0.83,0.98,1.0), lum2*lum2*uHigh);
+  col = clamp(col, 0.0, 1.0);
   col=mix(vec3(0.028,0.010,0.020),col,inside);
   gl_FragColor=vec4(col,1.);
 }`;
@@ -520,14 +532,18 @@ const sE = t => plate('p548', t, 0.70,'PLATE 548','1080×1920  H.264');
    SECTION A-A · 육각 매트릭스 · 마지막 성운 장면을 걷어냈다.
    [start, painter, crt세기, dither세기, 채널분리] */
 const BEATS=[
-  /* [start, painter, crt, dither, sep, mono, pink]
-     흑백과 ARGO 핑크를 번갈아 배치해 다섯 플레이트가 한 시리즈로 읽히게 한다. */
-  [0.0 , s01, 1.00, 0.00, 0.00, 0.00, 0.00],   /* BOOT        8.0s  원래 핑크 터미널 */
-  [8.0 , sA , 0.30, 0.00, 0.00, 1.00, 0.00],   /* PLATE 938  10.5s  0.50×  흑백 */
-  [18.5, sB , 0.30, 0.00, 0.00, 1.00, 0.92],   /* PLATE 787   9.5s  0.60×  핑크 */
-  [28.0, sC , 0.30, 0.00, 0.00, 1.00, 0.00],   /* PLATE 787B 10.0s  0.45×  흑백 */
-  [38.0, sD , 0.30, 0.00, 0.00, 1.00, 0.92],   /* PLATE 720  11.0s  0.55×  핑크 */
-  [49.0, sE , 0.30, 0.00, 0.00, 1.00, 0.00],   /* PLATE 548  11.0s  0.70×  흑백 */
+  /* [start, painter, crt, dither, sep, lift, gainC, gamma, sat, hue, shad, high]
+     lift  블랙 포인트 (올릴수록 검정이 진해진다)
+     gainC 깎은 만큼 다시 벌리는 양      gamma 중간톤 (>1 이면 대비가 선다)
+     sat   채도 (1 이상)                 hue   색상 회전(rad)
+     shad  그림자에 얹는 딥플럼          high  하이라이트에 얹는 아이스
+     다섯 플레이트가 색상만 다르고 대비·채도는 같아 한 시리즈로 읽힌다. */
+  [0.0 , s01, 1.00, 0.00, 0.00, 0.00, 1.00, 1.00, 1.00,  0.00, 0.00, 0.00],  /* BOOT  원본 */
+  [8.0 , sA , 0.30, 0.00, 0.00, 0.10, 1.28, 1.35, 1.45, -0.55, 0.34, 0.20],  /* 938  피치·앰버 */
+  [18.5, sB , 0.30, 0.00, 0.00, 0.10, 1.28, 1.35, 1.55,  0.42, 0.40, 0.16],  /* 787  핑크·마젠타 */
+  [28.0, sC , 0.30, 0.00, 0.00, 0.10, 1.28, 1.35, 1.40,  1.85, 0.26, 0.30],  /* 787B 블루·민트 */
+  [38.0, sD , 0.30, 0.00, 0.00, 0.10, 1.28, 1.35, 1.55,  0.18, 0.42, 0.16],  /* 720  로즈 */
+  [49.0, sE , 0.30, 0.00, 0.00, 0.10, 1.28, 1.35, 1.45, -0.30, 0.30, 0.24],  /* 548  코랄 */
 ];
 /* 전환 : 미끄러지는 대신 그냥 위에 덮어씌운다.
    장면마다 CRT 곡률이 달라 밀어 넣으면 곡면이 펴지는 게 보였다.
@@ -570,8 +586,13 @@ function frame(now){
   gl.uniform1f(U('uCrt'),    mix(A[2],B[2],sl.p));
   gl.uniform1f(U('uDither'), mix(A[3],B[3],sl.p));
   gl.uniform1f(U('uSep'),    mix(A[4],B[4],sl.p));
-  gl.uniform1f(U('uMono'),   mix(A[5],B[5],sl.p));
-  gl.uniform1f(U('uPink'),   mix(A[6],B[6],sl.p));
+  gl.uniform1f(U('uLift'),   mix(A[5],B[5],sl.p));
+  gl.uniform1f(U('uGainC'),  mix(A[6],B[6],sl.p));
+  gl.uniform1f(U('uGamma'),  mix(A[7],B[7],sl.p));
+  gl.uniform1f(U('uSat'),    mix(A[8],B[8],sl.p));
+  gl.uniform1f(U('uHue'),    mix(A[9],B[9],sl.p));
+  gl.uniform1f(U('uShad'),   mix(A[10],B[10],sl.p));
+  gl.uniform1f(U('uHigh'),   mix(A[11],B[11],sl.p));
   gl.uniform1f(U('uTrans'),0);
   gl.uniform1f(U('uOff'),offAmount(t));
   gl.drawArrays(gl.TRIANGLES,0,3);

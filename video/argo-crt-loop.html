@@ -42,16 +42,24 @@ const VS='attribute vec2 aPos;void main(){gl_Position=vec4(aPos,0.,1.);}';
 const FS=`precision highp float;
 uniform sampler2D uTex; uniform vec2 uRes; uniform float uTime;
 uniform float uCrt,uDither,uOff,uSep,uTrans;
-uniform float uLift,uGainC,uGamma,uSat,uHue,uShad,uHigh;
+uniform float uLift,uGainC,uGamma,uSat,uRed,uCool,uKeep;
 float hash(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
-vec3 hueRot(vec3 c, float a){
-  /* 색상만 돌린다 — 채도와 밝기는 유지된다. YIQ 축 회전. */
-  float u=cos(a), w=sin(a);
-  mat3 m = mat3(0.299,0.587,0.114, 0.596,-0.274,-0.322, 0.211,-0.523,0.312);
-  mat3 i = mat3(1.0,0.956,0.621, 1.0,-0.272,-0.647, 1.0,-1.106,1.703);
-  vec3 yiq = m*c;
-  vec3 r = vec3(yiq.x, yiq.y*u - yiq.z*w, yiq.y*w + yiq.z*u);
-  return i*r;
+/* ARGO 팔레트 램프 — 검정 → 딥플럼 → 레드 → 핫핑크 → 화이트.
+   여기 없는 색(초록·보라·주황)은 구조적으로 나올 수 없다.
+   uRed 가 크면 레드 구간이 넓어지고, 작으면 핑크가 넓어진다. */
+vec3 argoRamp(float l, float redBias){
+  vec3 c0=vec3(0.027,0.016,0.039);   /* #07040A 보이드 블랙 */
+  vec3 c1=vec3(0.227,0.039,0.180);   /* #3A0A2E 딥 플럼     */
+  vec3 c2=vec3(0.800,0.141,0.286);   /* #CC2449 레드        */
+  vec3 c3=vec3(1.000,0.176,0.510);   /* #FF2D82 핫 핑크     */
+  vec3 c4=vec3(1.000,1.000,1.000);   /* 화이트              */
+  float p1=0.20;
+  float p2=mix(0.52,0.38,redBias);
+  float p3=mix(0.78,0.88,redBias);
+  if(l<p1) return mix(c0,c1, l/p1);
+  if(l<p2) return mix(c1,c2,(l-p1)/(p2-p1));
+  if(l<p3) return mix(c2,c3,(l-p2)/(p3-p2));
+  return          mix(c3,c4,(l-p3)/(1.0-p3));
 }
 float bayer(vec2 a){
   vec2 p=floor(mod(a,4.0)); float i=p.y*4.0+p.x; float m;
@@ -91,6 +99,23 @@ void main(){
     float q=step(bayer(gl_FragCoord.xy), clamp(l*1.18,0.,1.));
     col=mix(col,vec3(q),uDither);
   }
+  /* ---- 컬러 그레이딩 ----
+     [수정] 색상환을 통째로 돌리던 방식은 팔레트에 없는 초록·보라·주황을 만들었고,
+     장면마다 한 색으로 몰려 듀오톤처럼 보였다.
+     이제는 밝기를 ARGO 램프에 태우고, 원본이 '푸른 정도'만 읽어 아이스민트를
+     조금 섞는다. 램프가 네 단계(플럼·레드·핑크·화이트)라 단색으로 뭉치지 않는다. */
+  col = max(col - uLift, 0.0) * uGainC;
+  col = pow(clamp(col,0.0,1.0), vec3(uGamma));
+  float l3 = dot(col, vec3(0.2126,0.7152,0.0722));
+  l3 = clamp(l3*uSat, 0.0, 1.0);
+  vec3 base = argoRamp(l3, uRed);
+  /* 원본이 푸른 픽셀만 아이스민트(#D4FAFF) 쪽으로 — '약간의 하늘 민트' */
+  float cool = clamp((col.b - max(col.r,col.g))*2.6, 0.0, 1.0);
+  base = mix(base, mix(base, vec3(0.831,0.980,1.000), 0.78), cool*uCool);
+  /* uKeep : 원본 명암의 결을 조금 남겨 램프가 평평해지지 않게 한다 */
+  col = mix(base, base*(0.72+0.56*l3), uKeep);
+  col = clamp(col,0.0,1.0);
+
   float sl=sin(uv.y*3.14159265*700.0+t*4.);
   col*=mix(1.-0.30*uCrt,1.,sl*sl);
   float gx=gl_FragCoord.x*(6.2831853/3.1);
@@ -103,19 +128,6 @@ void main(){
   col*=1.-0.022*uCrt*sin(t*8.);
   col+=(hash(fuv+fract(t*.37))-.5)*(0.018+0.045*uSep+0.10*uTrans);
   col+=trBlock*0.10;
-  /* ---- 컬러 그레이딩 ----
-     단색으로 뭉개지 않는다. 원본의 색은 살리되 대비를 올려 검정을 진짜 검정으로
-     내리고, 색상을 ARGO 팔레트 쪽으로 돌린 다음 그림자·하이라이트에 각각
-     딥플럼과 아이스를 얹는다. 오렌지·블루·민트 같은 서브 컬러도 그대로 살아남는다. */
-  col = max(col - uLift, 0.0) * uGainC;          /* 블랙 포인트를 깎고 다시 벌린다 */
-  col = pow(clamp(col,0.0,1.0), vec3(uGamma));   /* 감마로 중간톤을 눌러 대비를 세운다 */
-  col = hueRot(col, uHue);                       /* ARGO 색상환 쪽으로 */
-  float lum2 = dot(col, vec3(0.2126,0.7152,0.0722));
-  col = mix(vec3(lum2), col, uSat);              /* 채도는 올린다(1 이상) */
-  /* 스플릿 톤 : 그림자는 딥 플럼(#5C0E4A), 하이라이트는 아이스(#D4FAFF) */
-  col += vec3(0.36,0.055,0.29) * (1.0-lum2) * uShad;
-  col = mix(col, vec3(0.83,0.98,1.0), lum2*lum2*uHigh);
-  col = clamp(col, 0.0, 1.0);
   col=mix(vec3(0.028,0.010,0.020),col,inside);
   gl_FragColor=vec4(col,1.);
 }`;
@@ -534,17 +546,17 @@ const sE = t => plate('p548', t, 0.70,'PLATE 548','1080×1920  H.264');
    SECTION A-A · 육각 매트릭스 · 마지막 성운 장면을 걷어냈다.
    [start, painter, crt세기, dither세기, 채널분리] */
 const BEATS=[
-  /* [start, painter, crt, dither, sep, lift, gainC, gamma, sat, hue, shad, high]
-     구성은 출발 → 냉각 → 도착의 온도 곡선이다.
-     따뜻한 색으로 떠나 가장 먼 지점에서 가장 차갑고 가장 느려졌다가,
-     다시 따뜻해지며 닫힌다. 배속도 그 곡선을 따라간다. */
-  [0.0 , s01, 1.00, 0.00, 0.00, 0.00, 1.00, 1.00, 1.00,  0.00, 0.00, 0.00],  /* BOOT   7.0s        */
-  [7.0 , sA , 0.30, 0.00, 0.00, 0.10, 1.28, 1.35, 1.45, -0.55, 0.34, 0.20],  /* 938    9.0s 0.50× 피치·앰버   출발 */
-  [16.0, sB , 0.30, 0.00, 0.00, 0.10, 1.28, 1.35, 1.55,  0.42, 0.40, 0.16],  /* 787    9.0s 0.60× 핑크·마젠타 가속 */
-  [25.0, sC , 0.30, 0.00, 0.00, 0.10, 1.28, 1.35, 1.40,  1.85, 0.26, 0.30],  /* 787B   9.0s 0.45× 블루·민트   냉각 */
-  [34.0, sX , 0.30, 0.00, 0.00, 0.12, 1.30, 1.42, 1.34,  2.45, 0.22, 0.34],  /* 761    9.0s 0.40× 딥블루·바이올렛 최원점 */
-  [43.0, sD , 0.30, 0.00, 0.00, 0.10, 1.28, 1.35, 1.55,  0.18, 0.42, 0.16],  /* 720    8.5s 0.55× 로즈        접근 */
-  [51.5, sE , 0.30, 0.00, 0.00, 0.10, 1.28, 1.35, 1.45, -0.30, 0.30, 0.24],  /* 548    8.5s 0.70× 코랄        도착 */
+  /* [start, painter, crt, dither, sep, lift, gainC, gamma, sat, red, cool, keep]
+     팔레트는 검정·딥플럼·레드·핫핑크·화이트 + 약간의 아이스민트로 고정이다.
+     장면 차이는 색상이 아니라 램프의 배분(red)과 민트 허용치(cool)로만 낸다.
+     red 1 에 가까울수록 레드가 넓고, 0 에 가까울수록 핑크가 넓다. */
+  [0.0 , s01, 1.00, 0.00, 0.00, 0.00, 1.00, 1.00, 1.00, 0.00, 0.00, 0.00],  /* BOOT  원본 통과 */
+  [7.0 , sA , 0.30, 0.00, 0.00, 0.10, 1.30, 1.35, 0.92, 0.72, 0.10, 0.35],  /* 938  레드 우세   출발 */
+  [16.0, sB , 0.30, 0.00, 0.00, 0.10, 1.30, 1.35, 0.94, 0.35, 0.18, 0.35],  /* 787  핑크 우세   가속 */
+  [25.0, sC , 0.30, 0.00, 0.00, 0.10, 1.30, 1.38, 0.90, 0.20, 0.62, 0.40],  /* 787B 민트 강함   냉각 */
+  [34.0, sX , 0.30, 0.00, 0.00, 0.12, 1.32, 1.42, 0.88, 0.15, 0.78, 0.44],  /* 761  민트 최대   최원점 */
+  [43.0, sD , 0.30, 0.00, 0.00, 0.10, 1.30, 1.35, 0.94, 0.40, 0.16, 0.35],  /* 720  핑크        접근 */
+  [51.5, sE , 0.30, 0.00, 0.00, 0.10, 1.30, 1.35, 0.92, 0.66, 0.08, 0.35],  /* 548  레드        도착 */
 ];
 /* 전환 : 미끄러지는 대신 그냥 위에 덮어씌운다.
    장면마다 CRT 곡률이 달라 밀어 넣으면 곡면이 펴지는 게 보였다.
@@ -591,9 +603,9 @@ function frame(now){
   gl.uniform1f(U('uGainC'),  mix(A[6],B[6],sl.p));
   gl.uniform1f(U('uGamma'),  mix(A[7],B[7],sl.p));
   gl.uniform1f(U('uSat'),    mix(A[8],B[8],sl.p));
-  gl.uniform1f(U('uHue'),    mix(A[9],B[9],sl.p));
-  gl.uniform1f(U('uShad'),   mix(A[10],B[10],sl.p));
-  gl.uniform1f(U('uHigh'),   mix(A[11],B[11],sl.p));
+  gl.uniform1f(U('uRed'),    mix(A[9],B[9],sl.p));
+  gl.uniform1f(U('uCool'),   mix(A[10],B[10],sl.p));
+  gl.uniform1f(U('uKeep'),   mix(A[11],B[11],sl.p));
   gl.uniform1f(U('uTrans'),0);
   gl.uniform1f(U('uOff'),offAmount(t));
   gl.drawArrays(gl.TRIANGLES,0,3);

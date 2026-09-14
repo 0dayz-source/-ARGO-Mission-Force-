@@ -10,7 +10,6 @@
   #rec:hover{opacity:1}
 </style></head><body>
 <div id="stage"><canvas id="out"></canvas></div>
-<video id="p884" src="assets/p884.mp4" muted loop autoplay playsinline preload="auto" style="position:absolute;left:-9999px;top:0;width:2px;height:2px;opacity:0.01"></video>
 <video id="p787a" src="assets/p787a.mp4" muted loop autoplay playsinline preload="auto" style="position:absolute;left:-9999px;top:0;width:2px;height:2px;opacity:0.01"></video>
 <video id="p787b" src="assets/p787b.mp4" muted loop autoplay playsinline preload="auto" style="position:absolute;left:-9999px;top:0;width:2px;height:2px;opacity:0.01"></video>
 <video id="p720" src="assets/p720.mp4" muted loop autoplay playsinline preload="auto" style="position:absolute;left:-9999px;top:0;width:2px;height:2px;opacity:0.01"></video>
@@ -516,7 +515,7 @@ function s01(t){
    계산하므로 루프를 돌 때마다 같은 구간이 나온다 — 이어 붙인 자리가 흔들리지 않는다.
    글자는 전부 꾸밈이다. 설명하는 문장은 두지 않는다 — 코드·규격 조각만 남긴다. */
 const VID={};
-const PLATES=['p884','p787a','p787b','p761','p720','p548'];
+const PLATES=['p787a','p787b','p761','p720','p548'];
 PLATES.forEach(id=>{
   const v=document.getElementById(id);
   VID[id]={el:v, ready:false};
@@ -558,7 +557,6 @@ function plate(id, t, rate, tag, code){
     g.beginPath();g.moveTo(X-6,Y);g.lineTo(X+6,Y);g.moveTo(X,Y-6);g.lineTo(X,Y+6);g.stroke();}
   g.globalAlpha=1;
 }
-const sA = t => plate('p884', t, 0.85,'PLATE 884','1080×1920  H.264');
 const sB = t => plate('p787a',t, 0.70,'PLATE 787','1080×1920  H.264');
 const sC = t => plate('p787b',t, 0.50,'PLATE 787-B','1080×1920  H.264');
 const sD = t => plate('p720', t, 0.65,'PLATE 720','1080×1920  H.264');
@@ -575,12 +573,11 @@ const BEATS=[
      '원본이 확실히 붉은/푸른 자리에만' 포인트를 얼마나 허용할지의 세기다.
      기본은 거의 흑백(0.1대)으로 두고, 787b 와 마지막 548 에서만 색을 연다. */
   [0.0 , s01, 1.00, 0.00, 0.00, 0.00, 1.00, 1.00, 0.95, 0.95, 0.00],  /* BOOT  4.0s        자체 색 통과 */
-  [4.0 , sA , 0.30, 0.00, 0.00, 0.24, 1.60, 1.40, 0.10, 0.10, 0.35],  /* 884   6.0s  0.85× 순수 흑백   */
-  [10.0, sB , 0.30, 0.00, 0.00, 0.10, 1.30, 1.35, 0.12, 0.16, 0.35],  /* 787   9.5s  0.70× 거의 흑백   */
-  [19.5, sC , 0.30, 0.00, 0.00, 0.10, 1.30, 1.38, 0.42, 0.76, 0.40],  /* 787b 11.5s  0.50× 색이 열린다 */
-  [31.0, sX , 0.30, 0.00, 0.00, 0.12, 1.32, 1.42, 0.10, 0.34, 0.44],  /* 761   9.5s  0.40× 다시 닫힌다 */
-  [40.5, sD , 0.30, 0.00, 0.00, 0.10, 1.30, 1.35, 0.12, 0.12, 0.35],  /* 720   9.5s  0.65× 거의 흑백   */
-  [50.0, sE , 0.30, 0.00, 0.00, 0.10, 1.30, 1.35, 0.90, 0.72, 0.35],  /* 548  10.0s  0.90× 색 유지     */
+  [4.0 , sB , 0.30, 0.00, 0.00, 0.10, 1.30, 1.35, 0.12, 0.16, 0.35],  /* 787  10.5s  0.70× 거의 흑백   */
+  [14.5, sC , 0.30, 0.00, 0.00, 0.10, 1.30, 1.38, 0.42, 0.76, 0.40],  /* 787b 13.0s  0.50× 색이 열린다 */
+  [27.5, sX , 0.30, 0.00, 0.00, 0.12, 1.32, 1.42, 0.10, 0.34, 0.44],  /* 761  10.5s  0.40× 다시 닫힌다 */
+  [38.0, sD , 0.30, 0.00, 0.00, 0.10, 1.30, 1.35, 0.12, 0.12, 0.35],  /* 720  10.5s  0.65× 거의 흑백   */
+  [48.5, sE , 0.30, 0.00, 0.00, 0.10, 1.30, 1.35, 0.90, 0.72, 0.35],  /* 548  11.5s  0.90× 색 유지     */
 ];
 /* 전환 : 미끄러지는 대신 그냥 위에 덮어씌운다.
    장면마다 CRT 곡률이 달라 밀어 넣으면 곡면이 펴지는 게 보였다.

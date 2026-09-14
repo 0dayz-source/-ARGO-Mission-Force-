@@ -10,6 +10,7 @@
   #rec:hover{opacity:1}
 </style></head><body>
 <div id="stage"><canvas id="out"></canvas></div>
+<video id="story" src="assets/story.mp4" muted loop autoplay playsinline preload="auto" style="position:absolute;left:-9999px;top:0;width:2px;height:2px;opacity:0.01"></video>
 <video id="clip" src="assets/geometric.mp4" muted loop autoplay playsinline preload="auto" style="position:absolute;left:-9999px;top:0;width:2px;height:2px;opacity:0.01"></video>
 <button id="rec">● REC 60s</button>
 <script>
@@ -447,129 +448,34 @@ function s01(t){
   T('2068-05-29',W-52,120,13,C.dust,600,0,'right');
 }
 
-/* ================== 02  DEEP SPACE VEHICLE  (재작업) ==================== */
-/* 재래식 로켓을 걷어내고 심우주 항행선으로 바꿨다 — 긴 척추, 거주 링,
-   방열 날개, 자기 노즐 클러스터. 선을 촘촘히 넣어 도면처럼 읽히게 한다. */
-function craft(cx,top,bot,k){
-  const h=bot-top, sp=26;             /* sp : 척추 반폭 */
-  g.save(); g.beginPath(); g.rect(0,top-40,W,h*k+40); g.clip();
-
-  /* --- 지휘 모듈 : 각진 렌즈형 --- */
-  const ny=top, nh=h*0.115;
-  g.fillStyle=mass(.95); g.beginPath();
-  g.moveTo(cx,ny); g.lineTo(cx+38,ny+nh*0.42); g.lineTo(cx+30,ny+nh);
-  g.lineTo(cx-30,ny+nh); g.lineTo(cx-38,ny+nh*0.42); g.closePath(); g.fill();
-  g.strokeStyle='#000'; g.lineWidth=1;
-  for(let i=1;i<7;i++){const y=ny+nh*i/7; L(cx-38+Math.abs(3.5-i)*3,y,cx+38-Math.abs(3.5-i)*3,y,'#000',1);}
-  L(cx,ny,cx,ny+nh,'#000',1);
-  /* 창 */
-  g.fillStyle='#000'; for(let i=-2;i<=2;i++) g.fillRect(cx+i*11-3,ny+nh*0.62,6,4);
-
-  /* --- 전방 도킹 노드 --- */
-  const dy=ny+nh;
-  g.fillStyle=mass(.72); g.fillRect(cx-16,dy,32,h*0.035);
-  g.strokeStyle='#000'; for(let i=0;i<5;i++)L(cx-16,dy+i*h*0.007,cx+16,dy+i*h*0.007,'#000',1);
-  g.fillStyle=mass(.9); g.fillRect(cx-24,dy+h*0.012,48,4);
-
-  /* --- 척추 : 트러스 --- */
-  /* [수정] 레퍼런스의 구조물은 통짜 흰 덩어리가 아니라 밀도가 다른 스티플 기둥이
-     겹쳐 있다. 세로 기둥을 밀도별로 칠하고 그 위에 가로 격판을 얹는다. */
-  const sy=dy+h*0.035, sh=h*0.44;
-  const colw=(sp*2)/9;
-  for(let c2=0;c2<9;c2++){
-    const d2=[.85,.32,.62,.20,.95,.20,.62,.32,.85][c2];
-    g.fillStyle=mass(d2); g.fillRect(cx-sp+c2*colw,sy,colw-0.6,sh);
-  }
-  g.strokeStyle='#000'; g.lineWidth=1;
-  for(let i=0;i<88;i++){const y=sy+sh*i/88; L(cx-sp,y,cx+sp,y,'#000',i%4?0.7:1.4);}
-  for(let i=0;i<11;i++){const y=sy+sh*(i+0.5)/11;
-    g.fillStyle=mass(1); g.fillRect(cx-sp-5,y,sp*2+10,2.4);}
-  /* 사선 트러스 */
-  g.strokeStyle='rgba(0,0,0,.9)'; g.lineWidth=1.4;
-  for(let i=0;i<22;i++){const y=sy+sh*i/22, y2=sy+sh*(i+1)/22;
-    g.beginPath(); g.moveTo(cx-sp,y); g.lineTo(cx+sp,y2); g.moveTo(cx+sp,y); g.lineTo(cx-sp,y2); g.stroke();}
-  L(cx,sy,cx,sy+sh,'#000',1.4);
-
-  /* --- 거주 링 (정면에서 타원) --- */
-  const ry=sy+sh*0.42, rr=118;
-  g.strokeStyle=C.w; g.lineWidth=2.4;
-  g.beginPath(); g.ellipse(cx,ry,rr,rr*0.26,0,0,6.2832); g.stroke();
-  g.beginPath(); g.ellipse(cx,ry,rr*0.80,rr*0.21,0,0,6.2832); g.stroke();
-  for(let i=0;i<28;i++){const a2=i*6.2832/28;
-    L(cx+Math.cos(a2)*rr*0.80, ry+Math.sin(a2)*rr*0.21,
-      cx+Math.cos(a2)*rr,      ry+Math.sin(a2)*rr*0.26, C.w,1);}
-  /* 링 스포크 */
-  for(const sgn of [-1,1]) L(cx+sgn*sp,ry,cx+sgn*rr*0.80,ry,C.w,1.6);
-
-  /* --- 방열 날개 : 양쪽으로 뻗은 패널 --- */
-  const wy=sy+sh*0.74;
-  for(const sgn of [-1,1]){
-    for(let p2=0;p2<3;p2++){
-      const x1=cx+sgn*(sp+8+p2*76), w2=68, yy=wy-46+p2*6, hh=92-p2*8;
-      g.fillStyle=mass(.30); g.fillRect(sgn>0?x1:x1-w2,yy,w2,hh);
-      g.strokeStyle='rgba(0,0,0,.9)'; g.lineWidth=1;
-      for(let i=1;i<9;i++){const yv=yy+hh*i/9; L(sgn>0?x1:x1-w2,yv,sgn>0?x1+w2:x1,yv,'#000',1);}
-      for(let i=1;i<5;i++){const xv=(sgn>0?x1:x1-w2)+w2*i/5; L(xv,yy,xv,yy+hh,'#000',1);}
-      g.strokeStyle=C.w; g.lineWidth=1.2; g.strokeRect(sgn>0?x1:x1-w2,yy,w2,hh);
-      L(sgn>0?x1-8:x1, wy, sgn>0?x1:x1+8, wy, C.w, 1.6);
-    }
-  }
-
-  /* --- 추진부 : 자기 코일 + 노즐 --- */
-  const py=sy+sh, ph=h*0.20;
-  g.fillStyle=mass(.68); g.beginPath();
-  g.moveTo(cx-sp,py); g.lineTo(cx+sp,py); g.lineTo(cx+58,py+ph*0.42); g.lineTo(cx-58,py+ph*0.42); g.closePath(); g.fill();
-  g.strokeStyle='#000'; for(let i=1;i<9;i++){const y=py+ph*0.42*i/9; L(cx-sp-(58-sp)*i/9,y,cx+sp+(58-sp)*i/9,y,'#000',1);}
-  /* 코일 링 */
-  for(let i=0;i<4;i++){const y=py+ph*0.46+i*9;
-    g.strokeStyle=C.w; g.lineWidth=1.4; g.beginPath(); g.ellipse(cx,y,60-i*3,7,0,0,6.2832); g.stroke();}
-  /* 노즐 3기 */
-  for(const dx of [-38,0,38]){
-    g.fillStyle=mass(.9); g.beginPath();
-    g.moveTo(cx+dx-13,py+ph*0.60); g.lineTo(cx+dx+13,py+ph*0.60);
-    g.lineTo(cx+dx+24,bot); g.lineTo(cx+dx-24,bot); g.closePath(); g.fill();
-    g.strokeStyle='#000'; for(let i=1;i<8;i++){const u=i/8, y=py+ph*0.60+(bot-(py+ph*0.60))*u;
-      const hw=13+11*u; L(cx+dx-hw,y,cx+dx+hw,y,'#000',1);}
-  }
-  g.restore();
-  /* 중심선 · 기준선 */
-  g.setLineDash([9,5,2,5]); L(cx,top-26,cx,bot+26,'rgba(255,255,255,.5)',1); g.setLineDash([]);
-}
+/* ================== 02  SIGNAL PLATE  (영상 · 0.5배) ==================== */
+/* 우주선 도면을 걷어내고 외부 영상을 태운다. 원본 모션이 빨라 절반 속도로 돌린다.
+   재생 위치를 장면 시간에서 직접 계산하므로 루프마다 같은 구간이 나온다. */
+const STORY=document.getElementById('story');
+let storyReady=false;
+STORY.addEventListener('loadedmetadata',()=>{storyReady=true;});
+STORY.playbackRate=0.5; STORY.play().catch(()=>{});
 function s02(t){
   g.fillStyle='#000'; g.fillRect(0,0,W,H);
-  const k=E(seg(t,0.05,1.5));
-  craft(330,236,986,k);
-  chrome('ARG-IV  DEEP SPACE VEHICLE','SHEET 01','D','ISSUED FOR REVIEW · MASS PROPERTIES PRELIMINARY',true);
-  const on=E(seg(t,1.2,2.3));
-  if(on>0){ g.globalAlpha=on;
-    callout(1,330,268,540,250,'COMMAND MODULE','12 CREW · 4.2 m');
-    callout(2,330,352,560,338,'DOCK NODE','ANDROGYNOUS');
-    callout(3,448,566,620,556,'HABITAT RING','0.38 g · 12 rpm');
-    callout(4,330,700,560,690,'TRUSS SPINE','CFRP · 78 m');
-    callout(5,214,742,86,742,'RADIATOR WING','640 kW');
-    callout(6,330,872,560,862,'MAGNETIC NOZZLE','ISP 4,200 s');
-    g.globalAlpha=1; }
-  /* 치수선 */
-  const on2=E(seg(t,1.8,2.6));
-  if(on2>0){ g.globalAlpha=on2; dim(330-118,330+118,610,'Ø 24.0 m'); dim(96,120,986,''); g.globalAlpha=1; }
-  /* 패널 가구 */
-  const on3=E(seg(t,2.0,3.0));
-  if(on3>0){ g.globalAlpha=on3;
-    panel(520,900,222,120,'ASSEMBLY','06 STEPS');
-    stepList(530,922,['Truss deploy','Ring spin-up','Radiator extend','Coil charge','Tank transfer','Trim burn'],E(seg(t,2.2,4.6)));
-    panel(58,900,190,120,'MASS','t');
-    readout(70,922,[['DRY','214.0'],['PROP','1,240.0'],['CREW','1.1'],['CARGO','62.4'],['TOTAL','1,517.5']]);
-    g.globalAlpha=1; }
-  /* 레퍼런스의 '??? / WISHES TO COMMUNICATE' 같은 주석. 기술 도면 위에 기계가
-     아니라 의지를 가진 것에 대한 말이 얹힌다 — 이 어긋남이 개념이 된다. */
-  const nk=E(seg(t,2.8,4.0));
-  if(nk>0){ g.globalAlpha=nk;
-    T('???',548,286,8.6,'rgba(255,255,255,.80)',600);
-    T('IT DOES NOT INTEND',548,297,8.6,'rgba(255,255,255,.80)',600);
-    T('TO COME BACK',548,308,8.6,'rgba(255,255,255,.80)',600);
-    T('7 × (PATIENT)',150,648,8,'rgba(255,255,255,.70)',600);
-    T('STILL LISTENING',150,659,8,'rgba(255,255,255,.52)',400);
-    g.globalAlpha=1; }
+  if(!storyReady){
+    g.globalAlpha=0.5+0.5*Math.abs(Math.sin(t*2));
+    T('LOADING SIGNAL PLATE',W/2,H/2-10,14,C.w,600,8,'center'); g.globalAlpha=1;
+    dottedRings(W/2,H/2,200,4,t,1);
+  }else{
+    const want=Math.min(STORY.duration-0.05, t*0.5);   /* 0.5배 */
+    if(Math.abs(STORY.currentTime-want)>0.34){ try{STORY.currentTime=want;}catch(e){} }
+    if(STORY.paused) STORY.play().catch(()=>{});
+    const vw=STORY.videoWidth||1080, vh=STORY.videoHeight||1920;
+    const sc=Math.max(W/vw,H/vh), dw=vw*sc, dh=vh*sc;
+    g.drawImage(STORY,(W-dw)/2,(H-dh)/2,dw,dh);
+  }
+  const k=E(seg(t,0.2,1.0)); g.globalAlpha=k;
+  T('◆ SIGNAL PLATE',52,96,13,C.w,600,6);
+  T('REEL 753 · STORY',W-52,96,10,'rgba(255,255,255,.6)',400,0,'right');
+  L(52,H-96,W-52,H-96,'rgba(255,255,255,.45)',1);
+  T('TFSC-04  ·  TRANSMISSION INTERCEPT',52,H-86,9.5,'rgba(255,255,255,.7)',600);
+  T('0.5×  SOL 0687',W-52,H-86,9.5,'rgba(255,255,255,.5)',400,0,'right');
+  g.globalAlpha=1;
 }
 
 /* ======================= 03  MARS ORBIT  (12.2-19.0) ===================== */
@@ -982,59 +888,59 @@ function s10(t){
 }
 
 /* ---------------------------------------------------------------- 타임라인 */
-/* [start, painter, crt세기, dither세기, 채널분리] */
+/* 여섯 장면 × 10초. 페이지가 많아 1분 안에 이동이 잦다는 지적에 따라
+   SECTION A-A · 육각 매트릭스 · 마지막 성운 장면을 걷어냈다.
+   [start, painter, crt세기, dither세기, 채널분리] */
 const BEATS=[
-  [0.0 , s01, 1.00, 0.00, 0.00],
-  [5.2 , s02, 0.22, 1.00, 0.00],
-  [12.6, s03, 0.22, 1.00, 0.00],
-  [19.6, s04, 0.30, 0.00, 0.00],
-  [26.4, s05, 0.22, 1.00, 0.00],
-  [33.4, s06, 0.22, 1.00, 0.00],
-  [40.4, s07, 0.22, 1.00, 0.00],
-  [47.2, s09, 0.26, 1.00, 0.00],
-  [52.4, s10, 0.55, 0.00, 0.00],
+  [0.0 , s01, 1.00, 0.00, 0.00],   /* BOOT            */
+  [10.0, s02, 0.30, 0.00, 0.00],   /* SIGNAL PLATE    영상 0.5배 */
+  [20.0, s03, 0.22, 1.00, 0.00],   /* TRANSFER GEOM   */
+  [30.0, s04, 0.30, 0.00, 0.00],   /* ARCHIVE PLATE   영상 */
+  [40.0, s07, 0.22, 1.00, 0.00],   /* ENTRY DESCENT   */
+  [50.0, s09, 0.26, 1.00, 0.00],   /* HORIZON         */
 ];
-const TR=0.78;   /* 미끄러지는 시간 — 컷이 아니라 이동이므로 넉넉히 준다 */
+/* 전환 : 미끄러지는 대신 그냥 위에 덮어씌운다.
+   장면마다 CRT 곡률이 달라 밀어 넣으면 곡면이 펴지는 게 보였다.
+   겹쳐 넘기면 기하가 움직이지 않으므로 그 어색함이 사라진다.
+   CRT·디더 세기도 두 장면 사이를 선형으로 건너간다 — 안 그러면 질감이 툭 바뀐다. */
+const TR=0.9;
 function slideAt(t){
   for(let i=1;i<BEATS.length;i++){
     const bt=BEATS[i][0], d=t-bt;
-    if(d>=0 && d<=TR){ const u=d/TR; return {from:i-1, to:i, p:u*u*(3-2*u)}; }
+    if(d>=0 && d<=TR){ const u=d/TR; return {from:i-1,to:i,p:u*u*(3-2*u)}; }
   }
   let i=0; for(let k=0;k<BEATS.length;k++) if(t>=BEATS[k][0]) i=k;
-  return {from:i, to:i, p:0};
+  return {from:i,to:i,p:1};
 }
 function offAmount(t){
   if(t>DUR-0.55) return E((t-(DUR-0.55))/0.55);
   if(t<0.40)     return 1-E(t/0.40);
   return 0;
 }
+const mix=(a,b,k)=>a+(b-a)*k;
 let t0=performance.now(), forced=null;
 function frame(now){
   const t = forced!=null ? forced : ((now-t0)/1000)%DUR;
   const sl = slideAt(t);
+  const A=BEATS[sl.from], B=BEATS[sl.to];
   if(sl.from===sl.to){
-    g=scrG; BEATS[sl.to][1](t-BEATS[sl.to][0]);
+    g=scrG; B[1](t-B[0]);
   }else{
-    /* 갤러리 : 앞 장면이 왼쪽으로 빠지고 다음 장면이 오른쪽에서 들어온다 */
-    g=ctxA; BEATS[sl.from][1](t-BEATS[sl.from][0]);
-    g=ctxB; BEATS[sl.to][1](Math.max(0,t-BEATS[sl.to][0]));
+    g=ctxA; A[1](t-A[0]);
+    g=ctxB; B[1](Math.max(0,t-B[0]));
     g=scrG; g.setTransform(1,0,0,1,0,0);
-    g.fillStyle='#000'; g.fillRect(0,0,W,H);
-    const dx=Math.round(W*sl.p);
-    g.drawImage(bufA,-dx,0); g.drawImage(bufB,W-dx,0);
-    /* 이음매에 밝은 선 하나 — 필름이 넘어가는 자리 */
-    g.fillStyle='rgba(255,255,255,.55)'; g.fillRect(W-dx-1,0,2,H);
+    g.globalAlpha=1; g.drawImage(bufA,0,0);
+    g.globalAlpha=sl.p; g.drawImage(bufB,0,0); g.globalAlpha=1;
   }
-  const st=BEATS[sl.to];
   gl.bindTexture(gl.TEXTURE_2D,tx);
   gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);
   gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,scr);
   gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,false);
   gl.uniform1f(U('uTime'),t);
-  gl.uniform1f(U('uCrt'),st[2]);
-  gl.uniform1f(U('uDither'), sl.from===sl.to ? st[3] : 0);   /* 미끄러지는 동안은 디더 끔 */
-  gl.uniform1f(U('uSep'),st[4]);
-  gl.uniform1f(U('uTrans'), sl.from===sl.to ? 0 : 1-Math.abs(sl.p*2-1));
+  gl.uniform1f(U('uCrt'),    mix(A[2],B[2],sl.p));
+  gl.uniform1f(U('uDither'), mix(A[3],B[3],sl.p));
+  gl.uniform1f(U('uSep'),    mix(A[4],B[4],sl.p));
+  gl.uniform1f(U('uTrans'),0);
   gl.uniform1f(U('uOff'),offAmount(t));
   gl.drawArrays(gl.TRIANGLES,0,3);
   requestAnimationFrame(frame);

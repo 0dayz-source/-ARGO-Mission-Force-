@@ -34,7 +34,7 @@
    10 비트 × 평균 6초. 컷은 전부 하드컷 + 1프레임 화이트.
    ========================================================================== */
 const W=800, H=1280, DUR=60;
-const C={hot:'#FF2D82',rose:'#FF3D68',peach:'#FF9A7A',ice:'#D4FAFF',dust:'#8A5A62',blue:'#5B8DEF',w:'#FFFFFF'};
+const C={w:'#FFFFFF',hot:'#FF2D82',ice:'#D4FAFF'};  /* 흰색이 주색상, 핫핑크·아이스민트는 포인트 */
 const MONO='ui-monospace,"SF Mono",Menlo,Consolas,monospace';
 
 /* ---------------------------------------------------------------- 셰이더 */
@@ -44,29 +44,32 @@ uniform sampler2D uTex; uniform vec2 uRes; uniform float uTime;
 uniform float uCrt,uDither,uOff,uSep,uTrans;
 uniform float uLift,uGainC,uGamma,uRed,uCool,uKeep;
 float hash(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
-/* ARGO 팔레트 램프 — 검정 → 딥플럼 → 레드 → 핫핑크 → 화이트.
-   여기 없는 색(초록·보라·주황)은 구조적으로 나올 수 없다.
-   uRed 가 크면 레드 구간이 넓어지고, 작으면 핑크가 넓어진다. */
-vec3 argoRamp(float l, float redBias){
-  vec3 c0=vec3(0.027,0.016,0.039);   /* #07040A 보이드 블랙 */
-  vec3 c1=vec3(0.227,0.039,0.180);   /* #3A0A2E 딥 플럼     */
-  vec3 c2=vec3(0.800,0.141,0.286);   /* #CC2449 레드        */
-  vec3 c3=vec3(1.000,0.176,0.510);   /* #FF2D82 핫 핑크     */
-  vec3 c4=vec3(1.000,1.000,1.000);   /* 화이트              */
-  float p1=0.20;
-  float p2=mix(0.52,0.38,redBias);
-  float p3=mix(0.78,0.88,redBias);
-  if(l<p1) return mix(c0,c1, l/p1);
-  if(l<p2) return mix(c1,c2,(l-p1)/(p2-p1));
-  if(l<p3) return mix(c2,c3,(l-p2)/(p3-p2));
-  return          mix(c3,c4,(l-p3)/(1.0-p3));
+/* 바탕은 무채색이다 — 검정 배경에 흰색이 주색상.
+   빨강·핑크·민트는 여기 섞이지 않는다. 포인트로만 따로 얹는다. */
+vec3 monoRamp(float l){
+  vec3 k0=vec3(0.020,0.020,0.031);   /* #050508 보이드 블랙 */
+  vec3 k1=vec3(0.133,0.137,0.153);   /* #222327 재         */
+  vec3 k2=vec3(0.478,0.486,0.510);   /* #7A7C82 중간 회색   */
+  vec3 k3=vec3(1.000,1.000,1.000);   /* 화이트             */
+  if(l<0.22) return mix(k0,k1, l/0.22);
+  if(l<0.62) return mix(k1,k2,(l-0.22)/0.40);
+  return           mix(k2,k3,(l-0.62)/0.38);
 }
-/* 민트 갈래 — 어두운 틸 → 아쿠아 → 아이스.
-   창백한 아이스 한 색만 섞으면 레드 바탕에 묻혀 회색이 된다. */
+/* 포인트 하나 — 레드/핫핑크. 원본이 확실히 붉은 자리에만 얹는다. */
+vec3 hotRamp(float l){
+  vec3 h0=vec3(0.078,0.008,0.031);   /* #140208 */
+  vec3 h1=vec3(0.800,0.141,0.286);   /* #CC2449 레드    */
+  vec3 h2=vec3(1.000,0.176,0.510);   /* #FF2D82 핫핑크  */
+  vec3 h3=vec3(1.000,0.831,0.898);   /* #FFD4E5 */
+  if(l<0.34) return mix(h0,h1, l/0.34);
+  if(l<0.72) return mix(h1,h2,(l-0.34)/0.38);
+  return           mix(h2,h3,(l-0.72)/0.28);
+}
+/* 포인트 둘 — 아이스민트. 원본이 확실히 푸른 자리에만, 그것도 조금. */
 vec3 mintRamp(float l){
-  vec3 m0=vec3(0.031,0.086,0.102);   /* #08161A 딥 틸    */
-  vec3 m1=vec3(0.247,0.851,0.816);   /* #3FD9D0 아쿠아   */
-  vec3 m2=vec3(0.831,0.980,1.000);   /* #D4FAFF 아이스   */
+  vec3 m0=vec3(0.031,0.086,0.102);   /* #08161A 딥 틸   */
+  vec3 m1=vec3(0.247,0.851,0.816);   /* #3FD9D0 아쿠아  */
+  vec3 m2=vec3(0.831,0.980,1.000);   /* #D4FAFF 아이스  */
   return l<0.45 ? mix(m0,m1,l/0.45) : mix(m1,m2,(l-0.45)/0.55);
 }
 float bayer(vec2 a){
@@ -108,17 +111,18 @@ void main(){
     col=mix(col,vec3(q),uDither);
   }
   /* ---- 컬러 그레이딩 ----
-     [수정] 색상환을 통째로 돌리던 방식은 팔레트에 없는 초록·보라·주황을 만들었고,
-     장면마다 한 색으로 몰려 듀오톤처럼 보였다.
-     이제는 밝기를 ARGO 램프에 태우고, 원본이 '푸른 정도'만 읽어 아이스민트를
-     조금 섞는다. 램프가 네 단계(플럼·레드·핑크·화이트)라 단색으로 뭉치지 않는다. */
+     검정 배경에 흰색이 주색상이다. 바탕은 무채색 램프로만 간다.
+     빨강·핑크·민트는 원본이 '확실히' 그 색인 자리에만 얹는 포인트다 —
+     smoothstep 문턱을 둬서 옅게 물든 픽셀은 회색으로 남긴다.
+     문턱이 없으면 영상 전체가 붉게 깔린다. */
   col = max(col - uLift, 0.0) * uGainC;
   col = pow(clamp(col,0.0,1.0), vec3(uGamma));
   float l3 = clamp(dot(col, vec3(0.2126,0.7152,0.0722)), 0.0, 1.0);
-  /* 붉은 기가 빠진 픽셀(파랑·시안 둘 다)만 민트 갈래로 — '약간의 하늘 민트'.
-     파랑만 보면 시안이 걸러져 정작 민트로 갈 픽셀이 핑크가 됐다. */
-  float cool = clamp((max(col.g,col.b) - col.r)*2.2, 0.0, 1.0);
-  vec3 base = mix(argoRamp(l3,uRed), mintRamp(l3), cool*uCool);
+  vec3 base = monoRamp(l3);
+  float warm = smoothstep(0.10, 0.40, col.r - max(col.g,col.b));
+  float cool = smoothstep(0.10, 0.40, max(col.g,col.b) - col.r);
+  base = mix(base, hotRamp(l3),  warm*uRed);
+  base = mix(base, mintRamp(l3), cool*uCool);
   /* uKeep : 원본 명암의 결을 조금 남겨 램프가 평평해지지 않게 한다 */
   col = mix(base, base*(0.72+0.56*l3), uKeep);
   col = clamp(col,0.0,1.0);
@@ -466,7 +470,9 @@ function drawAscii(rows,x,y,cw,ch,col){
   g.shadowBlur=0;
 }
 
-/* =========================== 01  BOOT  (0-5.4) =========================== */
+/* =========================== 01  BOOT  (0-4.0) =========================== */
+/* [수정] 타이핑이 2.4초, 그 뒤 4.6초를 커서만 깜빡이며 버텼다 — 초반이 지루했다.
+   타이핑을 1.6초로 당기고, 남는 자리에 응답 한 줄과 컷으로 던지는 플래시를 넣었다. */
 const BOOT=[
  'ARGO MAINFRAME v4.2068   TFSC-04 / SELECTION DIVISION',
  '(c) 2068  TERRAFORMING SELECTION COMMITTEE   SOL 0687','',
@@ -479,19 +485,25 @@ const BOOT=[
  'SELECTION ANOMALY   SUBJ UNREGISTERED   STATE AWAKE','',
  'can you leave earth: '];
 function s01(t){
-  g.fillStyle='#0A0308'; g.fillRect(0,0,W,H);
+  g.fillStyle='#050508'; g.fillRect(0,0,W,H);
   const size=13.4; f(600,size); const cw=g.measureText('M').width, lh=size*2.0;
   const x=52, y0=300, all=BOOT.join('').length;
-  let left=Math.floor(all*E(seg(t,0.15,2.5))), y=y0, cx=x, cy=y0;
+  let left=Math.floor(all*E(seg(t,0.10,1.60))), y=y0, cx=x, cy=y0;
   for(const ln of BOOT){
-    const s = left<=0 ? '' : ln.slice(0,left);
-    if(s) T(s,x,y,size,/SELECTION|can you/.test(ln)?C.ice:/ARGO MAIN/.test(ln)?C.peach:C.hot,600,size*.4);
-    cx=x+cw*s.length; cy=y; left-=ln.length; y+=lh; if(left<=0)break;
+    const s2 = left<=0 ? '' : ln.slice(0,left);
+    /* 흰색이 주색상이다 — 포인트는 이상 보고 한 줄과 질문 한 줄뿐 */
+    if(s2) T(s2,x,y,size,/SELECTION ANOMALY/.test(ln)?C.hot:/can you/.test(ln)?C.ice:C.w,600,size*.4);
+    cx=x+cw*s2.length; cy=y; left-=ln.length; y+=lh; if(left<=0)break;
   }
-  if(Math.floor(t*4)%2===0){g.shadowColor=C.ice;g.shadowBlur=9;g.fillStyle=C.ice;
+  const ans='YES'.slice(0,Math.floor(3*E(seg(t,1.95,2.35))+0.001));
+  if(ans){ T(ans,cx,cy,size,C.hot,600,size*.4); cx+=cw*ans.length; }
+  if(Math.floor(t*6)%2===0){g.shadowColor=C.ice;g.shadowBlur=9;g.fillStyle=C.ice;
     g.fillRect(cx,cy+2,cw*.9,size*.95);g.shadowBlur=0;g.fillRect(cx,cy+2,cw*.9,size*.95);}
-  T('◆ ARGO BROADCAST',52,120,13,C.hot,600,6);
-  T('2068-05-29',W-52,120,13,C.dust,600,0,'right');
+  T('\u25c6 ARGO BROADCAST',52,120,13,C.w,600,6);
+  T('2068-05-29',W-52,120,13,'rgba(255,255,255,.45)',600,0,'right');
+  /* 다음 장면으로 던져 넣는 섬광 — 뾰족하게 한 번만 */
+  const fl=Math.max(0,1-Math.abs(t-3.52)/0.17)*0.78;
+  if(fl>0){ g.globalAlpha=fl; g.fillStyle='#FFFFFF'; g.fillRect(0,0,W,H); g.globalAlpha=1; }
 }
 
 /* ===================== 영상 플레이트 (공용) ============================= */
@@ -541,12 +553,12 @@ function plate(id, t, rate, tag, code){
     g.beginPath();g.moveTo(X-6,Y);g.lineTo(X+6,Y);g.moveTo(X,Y-6);g.lineTo(X,Y+6);g.stroke();}
   g.globalAlpha=1;
 }
-const sA = t => plate('p938', t, 0.50,'PLATE 938','1080×1920  H.264');
-const sB = t => plate('p787a',t, 0.60,'PLATE 787','1080×1920  H.264');
-const sC = t => plate('p787b',t, 0.45,'PLATE 787-B','1080×1920  H.264');
-const sD = t => plate('p720', t, 0.55,'PLATE 720','1080×1920  H.264');
+const sA = t => plate('p938', t, 0.85,'PLATE 938','1080×1920  H.264');
+const sB = t => plate('p787a',t, 0.70,'PLATE 787','1080×1920  H.264');
+const sC = t => plate('p787b',t, 0.50,'PLATE 787-B','1080×1920  H.264');
+const sD = t => plate('p720', t, 0.65,'PLATE 720','1080×1920  H.264');
 const sX = t => plate('p761', t, 0.40,'PLATE 761','1080×1920  H.264');
-const sE = t => plate('p548', t, 0.70,'PLATE 548','1080×1920  H.264');
+const sE = t => plate('p548', t, 0.90,'PLATE 548','1080×1920  H.264');
 
 /* ---------------------------------------------------------------- 타임라인 */
 /* 여섯 장면 × 10초. 페이지가 많아 1분 안에 이동이 잦다는 지적에 따라
@@ -554,16 +566,15 @@ const sE = t => plate('p548', t, 0.70,'PLATE 548','1080×1920  H.264');
    [start, painter, crt세기, dither세기, 채널분리] */
 const BEATS=[
   /* [start, painter, crt, dither, sep, lift, gainC, gamma, red, cool, keep]
-     팔레트는 검정·딥플럼·레드·핫핑크·화이트 + 약간의 아이스민트로 고정이다.
-     장면 차이는 색상이 아니라 램프의 배분(red)과 민트 허용치(cool)로만 낸다.
-     red 1 에 가까울수록 레드가 넓고, 0 에 가까울수록 핑크가 넓다. */
-  [0.0 , s01, 1.00, 0.00, 0.00, 0.00, 1.00, 1.00, 0.00, 0.00, 0.00],  /* BOOT  원본 통과 */
-  [7.0 , sA , 0.30, 0.00, 0.00, 0.10, 1.30, 1.35, 0.72, 0.10, 0.35],  /* 938  레드 우세   출발 */
-  [16.0, sB , 0.30, 0.00, 0.00, 0.10, 1.30, 1.35, 0.35, 0.18, 0.35],  /* 787  핑크 우세   가속 */
-  [25.0, sC , 0.30, 0.00, 0.00, 0.10, 1.30, 1.38, 0.20, 0.62, 0.40],  /* 787B 민트 강함   냉각 */
-  [34.0, sX , 0.30, 0.00, 0.00, 0.12, 1.32, 1.42, 0.15, 0.78, 0.44],  /* 761  민트 최대   최원점 */
-  [43.0, sD , 0.30, 0.00, 0.00, 0.10, 1.30, 1.35, 0.40, 0.16, 0.35],  /* 720  핑크        접근 */
-  [51.5, sE , 0.30, 0.00, 0.00, 0.10, 1.30, 1.35, 0.66, 0.08, 0.35],  /* 548  레드        도착 */
+     바탕은 무조건 검정+흰색이다. red / cool 은 색을 칠하는 값이 아니라
+     '원본이 확실히 붉은/푸른 자리에만' 포인트를 얼마나 허용할지의 세기다. */
+  [0.0 , s01, 1.00, 0.00, 0.00, 0.00, 1.00, 1.00, 0.95, 0.95, 0.00],  /* BOOT 4.0s  자체 색 통과 */
+  [4.0 , sA , 0.30, 0.00, 0.00, 0.10, 1.30, 1.35, 0.55, 0.10, 0.35],  /* 938  0.85× 빠르게 출발 */
+  [13.5, sB , 0.30, 0.00, 0.00, 0.10, 1.30, 1.35, 0.40, 0.16, 0.35],  /* 787  0.70× */
+  [23.0, sC , 0.30, 0.00, 0.00, 0.10, 1.30, 1.38, 0.14, 0.55, 0.40],  /* 787B 0.50× 냉각 */
+  [32.0, sX , 0.30, 0.00, 0.00, 0.12, 1.32, 1.42, 0.10, 0.70, 0.44],  /* 761  0.40× 최원점 */
+  [41.5, sD , 0.30, 0.00, 0.00, 0.10, 1.30, 1.35, 0.38, 0.14, 0.35],  /* 720  0.65× 접근 */
+  [51.0, sE , 0.30, 0.00, 0.00, 0.10, 1.30, 1.35, 0.60, 0.08, 0.35],  /* 548  0.90× 도착 */
 ];
 /* 전환 : 미끄러지는 대신 그냥 위에 덮어씌운다.
    장면마다 CRT 곡률이 달라 밀어 넣으면 곡면이 펴지는 게 보였다.

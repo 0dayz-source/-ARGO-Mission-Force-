@@ -1553,6 +1553,13 @@ while(pi<TOTAL){
     const mat = new THREE.ShaderMaterial({
       uniforms: {
         uTime:  { value: 0.0 },
+        /* 커서 발광 — 커서 근처 입자만 밝아진다. 자리는 건드리지 않는다.
+           uPointer 는 화면 좌표(-1~1). 커서를 아직 안 움직였으면 화면 밖(9,9)이라
+           아무것도 빛나지 않는다. */
+        uPointer:{ value: new THREE.Vector2(9, 9) },
+        uAspect: { value: 1.0 },
+        uGlowR:  { value: 0.50 },   /* 발광 반경 — 크게 잡으면 경계가 안 보인다 */
+        uGlowAmt:{ value: 1.10 },   /* 얼마나 밝아지는가 */
         uPixelRatio: { value: Math.min(devicePixelRatio, 2.0) * argoParticleScale() },
         /* 반짝임 — ARGO 토러스(shared/argo-torus.js)와 같은 방식·같은 속도대.
            uTwSpeed 느린 명멸(rad/s), uSpSpeed 짧은 섬광. 낮출수록 느긋하다. */
@@ -1568,11 +1575,20 @@ while(pi<TOTAL){
         uniform float uPixelRatio;
         uniform float uTwSpeed;
         uniform float uSpSpeed;
+        uniform vec2  uPointer;
+        uniform float uAspect;
+        uniform float uGlowR;
+        uniform float uGlowAmt;
 
         void main(){
           vColor = color;
           vec4 mv = modelViewMatrix * vec4(position, 1.0);
           gl_Position = projectionMatrix * mv;
+          /* 커서와의 거리는 화면 좌표에서 잰다 — 깊이가 달라도 '커서 근처' 판정이
+             같다. 가우시안이라 경계가 드러나지 않는다. */
+          vec2  pndc = gl_Position.xy / max(abs(gl_Position.w), 0.0001);
+          float pq   = length((pndc - uPointer) * vec2(uAspect, 1.0)) / max(uGlowR, 0.001);
+          float pGlow = exp(-pq * pq * 2.2);
           float dist = -mv.z;
           float safeDist = max(dist, 3.0);
           gl_PointSize = min(uPixelRatio * (35.64 / safeDist), uPixelRatio * 12.54);  /* 1.2배 → 1.1배 더 (32.4/11.4) */
@@ -1590,6 +1606,7 @@ while(pi<TOTAL){
           /* 짧은 섬광 — sin 을 26제곱으로 눌러 대부분 0, 아주 짧게만 1 에 닿는다 */
           vSpark = pow(max(0.0, sin(uTime * uSpSpeed * (0.7 + ph * 0.9) + ph * 31.4)), 26.0);
           vAlpha = min(1.0, vAlpha + vSpark * 0.85);
+          vAlpha *= 1.0 + pGlow * uGlowAmt;   /* 커서 근처만 발광 */
         }
       `,
       fragmentShader: `
@@ -1682,6 +1699,8 @@ const BGPC=7200;
 
     const bgMat=new THREE.ShaderMaterial({
       uniforms:{ uTime:{value:0}, uPixelRatio:{value:Math.min(devicePixelRatio,2.5) * argoParticleScale()},
+        uPointer:{value:new THREE.Vector2(9,9)}, uAspect:{value:1.0},
+        uGlowR:{value:0.50}, uGlowAmt:{value:0.95},
         /* 별 반짝임 — 낮출수록 느긋하다. 별마다 속도가 또 흩어지므로
            실제 주기는 이 값 기준 0.45~1.7배 사이로 퍼진다. */
         uTwSpeed:{value:0.16}, uSpSpeed:{value:0.28} },
@@ -1697,10 +1716,18 @@ const BGPC=7200;
            컴파일에 실패했다 — 배경 별 7200개가 통째로 안 그려지고 있었다. */
         uniform float uTwSpeed;
         uniform float uSpSpeed;
+        uniform vec2  uPointer;
+        uniform float uAspect;
+        uniform float uGlowR;
+        uniform float uGlowAmt;
+        varying float vGlow;
         void main(){
           vColor = color;
           vec4 mv = modelViewMatrix * vec4(position,1.0);
           gl_Position = projectionMatrix * mv;
+          vec2  pndc = gl_Position.xy / max(abs(gl_Position.w), 0.0001);
+          float pq   = length((pndc - uPointer) * vec2(uAspect, 1.0)) / max(uGlowR, 0.001);
+          vGlow = 1.0 + exp(-pq * pq * 2.2) * uGlowAmt;
           gl_PointSize = uPixelRatio * 3.96;   /* 1.2배 → 1.1배 더 (3.6) */
           /* [반짝임] 예전 0.55+0.45*sin 은 밝기가 0.55~1.0 사이만 오가서
              '숨쉬는' 정도였지 반짝이는 걸로 안 보였다. 전 구간(0~1)을 쓴다.
@@ -1721,13 +1748,14 @@ const BGPC=7200;
         varying vec3 vColor;
         varying float vTwinkle;
         varying float vSpark;
+        varying float vGlow;
         void main(){
           vec2 uv = gl_PointCoord - 0.5;
           float d = length(uv)*2.0;
           float edgeFade = 1.0 - smoothstep(0.8,1.0,d);
           if(d>1.05) discard;
           float core = exp(-d*d*7.0);
-          float a = core * (0.16 + vTwinkle*0.95 + vSpark*1.5) * edgeFade;
+          float a = core * (0.16 + vTwinkle*0.95 + vSpark*1.5) * edgeFade * vGlow;
           /* 별도 같은 규칙 — 코어는 네온 핑크, 가장자리는 제 색 */
           vec3 neon = vec3(1.0, 0.176, 0.510);     /* #FF2D82 핫 핑크 */
           vec3 base = mix(vColor, neon, core*0.28);
@@ -1873,10 +1901,13 @@ let targetFlowDir = 0;  // 0=normal, 1=upward
     };
 
     let mox=0,moy=0,rawMox=0,rawMoy=0;
+    /* 커서 발광 지점. glowSeen 이 false 인 동안은 화면 밖(9,9)에 머문다. */
+    let glowX=9, glowY=9, glowSeen=false;
     let lastMoveTime = performance.now();
     document.addEventListener('mousemove',function(e){
       rawMox=(e.clientX/innerWidth-0.5)*2;
       rawMoy=-(e.clientY/innerHeight-0.5)*2;
+      if(!glowSeen){ glowSeen=true; glowX=rawMox; glowY=rawMoy; }
       lastMoveTime = performance.now();
     });
 
@@ -2003,6 +2034,19 @@ let targetFlowDir = 0;  // 0=normal, 1=upward
       }
       bgPts.rotation.y=tt*0.006;
       bgMat.uniforms.uTime.value = tt;
+      /* 발광 지점은 커서를 한 박자 늦게 따라간다 — 손을 튕겨도 빛이 부드럽게 끌려온다.
+         커서가 페이지에 한 번도 안 들어왔으면 화면 밖에 둬서 아무것도 빛나지 않는다. */
+      (function(){
+        if(glowSeen){
+          glowX += (rawMox - glowX) * 0.14;
+          glowY += (rawMoy - glowY) * 0.14;
+        }
+        var asp = innerWidth / Math.max(1, innerHeight);
+        mat.uniforms.uPointer.value.set(glowX, glowY);
+        bgMat.uniforms.uPointer.value.set(glowX, glowY);
+        mat.uniforms.uAspect.value = asp;
+        bgMat.uniforms.uAspect.value = asp;
+      })();
       renderer.render(scene,cam);
       /* [신호] 성운의 첫 프레임이 실제로 그려진 시점.
          로딩 오버레이(shared/argo-nav.js)가 이걸 기다렸다가 걷힌다 —

@@ -766,19 +766,7 @@ function updateOrbitDisplay(){
   _awWheel.setIndex(cq);
 }
 
-/* ---- 다음 버튼 상태를 한 곳에서만 결정한다 ----
-   선택지는 두 경로에서 만들어진다: 씬 진입/건너뛰기는 renderQuestion(), 다음 문항은 nextQ()
-   안의 별도 빌더. 각 경로가 자기 클릭 핸들러에서 라벨을 따로 갱신하고 있어서, 한쪽만
-   어긋나도 "다음 문항으로"가 특정 문항에서만 뜨는 증상이 생긴다.
-   컨테이너에 위임해 두면 어느 빌더가 만든 선택지든 항상 같은 규칙으로 갱신된다. */
-function syncNextButton(){
-  var btn=document.getElementById('aw-next');
-  var lbl=document.getElementById('aw-next-label');
-  if(!btn||!lbl)return;
-  var answered = answers[cq]!==undefined;
-  btn.classList.toggle('ready', answered);
-  lbl.textContent = answered ? (cq===7?'결과 확인':'다음 문항으로') : '응답을 선택하세요';
-}
+/* 선택지는 renderQuestion() 과 nextQ() 두 곳에서 만들어진다 — 클릭은 컨테이너 위임으로 한 곳에서 받는다 */
 (function bindChoiceDelegation(){
   var ce=document.getElementById('aw-choices');
   if(!ce){ document.addEventListener('DOMContentLoaded', bindChoiceDelegation, {once:true}); return; }
@@ -786,7 +774,8 @@ function syncNextButton(){
   /* 각 빌더의 인라인 핸들러가 answers[cq] 를 먼저 넣도록 한 틱 뒤에 동기화한다 */
   ce.addEventListener('click', function(e){
     if(!e.target.closest || !e.target.closest('.aw-choice'))return;
-    setTimeout(syncNextButton, 0);
+    /* 선택 즉시 다음 문항으로 — 두 빌더 모두 여길 지나므로 한 곳에서 처리 */
+    setTimeout(nextQ, 0);
   });
 })();
 
@@ -818,7 +807,6 @@ function renderQuestion(){
       answers[cq]=i;
       try{ if(window.ArgoTrack) ArgoTrack.act('assessment_answered',{page:'assessment',question_id:'q'+(cq+1),choice_index:i}); }catch(e){}
       if(window.onChoiceSelect)window.onChoiceSelect(i, evt.clientX, evt.clientY);
-      syncNextButton();
     });
     div.addEventListener('mouseenter',()=>{if(window.setAccentColor)window.setAccentColor(i===2?'mint':'orange')});
     div.addEventListener('mouseleave',()=>{if(window.setAccentColor)window.setAccentColor('default')});
@@ -829,7 +817,6 @@ function renderQuestion(){
   if(progEl) progEl.style.width=(answered/8*100)+'%';
   const progTxtEl=document.getElementById('aw-prog-txt');
   if(progTxtEl) progTxtEl.textContent=`${answered} / 8 항목 응답됨`;
-  syncNextButton();
 }
 var _nextQBusy = false;
 function nextQ(){
@@ -861,7 +848,6 @@ function nextQ(){
   setTimeout(function(){
     cq++;
     if(ceEl){ceEl.innerHTML="";ceEl.classList.remove("has-sel");}
-    syncNextButton();
     if(cq >= questions.length){ _nextQBusy = false; showResult(); return; }
     var q=questions[cq];
     updateOrbitDisplay();
@@ -894,7 +880,6 @@ function nextQ(){
         ceEl.querySelectorAll(".aw-choice").forEach(function(el){el.classList.remove("selected");});
         div.classList.add("selected");
         if(window.onChoiceSelect)window.onChoiceSelect(i,null,null);
-        syncNextButton();
       });
       div.addEventListener("mouseenter",function(){
         if(window.setAccentColor)window.setAccentColor(ch.k);

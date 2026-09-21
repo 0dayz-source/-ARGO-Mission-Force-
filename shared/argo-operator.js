@@ -228,7 +228,7 @@
       },
       capture: {
         text: '신원 이미지가 확인되었습니다.\n' +
-              '기록은 게늄 데이터로 변환되어 아카이브에 보관됩니다.',
+              '기록은 게놈 데이터로 변환되어 아카이브에 보관됩니다.',
         actions: [
           /* 첫 말풍선(protocol)만 코랄을 쓴다 — 나머지는 투명 */
           { label: 'CONTINUE', kind: 'ghost', act: function () { api.dismiss(); } }

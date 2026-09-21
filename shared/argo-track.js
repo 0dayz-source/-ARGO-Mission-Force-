@@ -752,6 +752,9 @@
       .then(function (rows) {
         var r = rows && rows[0];
         if (!r) throw new Error('not_found');
+        /* 이 RPC 는 app.js 가 파싱되기 전에 시작한다. 응답이 먼저 도착하면 콜백이 아직
+           없을 수 있으므로 행을 보관해 둔다 — app.js 가 붙을 때 이것을 보고 그린다. */
+        api.lastQrResult = r;
         api.onQrResult && api.onQrResult(r);
       })
       .catch(function (e) {

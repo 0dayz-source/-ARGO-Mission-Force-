@@ -921,12 +921,22 @@ addEventListener('resize',function(){
   if(ov&&ov.classList.contains('open')) fitDivisionName();
 },{passive:true});
 
-function showResult(){
+/* pre 를 넘기면 응답 배열 대신 그 값으로 그린다 — QR 로 들어온 결과 조회가 쓴다.
+   그 화면에는 answers 가 없다(시험을 본 키오스크가 아니라 휴대폰이다).
+   DB 가 돌려주는 scores 에 직군·심리 점수가 통째로 들어 있어 결과지를 그대로 복원할 수 있다. */
+function showResult(pre){
   const js={CR:0,SV:0,ME:0,GO:0,SC:0,CU:0},ps={AUT:0,ISO:0,NEU:0,COL:0,GEN:0,IDE:0};
+  if(pre){
+    Object.keys(js).forEach(function(k){ if(pre.job   && pre.job[k]  !=null) js[k]=pre.job[k]; });
+    Object.keys(ps).forEach(function(k){ if(pre.psych && pre.psych[k]!=null) ps[k]=pre.psych[k]; });
+  } else {
   answers.forEach((ans,qi)=>{if(ans===undefined)return;Object.entries(questions[qi].choices[ans].s).forEach(([k,v])=>{if(js[k]!==undefined)js[k]+=v;else if(ps[k]!==undefined)ps[k]+=v;})});
-  const topJob=Object.entries(js).sort((a,b)=>b[1]-a[1])[0];
-  const total=Object.values(js).reduce((a,b)=>a+b,0);
-  const verdict=total>=10?'PASS':total>=6?'DEFER':'FAIL';
+  }
+  const topJob = (pre && pre.top_job)
+    ? [pre.top_job, (pre.top_job_score!=null ? pre.top_job_score : (js[pre.top_job]||0))]
+    : Object.entries(js).sort((a,b)=>b[1]-a[1])[0];
+  const total = (pre && pre.total!=null) ? pre.total : Object.values(js).reduce((a,b)=>a+b,0);
+  const verdict = (pre && pre.verdict) ? pre.verdict : (total>=10?'PASS':total>=6?'DEFER':'FAIL');
   const ve=document.getElementById('ro-verdict');
   ve.textContent=verdict==='PASS'?'CLEARED':verdict==='DEFER'?'DEFERRED':'GROUNDED';
   ve.className='ro-verdict '+(verdict==='PASS'?'pass':verdict==='DEFER'?'defer':'fail');
@@ -947,7 +957,8 @@ function showResult(){
   fitDivisionName();
   _set('ro-div-keys', (_jd.spec||'').split(',').map(function(x){return x.trim();}).join(' · '));
   _set('ro-fit-n', String(topJob[1]));
-  _set('ro-fit-d', '/ ' + answers.filter(function(a){return a!==undefined;}).length);
+  _set('ro-fit-d', '/ ' + (pre ? (pre.answered || questions.length)
+                               : answers.filter(function(a){return a!==undefined;}).length));
   var _de=document.getElementById('ro-drama');
   if(_de) _de.textContent = _jd.drama || '';
   const je=document.getElementById('ro-jobs');je.innerHTML='';
@@ -974,6 +985,9 @@ function showResult(){
   if(window.setSceneMode) window.setSceneMode(0);
   if(window.setAccentColor) window.setAccentColor('orange');
   setTimeout(()=>document.querySelectorAll('.ro-job-bar').forEach(b=>{b.style.width=b.dataset.w}),300);
+  /* QR 조회는 여기까지다. 아래는 '방금 시험을 끝낸 키오스크' 에서만 할 일 —
+     새 result_id 발급·QR 생성·DB 저장. 조회 화면에서 실행하면 기록이 하나 더 생긴다. */
+  if(pre) return;
   /* [추적] 시험 완료 — result_id 를 만들고 assessment_results 에 저장한다.
      아래 QR 은 이 result_id 를 담는다(예전엔 session_id 였다). */
   var _trResultId=null;
@@ -1179,6 +1193,68 @@ function closeOriginOverlay(){
   },980);
 }
 function closeResult(){document.getElementById('result-overlay').classList.remove('open');cq=0;answers=[];if(window.setAccentColor) window.setAccentColor('default');goScene(2);}  /* 평가 종료 → 방명록 */
+
+/* ── QR 로 들어온 결과 조회 ──────────────────────────────────────────────────
+   ?result=<result_id> 로 들어오면 argo-track.js 가 get_result RPC 로 행을 받아
+   ArgoTrack.onQrResult 로 넘겨준다. 여기서 그 행을 결과지로 그린다.
+
+   키오스크와 다른 점만 손본다:
+     · 결과지 안의 QR 은 숨긴다 — QR 로 연 화면에 또 QR 을 띄울 이유가 없다
+     · 하단 버튼을 바꾼다 — RETAKE 는 키오스크 시험을 초기화하고, CONTINUE 는
+       닫으면서 방명록(s2)으로 보낸다. 휴대폰으로 연 사람에게는 둘 다 맞지 않는다
+     · 배경을 눌러도 닫히지 않게 한다(닫으면 빈 메인만 남는다)
+     · 언제 본 결과인지 completed_at 을 적는다 */
+function renderQrResult(row){
+  if(!row) return;
+  var sc = row.scores || {};
+  try{
+    showResult({ job: sc.job, psych: sc.psych, verdict: sc.verdict, total: sc.total,
+                 top_job: sc.top_job || row.assigned_role, top_job_score: sc.top_job_score });
+  }catch(e){ return; }
+
+  var ov = document.getElementById('result-overlay');
+  if(!ov) return;
+  ov.classList.add('is-qr-view');
+  /* 이 화면은 휴대폰으로 열린다 — 뒤의 SPA(성운·티커·HUD)는 걷어낸다.
+     CSS 는 shared/styles.css 의 'QR 결과 조회' 블록이 받는다. */
+  document.body.classList.add('on-qr-result');
+
+  /* 결과지는 네트워크 응답이 온 뒤에 나타난다 — 화면이 바뀐 것을 읽어 주게 하고,
+     스크린리더 초점을 결과지로 옮긴다(그러지 않으면 빈 메인에 초점이 남는다). */
+  var card = ov.querySelector('.ro-card');
+  if(card){
+    card.setAttribute('aria-live','polite');
+    card.setAttribute('role','document');
+    card.setAttribute('tabindex','-1');
+    try{ card.focus({preventScroll:true}); }catch(e){}
+  }
+
+  var qr = document.getElementById('ro-qr'); if(qr) qr.style.display='none';
+  var bg = ov.querySelector('.ro-bg'); if(bg) bg.onclick = null;
+
+  var cand = document.getElementById('ro-cand');
+  if(cand && row.result_id) cand.textContent = String(row.result_id).slice(0,8).toUpperCase();
+
+  /* 키오스크 전용 버튼 두 개를 치우고, 대신 본 시각을 남긴다 */
+  var acts = ov.querySelector('.ro-actions');
+  if(acts){
+    acts.innerHTML = '';
+    var when = document.createElement('p');
+    when.className = 'ro-note';
+    var d = row.completed_at ? new Date(row.completed_at) : null;
+    when.textContent = d && !isNaN(d)
+      ? '평가 완료 · ' + d.toLocaleString('ko-KR', { dateStyle:'long', timeStyle:'short' })
+      : '';
+    acts.appendChild(when);
+  }
+}
+(function(){
+  if(!window.ArgoTrack) return;
+  ArgoTrack.onQrResult = renderQrResult;
+  /* initQr 의 RPC 는 app.js 보다 먼저 시작한다. 응답이 이 줄보다 빨리 오는 경우를 대비해
+     argo-track.js 가 받은 행을 보관해 두므로, 이미 와 있으면 지금 그린다. */
+  if(ArgoTrack.lastQrResult) renderQrResult(ArgoTrack.lastQrResult);
+})();
 function resetAssessment(){
   const s3=document.getElementById('s3');
   document.getElementById('result-overlay').classList.remove('open');

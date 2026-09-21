@@ -1287,7 +1287,8 @@ function renderResponseLog(log, row){
     row.innerHTML =
       '<div class="ro-rc-q"><span class="ro-rc-n">'+esc(a.n||'')+'</span>'+
         '<span class="ro-rc-qt">'+esc(q?q.q:'(문항 정보 없음)')+'</span></div>'+
-      '<div class="ro-rc-a"><span class="ro-rc-k">'+esc(a.k||'-')+'</span>'+
+      /* ▣ : 고른 답의 표식. 터미널 체크박스처럼 읽히게 한다 */
+      '<div class="ro-rc-a"><span class="ro-rc-k">▣ '+esc(a.k||'-')+'</span>'+
         '<span class="ro-rc-at">'+esc(choice?choice.t:'(선택 정보 없음)')+'</span></div>';
     body.appendChild(row);
   });

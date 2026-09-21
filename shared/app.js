@@ -994,8 +994,17 @@ function showResult(pre){
   try{
     if(window.ArgoTrack){
       ArgoTrack.act('assessment_completed',{page:'assessment',verdict:verdict,assigned_role:topJob[0],total:total});
+      /* answers : QR 결과지 하단의 '문항별 응답' 영수증이 이것으로 그려진다.
+         문항·선택지 본문은 questions 에 이미 있으므로 번호와 선택키만 남긴다. */
+      var _ansLog=[];
+      answers.forEach(function(a,qi){
+        if(a===undefined || !questions[qi]) return;
+        var c=questions[qi].choices[a];
+        _ansLog.push({n:questions[qi].n, i:qi, k:c?c.k:'-'});
+      });
       _trResultId=ArgoTrack.saveResult({assigned_role:topJob[0],
-        scores:{verdict:verdict,total:total,top_job:topJob[0],top_job_score:topJob[1],job:js,psych:ps}});
+        scores:{verdict:verdict,total:total,top_job:topJob[0],top_job_score:topJob[1],job:js,psych:ps,
+                answers:_ansLog}});
       ArgoTrack.setPage('result','normal_next');
       ArgoTrack.track('result_viewed',{page:'result'});
     }
@@ -1235,6 +1244,10 @@ function renderQrResult(row){
   var cand = document.getElementById('ro-cand');
   if(cand && row.result_id) cand.textContent = String(row.result_id).slice(0,8).toUpperCase();
 
+  /* 문항별 응답 영수증 — DB 의 scores.answers 로 그린다.
+     답안을 저장하기 전에 만들어진 결과에는 이 값이 없다. 그때는 섹션을 숨긴다. */
+  renderResponseLog(sc.answers, row);
+
   /* 키오스크 전용 버튼 두 개를 치우고, 대신 본 시각을 남긴다 */
   var acts = ov.querySelector('.ro-actions');
   if(acts){
@@ -1248,6 +1261,49 @@ function renderQrResult(row){
     acts.appendChild(when);
   }
 }
+/* ── 문항별 응답 영수증 ──────────────────────────────────────────────────────
+   저장된 것은 문항번호(n)·문항 인덱스(i)·선택키(k) 뿐이다.
+   문항과 선택지 본문은 questions 에 이미 있으므로 여기서 이어 붙인다. */
+function renderResponseLog(log, row){
+  var sec=document.getElementById('ro-receipt');
+  if(!sec) return;
+  if(!log || !log.length){ sec.hidden=true; return; }
+
+  var body=document.getElementById('ro-rc-body');
+  if(!body) return;
+  body.innerHTML='';
+
+  var esc=function(s){ return String(s==null?'':s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
+
+  log.forEach(function(a){
+    var q = (typeof a.i==='number' && questions[a.i]) ? questions[a.i] : null;
+    var choice = null;
+    if(q && q.choices){
+      for(var c=0;c<q.choices.length;c++){ if(q.choices[c].k===a.k){ choice=q.choices[c]; break; } }
+    }
+    var row=document.createElement('div');
+    row.className='ro-rc-row';
+    row.innerHTML =
+      '<div class="ro-rc-q"><span class="ro-rc-n">'+esc(a.n||'')+'</span>'+
+        '<span class="ro-rc-qt">'+esc(q?q.q:'(문항 정보 없음)')+'</span></div>'+
+      '<div class="ro-rc-a"><span class="ro-rc-k">'+esc(a.k||'-')+'</span>'+
+        '<span class="ro-rc-at">'+esc(choice?choice.t:'(선택 정보 없음)')+'</span></div>';
+    body.appendChild(row);
+  });
+
+  var idEl=document.getElementById('ro-rc-id');
+  if(idEl && row && row.result_id) idEl.textContent='NO. '+String(row.result_id).slice(0,8).toUpperCase();
+  var cnt=document.getElementById('ro-rc-count');
+  if(cnt) cnt.textContent=log.length+' / '+questions.length+' ITEMS';
+  var dt=document.getElementById('ro-rc-date');
+  if(dt && row && row.completed_at){
+    var d=new Date(row.completed_at);
+    if(!isNaN(d)) dt.textContent=d.toLocaleString('ko-KR',{dateStyle:'short',timeStyle:'short'});
+  }
+  sec.hidden=false;
+}
+
 (function(){
   if(!window.ArgoTrack) return;
   ArgoTrack.onQrResult = renderQrResult;

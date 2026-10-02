@@ -684,7 +684,7 @@ const questions=[
     {k:'B',t:'그냥 지금 할 일을 한다. 그리움은 사치다.',s:{SV:1,AUT:2,NEU:1}},
     {k:'C',t:'지구에서 가져온 물건을 꺼내 한참 바라본다.',s:{CU:1,ISO:2,IDE:2}}
   ]},
-  {n:'004',q:'5구역 산소가 임계치 아래로 떨어졌다. 내가 먼저 발견했고, 팀장은 연락이 안 된다. 당신은?',choices:[
+  {n:'004',q:'5구역 산소가 임계치 아래로 떨어졌다.\n내가 먼저 발견했고, 팀장은 연락이 안 된다. 당신은?',choices:[
     {k:'A',t:'팀원 두 명을 깨워 같이 판단한다.',s:{GO:2,ME:1,COL:2}},
     {k:'B',t:'매뉴얼을 펼쳐 정확한 절차를 따른다.',s:{SC:2,NEU:2,AUT:1}},
     {k:'C',t:'직접 수동 밸브를 조작한다. 지금 1분이 중요하다.',s:{CR:2,SV:2,AUT:1}}
@@ -699,7 +699,7 @@ const questions=[
     {k:'B',t:'서명한다. 내가 심은 씨앗이면 충분하다.',s:{CR:2,GEN:2,AUT:1}},
     {k:'C',t:'더 빠른 성과가 나오는 프로젝트를 먼저 하고 싶다.',s:{ME:1,SC:2,NEU:1}}
   ]},
-  {n:'007',q:'지구와의 통신 장비가 고장났다. 현재 아무도 수리 방법을 모르고, 언제 될지 예상할 수 없다. 가족의 소식을 다시는 들을 수 없을지도 모른다.',choices:[
+  {n:'007',q:'지구와의 통신 장비가 고장났다. 현재 아무도 수리 방법을 모르고,\n언제 될지 예상할 수 없다. 가족의 소식을 다시는 들을 수 없을지도 모른다.',choices:[
     {k:'A',t:'동료에게 말을 건다. 오늘따라 누군가와 얘기하고 싶다.',s:{ME:2,COL:2,IDE:2}},
     {k:'B',t:'혼자 있을 공간을 찾아간다. 이 감정을 충분히 느끼고 싶다.',s:{ISO:2,NEU:2,IDE:1}},
     {k:'C',t:'내일 할 일 목록을 적는다. 지금 무너지면 안 된다는 걸 안다.',s:{SV:2,NEU:2,AUT:1}}
@@ -812,6 +812,12 @@ function renderQuestion(){
     div.addEventListener('mouseleave',()=>{if(window.setAccentColor)window.setAccentColor('default')});
     ce.appendChild(div);
   });
+  /* 이전 문항으로 돌아왔으면 골랐던 답을 그대로 보여준다 — 안 그러면 답이 사라진 것처럼 보인다 */
+  if(answers[cq]!==undefined){
+    const sel=ce.children[answers[cq]];
+    if(sel){ sel.classList.add('selected'); ce.classList.add('has-sel'); }
+  }
+  syncQNav();
   const answered=answers.filter(a=>a!==undefined).length;
   const progEl=document.getElementById('aw-prog');
   if(progEl) progEl.style.width=(answered/8*100)+'%';
@@ -839,16 +845,17 @@ function nextQ(){
   var noiseOut=setInterval(function(){
     if(!qtEl){clearInterval(noiseOut);return;}
     var html=orig.split("").map(function(ch){
-      if(ch===" ")return " ";
+      if(ch===" "||ch==="\n")return ch;
       return "<span class=\"sc-char\">"+rnd()+"</span>";
     }).join("");
     qtEl.innerHTML=html;
     if(++fi>10)clearInterval(noiseOut);
   },24);
   setTimeout(function(){
+   try{
     cq++;
     if(ceEl){ceEl.innerHTML="";ceEl.classList.remove("has-sel");}
-    if(cq >= questions.length){ _nextQBusy = false; showResult(); return; }
+    if(cq >= questions.length){ showResult(); return; }
     var q=questions[cq];
     updateOrbitDisplay();
     if(qnEl)qnEl.textContent=q.n+" / 008";
@@ -858,8 +865,8 @@ function nextQ(){
       r+=2.5;
       if(!qtEl){clearInterval(scramIn);return;}
       var html=target.split("").map(function(ch,i){
-        if(i<r)return ch===" "?" ":ch;
-        if(ch===" ")return " ";
+        if(i<r)return ch;
+        if(ch===" "||ch==="\n")return ch;
         return "<span class=\"sc-char\">"+rnd()+"</span>";
       }).join("");
       qtEl.innerHTML=html;
@@ -885,25 +892,55 @@ function nextQ(){
         if(window.setAccentColor)window.setAccentColor(ch.k);
       });
     });
-    _nextQBusy = false;
+    syncQNav();
+   }finally{ _nextQBusy = false; }
   },460);   /* choiceOut(.45s) 이 끝난 뒤 교체 — 예전 280ms 는 중간에 잘렸다 */
 }
+/* 첫 문항에서는 돌아갈 곳이, 마지막 문항에서는 갈 곳이 없다 — 자리는 두고 보이지만
+   않게 한다(display:none 이면 그 문항만 질문 위치가 튄다) */
+function syncQNav(){
+  hideWarn();
+  var p=document.getElementById('aw-prev'), n=document.getElementById('aw-next');
+  if(p) p.style.visibility = cq>0 ? 'visible' : 'hidden';
+  if(n) n.style.visibility = cq<7 ? 'visible' : 'hidden';
+}
 var _skipQBusy = false;
-function skipQ(){
+/* 건너뛰기(+1)와 이전 문항(-1)은 같은 전환이다 — 방향만 다르다 */
+function moveQ(step){
   if(_skipQBusy) return;
-  if(cq<7){
-    _skipQBusy = true;
-    const panel=document.getElementById('aw-panel');
-    panel.classList.add('fade-out');
-    setTimeout(()=>{
-      cq++;
+  var to=cq+step;
+  if(to<0 || to>7) return;
+  const panel=document.getElementById('aw-panel');
+  if(!panel){ cq=to; renderQuestion(); return; }
+  _skipQBusy = true;
+  panel.classList.add('fade-out');
+  setTimeout(()=>{
+    try{
+      cq=to;
       panel.classList.remove('fade-out');
       panel.classList.add('fade-in');
       renderQuestion();
-      setTimeout(()=>{panel.classList.remove('fade-in'); _skipQBusy = false;},50)
-    },320);
-  }
+    }finally{
+      setTimeout(()=>{panel.classList.remove('fade-in'); _skipQBusy = false;},50);
+    }
+  },320);
 }
+/* 미응답 경고 — 안 고르고 넘어가면 그 문항이 보류로 집계된다는 걸 알린다 */
+var _warnT = null;
+function warnUnanswered(){
+  if(answers[cq]!==undefined) return false;
+  var el=document.getElementById('aw-pick-warn');
+  if(el){
+    el.hidden=false; el.classList.remove('on'); void el.offsetWidth; el.classList.add('on');
+    clearTimeout(_warnT);
+    _warnT=setTimeout(function(){ el.classList.remove('on'); },2600);
+  }
+  return true;
+}
+function hideWarn(){ var el=document.getElementById('aw-pick-warn'); if(el) el.classList.remove('on'); }
+/* 다음 문항 : 답이 있어야 넘어간다(건너뛰기 버튼은 삭제됐다). */
+function goNextQ(){ if(warnUnanswered()) return; moveQ(1); }
+function prevQ(){ hideWarn(); moveQ(-1); }
 /* 칸 폭에 맞춰 글자 크기를 줄인다 — 넘치면 1px 씩 내린다. */
 function fitDivisionName(){
   var el=document.getElementById('ro-div-name');
@@ -911,7 +948,7 @@ function fitDivisionName(){
   requestAnimationFrame(function(){
     var box=el.parentElement.clientWidth;
     if(!box) return;
-    var max=Math.min(88, Math.round(window.innerWidth*0.062)), min=26, size=max;
+    var max=Math.min(118, Math.round(window.innerWidth*0.078)), min=26, size=max;
     el.style.fontSize=size+'px';
     while(size>min && el.scrollWidth>box){ size-=1; el.style.fontSize=size+'px'; }
   });
@@ -1022,7 +1059,7 @@ function showResult(pre){
     if(!sid){ try{ sid = window.ArgoDB ? ArgoDB.sid() : (localStorage.getItem('argo_sid')||''); }catch(e){} }
     if(!sid) sid='local-'+Math.random().toString(36).slice(2,10);
     var url=location.origin+location.pathname+'?result='+encodeURIComponent(sid);
-    var ok=ArgoQR.draw(cv, url, {size:88, fg:'#0a0a0c', bg:'#D4FAFF'});
+    var ok=ArgoQR.draw(cv, url, {size:176, fg:'#0a0a0c', bg:'#D4FAFF'});
     try{ if(window.ArgoTrack&&ok) ArgoTrack.track('result_qr_shown',{page:'result'}); }catch(e){}
     var code = sid.slice(0,8).toUpperCase();
     if(lab) lab.textContent = ok ? code : '—';
@@ -1188,6 +1225,7 @@ function openOriginOverlay(){
   populateOriginList();
   el.classList.remove('open','closing');
   void el.offsetWidth;
+  document.body.classList.add('overlay-open');   /* [성능] 결과지 뒤 배경 루프 정지 */
   requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('open')));
 }
 function closeOriginOverlay(){
@@ -1201,7 +1239,7 @@ function closeOriginOverlay(){
     if(_originFloatRAF){ cancelAnimationFrame(_originFloatRAF); _originFloatRAF = null; }
   },980);
 }
-function closeResult(){document.getElementById('result-overlay').classList.remove('open');cq=0;answers=[];if(window.setAccentColor) window.setAccentColor('default');goScene(2);}  /* 평가 종료 → 방명록 */
+function closeResult(){document.getElementById('result-overlay').classList.remove('open');document.body.classList.remove('overlay-open');cq=0;answers=[];if(window.setAccentColor) window.setAccentColor('default');goScene(2);}  /* 평가 종료 → 방명록 */
 
 /* ── QR 로 들어온 결과 조회 ──────────────────────────────────────────────────
    ?result=<result_id> 로 들어오면 argo-track.js 가 get_result RPC 로 행을 받아
@@ -1314,7 +1352,9 @@ function renderResponseLog(log, row){
 })();
 function resetAssessment(){
   const s3=document.getElementById('s3');
+  _nextQBusy=false; _skipQBusy=false;   /* 전환 도중 재시험을 누르면 잠금이 남는다 */
   document.getElementById('result-overlay').classList.remove('open');
+  document.body.classList.remove('overlay-open');
   if(window.setSceneMode) window.setSceneMode(3);
   if(window.setAccentColor) window.setAccentColor('default');
   s3.classList.remove('active');
@@ -1366,6 +1406,7 @@ function resetAssessment(){
 function backAssessment(){
   answers=[];
   cq=0;
+  _nextQBusy=false; _skipQBusy=false;
   /* 메인(s0)이 아니라 온 길로 되돌아간다 — 평가는 MARS 마지막 화면의
      BEGIN ASSESSMENT 에서 들어오므로, BACK 은 그 화면으로 돌려보낸다. */
   var url='11-planet-detail.html?at=cta';
@@ -2198,6 +2239,11 @@ if(document.getElementById('trail-cv')){
 
     function trailTick(){
       requestAnimationFrame(trailTick);
+      /* [성능] 이 루프만 가드가 없어서, 탭이 백그라운드이거나 불투명한 씬·오버레이가
+         덮고 있어도 매 프레임 전체화면을 다시 칠하고 280×18 개 선을 그었다.
+         아래 drawRadar/draw 와 같은 조건으로 맞춘다. */
+      if(document.hidden || document.body.classList.contains('on-sysindex')
+         || document.body.classList.contains('overlay-open')) return;
       const W=innerWidth, H=innerHeight;
       trailCtx.fillStyle='rgba(9,9,9,0.28)';
       trailCtx.fillRect(0,0,W,H);
@@ -2303,6 +2349,9 @@ if(document.getElementById('trail-cv')){
 
       function mwTick(){
         requestAnimationFrame(mwTick);
+        /* [성능] 은하수 1,800 입자도 같은 가드가 없었다 */
+      if(document.hidden || document.body.classList.contains('on-sysindex')
+         || document.body.classList.contains('overlay-open')) return;
         const W2=innerWidth,H2=innerHeight;
         mwCtx.fillStyle='rgba(9,9,9,0.16)';
         mwCtx.fillRect(0,0,W2,H2);

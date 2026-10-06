@@ -13,6 +13,7 @@ build.py — src/scenes/* 를 src/shell.html 에 합쳐 index.html 생성.
 사용:  python3 src/build.py   (어느 위치에서 실행해도 된다)
 """
 import re
+import shutil
 import sys
 from pathlib import Path
 
@@ -79,6 +80,33 @@ def main():
     left = len(INCLUDE_RE.findall(out))
     stamped = stamp_version()
     print(f"빌드 완료 → {OUT.name}  (병합 {len(sections)}개, 미치환 INCLUDE {left}개, ?v={stamped})")
+    build_lite()
+    print("저사양판 → lite/")
+
+
+def build_lite():
+    """lite/ — 사이트 통째 복사본에 해상도 상한(shared/argo-dpr.js)만 끼운 저사양판.
+
+    JS 가 'assets/…' 'shared/assets/…' 를 문서 기준 상대경로로 읽어서, HTML 만 옮기면
+    경로가 깨진다. 그래서 shared/·assets/ 까지 같이 복사한다. 매 빌드마다 새로 만들므로
+    lite/ 는 직접 고치지 말 것.
+    """
+    lite = ROOT / "lite"
+    shutil.rmtree(lite, ignore_errors=True)
+    for d in ("shared", "assets"):
+        shutil.copytree(ROOT / d, lite / d, ignore=shutil.ignore_patterns(".DS_Store"))
+    for name in STAMP_FILES:
+        text = (ROOT / name).read_text(encoding="utf-8")
+        tag = '<meta charset="UTF-8">'
+        assert text.count(tag) >= 1, f"{name}: {tag} 없음"
+        text = text.replace(tag, tag + '<script src="shared/argo-dpr.js"></script>', 1)
+        (lite / name).write_text(text, encoding="utf-8")
+    # 메인 3D 배경의 MSAA 를 끈다 — 5K 에서 눈에 거의 안 띄고 비용은 크다
+    app = lite / "shared" / "app.js"
+    src = app.read_text(encoding="utf-8")
+    old = "new THREE.WebGLRenderer({canvas,antialias:true})"
+    assert src.count(old) == 1, "app.js: 렌더러 생성 줄이 바뀌었다 — build_lite 를 고칠 것"
+    app.write_text(src.replace(old, old.replace("true", "false")), encoding="utf-8")
 
 
 def stamp_version():

@@ -7,6 +7,7 @@
 - `index.html` — 빌드 결과물. **직접 고치지 말 것.**
 - `src/scenes/*.html` + `src/shell.html` — 실제 소스. 고친 뒤 `python3 src/build.py` 를 돌린다.
 - `11-planet-detail.html`, `photo-wall.html` — 독립 페이지(빌드 대상 아님)
+- `lite/` — 저사양판(5K 아이맥 등). 빌드가 사이트를 통째 복사하고 캔버스 해상도를 1배로 묶는다. **직접 고치지 말 것.** 주소 뒤 `?dpr=1.5` 로 현장 조정
 - `.nojekyll` — Jekyll 이 `_` 로 시작하는 파일·폴더를 건너뛰지 않게 한다
 - `src/` `db/` `docs/` — 백업용으로 함께 올라가지만 브라우저가 열어보지 않는다
 

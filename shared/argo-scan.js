@@ -806,7 +806,7 @@
       boothStrip.appendChild(card);
     });
     if(currentIdx>=0){
-      var el=boothStrip.children[currentIdx];
+      var el=boothStrip.children[currentIdx-offset];   /* currentIdx 는 전체 목록 기준 — 20장 넘으면 offset 만큼 밀린다 */
       if(el&&el.scrollIntoView) el.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
     }
   }

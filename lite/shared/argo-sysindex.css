@@ -351,3 +351,30 @@
 .si-right::before{content:"";flex:3 1 0;min-height:0}
 .si-right::after{content:"";flex:2 1 0;min-height:0}
 .si-credit{position:static;flex-shrink:0;margin-top:22px}
+
+/* ── 오른쪽 설명 타이포 정리 (2026-10-14 · apple-design §15) ─────────────
+   자간·행간은 크기마다 달라야 한다. 예전엔 14px 섹션 라벨이 제목급 자간(.18em)을 써서
+   글자 사이가 벌어져 보였고, 본문은 14.5/15.5px 두 크기가 섞였고, 제목은 본문의
+   2.4배(36px) 넓은 디스플레이 서체라 패널을 혼자 차지했다.
+   위계는 크기 하나가 아니라 크기·굵기·간격 묶음으로 만든다:
+     제목 26 / 본문 15 / 라벨 11 — 라벨은 작은 만큼만 자간을 준다. */
+#s11 .si-detail-name{
+  font-size:clamp(20px,calc(1.6 * var(--vw)),26px);
+  line-height:1.08; letter-spacing:-.015em;   /* 넓은 Syne 은 많이 조이면 글자가 붙는다 */
+  margin-bottom:8px;
+}
+#s11 .si-detail-ko{font-size:14px;line-height:1.5;margin-bottom:28px;color:rgba(212,250,255,.6)}
+#s11 .si-detail-code,
+#s11 .si-sec-h{font-size:12px;letter-spacing:.14em;line-height:1.4;margin-bottom:10px}
+#s11 .si-detail-code{margin-bottom:12px}
+#s11 .si-sec{margin-bottom:26px}
+#s11 .si-sec:last-child{margin-bottom:0}
+#s11 .si-sec p.kr,
+#s11 .si-feat li{font-size:15px;line-height:1.65;letter-spacing:-.005em}
+#s11 .si-feat{gap:4px}
+#s11 .si-feat li{padding-left:14px}
+/* 점을 첫 줄 글자 높이 가운데에 — 예전엔 위로 떠 있었다 */
+#s11 .si-feat li::before{top:0;font-size:inherit;line-height:inherit}
+#s11 .si-row{font-size:12px;letter-spacing:.06em;padding:6px 0;grid-template-columns:120px minmax(0,1fr)}
+#s11 .si-row dd.kr{font-size:14px;line-height:1.55;letter-spacing:-.005em}
+#s11 .si-credit{font-weight:400;letter-spacing:.08em}

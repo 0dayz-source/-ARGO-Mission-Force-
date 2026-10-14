@@ -4538,8 +4538,9 @@ button,input,textarea,select{font-family:inherit}
   /* [높이 조절 손잡이] 원을 글자 기준으로 얼마나 올릴지. 여기 한 값만 고치면 된다.
      상자의 정중앙(50%)은 계산상 '가운데' 지만, 원이 글자보다 작아서 그대로 두면
      눈에는 아래로 처져 보인다. 대문자·한글의 세로 중앙에 얹히는 값이 3px 이다. */
-  --sc-rise:3px;
+  --sc-rise:0px;   /* 한 줄 입력(이름): 3px 은 원이 글자보다 위로 떠 보였다(실측 2.9px) — 정중앙으로 */
 }
+.sc-caret.sc-multi{--sc-rise:4px}   /* 여러 줄(메시지): 줄간격이 넓어 그대로면 원이 아래로 처진다 */
 .sc-caret::before,
 .sc-caret::after{
   content:''; position:absolute; left:50%; top:50%;

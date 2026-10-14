@@ -54,7 +54,7 @@
     var mirror = null;
 
     var caret = document.createElement('div');
-    caret.className = 'sc-caret';
+    caret.className = 'sc-caret' + (multiline ? ' sc-multi' : '');   /* 줄 높이가 달라 원 높이 보정도 따로 */
     caret.setAttribute('aria-hidden', 'true');
     document.body.appendChild(caret);
 

@@ -42,15 +42,15 @@
 })();
 </script>
 
-<link rel="stylesheet" href="shared/pd-skin.css?v=1791962000">
-  <script src="shared/argo-date.js?v=1791962000"></script>
-  <script id="ripple-fx" src="shared/argo-ripple.js?v=1791962000"></script>
-  <script src="shared/argo-scramble.js?v=1791962000"></script>
-<link rel="stylesheet" href="shared/argo-operator.css?v=1791962000">
-<link rel="stylesheet" href="shared/argo-track.css?v=1791962000"><link rel="stylesheet" href="shared/argo-warn.css?v=1791962000">
+<link rel="stylesheet" href="shared/pd-skin.css?v=1791966587">
+  <script src="shared/argo-date.js?v=1791966587"></script>
+  <script id="ripple-fx" src="shared/argo-ripple.js?v=1791966587"></script>
+  <script src="shared/argo-scramble.js?v=1791966587"></script>
+<link rel="stylesheet" href="shared/argo-operator.css?v=1791966587">
+<link rel="stylesheet" href="shared/argo-track.css?v=1791966587"><link rel="stylesheet" href="shared/argo-warn.css?v=1791966587">
 </head>
 <body>
-<script src="shared/argo-nav.js?v=1791962000"></script>
+<script src="shared/argo-nav.js?v=1791966587"></script>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
     <!-- [VHS] 테이프가 살짝 늘어난 듯한 가로 왜곡. baseFrequency 를 세로로만 크게 줘서
@@ -108,7 +108,7 @@
       <div class="booth-lb-meta">
         <span id="boothLbCap">FRAME —</span>
         <span class="booth-lb-act">
-          <button class="booth-lb-set" id="boothLbSet" type="button">Genome에 보관</button>
+          <button class="booth-lb-set" id="boothLbSet" type="button">대표 사진으로 지정</button>
           <span class="booth-lb-hint">후보자 기록 캡슐에 저장됩니다</span>
         </span>
       </div>
@@ -2499,8 +2499,7 @@ void main(){ vec2 p = gl_PointCoord - 0.5; float l = length(p); if (l > 0.5) dis
     atmoPoints.position.copy(camera.position);
     finalPass.uniforms.iTime.value = t;
 
-    camera.layers.set(LAYERS.TORUS_SCENE);  torusComposer.render();
-    camera.layers.set(LAYERS.BLOOM_SCENE);  bloomComposer.render();
+    /* [렉] TORUS/BLOOM 레이어엔 오브젝트가 없어 두 컴포저는 매 프레임 '검정 + 블룸'만 그렸다 — 결과가 0 이라 생략 */
     camera.layers.set(LAYERS.ENTIRE_SCENE); finalComposer.render();
   }
   onResize();
@@ -2674,10 +2673,10 @@ void main(){ vec2 p = gl_PointCoord - 0.5; float l = length(p); if (l > 0.5) dis
 })();
 </script>
 
-<script src="shared/argo-warn.js?v=1791962000"></script><script src="shared/argo-track.js?v=1791962000"></script>
-<script src="shared/argo-db.js?v=1791962000"></script>
-<script src="shared/argo-foldtext.js?v=1791962000"></script>
-<script id="scan-fx" src="shared/argo-scan.js?v=1791962000"></script>
+<script src="shared/argo-warn.js?v=1791966587"></script><script src="shared/argo-track.js?v=1791966587"></script>
+<script src="shared/argo-db.js?v=1791966587"></script>
+<script src="shared/argo-foldtext.js?v=1791966587"></script>
+<script id="scan-fx" src="shared/argo-scan.js?v=1791966587"></script>
 
 <script src="shared/vendor/matter.min.js"></script>
 <script id="tele-fall-fx">
@@ -4449,7 +4448,7 @@ import { CopyShader } from 'three/addons/shaders/CopyShader.js';
     opacity:2, pointSize:80, brightness:1.6,
     /* [움직임] 커서가 멈추면 거의 정지(0.03)했다가 움직이면 반발(4)이 한꺼번에 켜져 '렉 걸린 듯' 튀었다.
        평소에도 천천히 돌게 하고(0.07), 반발은 절반쯤으로 부드럽게 — 아래 updatePointer 의 램프와 짝이다. */
-    spin:0.07, blowUp:0, repelRadius:1.4, repelStrength:2.2,
+    spin:0.22, blowUp:0, repelRadius:1.4, repelStrength:2.2,
     scrollDive:3, scrollGrow:0.5, scrollSpin:0.6, parallax:0.7,
     /* 사양에 없는 값 하나 — 이 섹션에선 오브가 화면을 너무 꽉 채워서 전체 배율을 줄인다 */
     baseScale:0.52
@@ -4703,11 +4702,11 @@ void main(){
       if(Math.abs(denom)>1e-4){ const t=-camera.position.z/denom;
         if(t>0 && Number.isFinite(t)) _target.copy(camera.position).addScaledVector(_dir,t); }
     }
-    POINTER.world.lerp(_target,0.06);   /* 커서를 한 박자 늦게, 미끄러지듯 따라간다 */
+    POINTER.world.lerp(_target,0.14);   /* 커서를 한 박자 늦게, 미끄러지듯 따라간다 */
     const idle=(performance.now()-POINTER.lastMove)/1000;
     const want=(POINTER.active && idle<3)?1:0;
     /* 켜질 땐 ~1.5초에 걸쳐 서서히, 꺼질 땐 더 천천히 — 툭 켜지고 툭 꺼지지 않게 */
-    POINTER.activity += (want-POINTER.activity)*(want>POINTER.activity ? 0.03 : 0.012);
+    POINTER.activity += (want-POINTER.activity)*(want>POINTER.activity ? 0.07 : 0.012);
   }
 
   /* ---------------- scroll (이 섹션의 통과 진행도) ---------------- */
@@ -4731,8 +4730,13 @@ void main(){
     raf=0;
     scrollSmooth  = Lerp(scrollSmooth, scrollTarget, 0.10);
     scrollCurrent = Lerp(scrollCurrent, scrollSmooth, 0.06);
-    mouseSmooth.x = Lerp(mouseSmooth.x, POINTER.ndc.x, 0.035);   /* 시점 이동도 느긋하게 */
-    mouseSmooth.y = Lerp(mouseSmooth.y, POINTER.ndc.y, 0.035);
+    /* 커서가 3초 넘게 멈추면 시점이 천천히 저절로 떠돈다 — 마우스를 안 움직여도 살아 있게.
+       커서를 움직이면 그 위치로 곧장 따라간다(지연 0.035 → 0.09). */
+    const now=performance.now(), idleDrift=(now-POINTER.lastMove)>3000;
+    const tx=idleDrift ? Math.sin(now*0.00021)*0.45 : POINTER.ndc.x;
+    const ty=idleDrift ? Math.cos(now*0.00016)*0.3  : POINTER.ndc.y;
+    mouseSmooth.x = Lerp(mouseSmooth.x, tx, idleDrift ? 0.02 : 0.09);
+    mouseSmooth.y = Lerp(mouseSmooth.y, ty, idleDrift ? 0.02 : 0.09);
     updatePointer();
 
     const t=performance.now()/1000;
@@ -4754,8 +4758,8 @@ void main(){
     atmoPoints.position.copy(camera.position);
     finalPass.uniforms.iTime.value = t;
 
-    camera.layers.set(LAYERS.TORUS_SCENE);  torusComposer.render();
-    camera.layers.set(LAYERS.BLOOM_SCENE);  bloomComposer.render();
+    /* [렉] TORUS/BLOOM 레이어엔 올라간 오브젝트가 없어 두 컴포저는 매 프레임 '검정 + 블룸'만 그렸다.
+       결과가 0 이라 합성에 더하는 게 없으므로 그리지 않는다(두 텍스처는 0 으로 남는다). */
     camera.layers.set(LAYERS.ENTIRE_SCENE); finalComposer.render();
 
     if(visible) raf=requestAnimationFrame(frame);
@@ -4974,6 +4978,6 @@ void main(){
   },{threshold:[0,0.05,0.35,0.6]}).observe(stage);
 })();
 </script>
-<script src="shared/argo-operator.js?v=1791962000"></script>
+<script src="shared/argo-operator.js?v=1791966587"></script>
 </body>
 </html>

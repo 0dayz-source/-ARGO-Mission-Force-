@@ -446,7 +446,7 @@ html.theme-light .pd-hero-pin::after{background:radial-gradient(120% 90% at 50% 
 .pd-brief-pin{position:absolute;top:0;left:0;right:0;height:calc(100 * var(--dvh));display:flex;flex-direction:column;
   justify-content:center;align-items:center}
 .pd-brief-pin.is-pinned{position:fixed;top:0;left:0;right:0;height:calc(100 * var(--dvh));min-height:0;z-index:5}
-.pd-brief-pin.is-past{position:absolute;left:0;right:0;bottom:auto;height:calc(100 * var(--dvh));min-height:0}
+.pd-brief-pin.is-past{position:absolute;left:0;right:0;bottom:auto;height:calc(100 * var(--dvh));min-height:0;pointer-events:none}  /* 다 사라진(opacity 0) 핀이 아래 촬영 스트립 클릭·스와이프를 가로채지 않게 */
 #tunnel-canvas,#galaxy-canvas{position:fixed;inset:0;width:calc(100 * var(--vw));height:calc(100 * var(--vh));display:block;z-index:1;pointer-events:none;opacity:0}
 /* -- Aurora Background (aceternity 참고): 은은하게 흐르는 컬러 블롭 -- */
 .pd-brief-aurora{

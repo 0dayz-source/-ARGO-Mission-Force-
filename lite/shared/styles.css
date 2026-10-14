@@ -3091,6 +3091,10 @@
    (JS 는 .choice-disappear 를 붙이는데 그 클래스에 해당하는 CSS 가 없었다)
    → 문항이 바뀔 때 이전 보기가 툭 사라지던 이유. 이제 부드럽게 빠진다. */
 #s3 .aw-choice.choice-disappear{animation:choiceOut var(--st-fast) var(--st-ease) both}
+/* [렉] 카드가 움직이는 동안 뒤의 성운을 매 프레임 다시 흐리느라 전환이 끊겼다(아이맥 기준 jank 21→4).
+   등장·퇴장 애니메이션 동안만 유리 흐림을 끄고, 끝나면(app.js animationend) 돌려놓는다. */
+#s3 .aw-choice.choice-appear,
+#s3 .aw-choice.choice-disappear{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
 
 @media(prefers-reduced-motion:reduce){
   #s3 .aw-choice,

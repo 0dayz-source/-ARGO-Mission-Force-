@@ -876,6 +876,7 @@ function nextQ(){
       var div=document.createElement("div");
       div.className="aw-choice choice-appear";
       div.style.animationDelay=(i*0.08)+"s";
+      div.addEventListener("animationend",function h(e){ if(e.target!==div) return; div.classList.remove("choice-appear"); div.removeEventListener("animationend",h); });   /* 유리 흐림 복귀 */
       /* 보기를 만드는 곳이 두 군데다 — renderQuestion() 과 여기(다음 문항 전환). 마크업을 맞춘다. */
       div.innerHTML="<span class=\"lg-spec\"></span><span class=\"ac-key\">"+ch.k+"</span><span class=\"ac-text\">"+ch.t+"</span>";
       if(ceEl)ceEl.appendChild(div);

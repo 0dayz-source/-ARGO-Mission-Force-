@@ -33,12 +33,12 @@
     {
       code:'ARG-01', cat:'MISSION', thumb:'mars',
       name:'PLANETARY BRIEF', ko:'화성 · 스크롤 브리핑',
-      keys:['SCROLL STORY','WEBCAM','GENOME'],
+      keys:['SCROLL STORY','WEBCAM','RECORD'],
       desc:'화성으로 내려가는 긴 스크롤 문서입니다. 성운을 헤치며 행성에 가까워지고, ' +
-           '지원자 생체 등록(웹캠 촬영)과 게놈 캡슐을 지나 심리 평가 앞에 도착합니다.',
+           '후보자 사진 등록(웹캠 촬영)과 기록 캡슐을 지나 심리 평가 앞에 도착합니다.',
       feat:['커서로 성운을 흩뜨리는 히어로 — 스크롤할수록 화성에 가까워집니다',
             'IDENTITY CAPTURE — 손으로 사각 프레임을 만들면 촬영됩니다',
-            'CREED 타이포그래피 · 워드 휠 · 게놈 캡슐 픽셀 전환'],
+            'CREED 타이포그래피 · 워드 휠 · 기록 캡슐 픽셀 전환'],
       route:[['TYPE','DOCUMENT'],['FILE','11-planet-detail.html']],
       go:function(){ if (window.argoGoto) argoGoto('11-planet-detail.html'); else location.href='11-planet-detail.html'; }
     },

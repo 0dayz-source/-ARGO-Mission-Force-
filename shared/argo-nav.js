@@ -49,7 +49,7 @@
     'const candidate = {',
     "  id: 'TFSC-04',",
     "  biometric: 'sealed',",
-    "  genome: 'locked'",
+    "  record: 'locked'",
     '};',
     'function evaluate(c) {',
     '  const s = score(c.cognitive);',

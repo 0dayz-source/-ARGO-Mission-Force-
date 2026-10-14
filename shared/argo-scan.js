@@ -88,7 +88,7 @@
   var CODE_LINES=[
     '[ATMOS]  0.6% Earth', '[THERM] -63C avg', '[ROT]    24.6 hrs',
     '[STATUS] IN PROGRESS', 'relay ORBIT-3 ... ok', 'latency 12m40s',
-    'link established · SOL-0687', 'biometric: \'sealed\'', 'genome: \'locked\'',
+    'link established · SOL-0687', 'biometric: \'sealed\'', 'record: \'locked\'',
     'hash: sha256(frame)', 'scope: \'committee-only\'', 'archive.seal({ ... })',
     'scan sequence 03/06', 'surface dust ...... ok', 'pressure .......... ok',
     'mineral trace ..... ok', 'score(c.cognitive)', 'if (s < THRESHOLD) reject(c)',

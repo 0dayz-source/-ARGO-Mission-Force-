@@ -971,9 +971,30 @@ function showResult(pre){
   } else {
   answers.forEach((ans,qi)=>{if(ans===undefined)return;Object.entries(questions[qi].choices[ans].s).forEach(([k,v])=>{if(js[k]!==undefined)js[k]+=v;else if(ps[k]!==undefined)ps[k]+=v;})});
   }
+  /* [공정성] 직군마다 점수를 받을 기회가 다르다(문항 구성상 최고점 CR 7 ~ ME 11).
+     원점수로 비교하면 기회가 많은 직군이 유리해서 6,561가지 응답 중 MEDIC 이 1위 1,773회,
+     GOVERN 은 729회였고, 공동 1위 1,489건은 코드에 먼저 적힌 직군이 가져갔다.
+     → 직군별 최고점으로 나눈 비율로 순위를 정하고, 같으면 ① 원점수 ② 점수를 받은 문항 수.
+       그래도 같으면(GO·SC 34건) 한쪽을 숨기지 않고 '복수 직군 적합'으로 함께 표시한다.
+     최고점은 문항 데이터에서 계산하므로 문항을 고쳐도 따라간다. */
+  const JKEYS=Object.keys(js), JMAX={}, hits={};
+  JKEYS.forEach(function(k){
+    JMAX[k]=questions.reduce(function(a,q){ return a+Math.max(0,...q.choices.map(function(c){return c.s[k]||0;})); },0)||1;
+    hits[k]=0;
+  });
+  /* 응답 기록(키오스크는 answers, QR 조회는 저장된 answers 로그)으로 문항 수를 센다 */
+  const picks = pre ? (pre.answers||[]).map(function(a){ var q=questions[a.i]; return [a.i, q ? q.choices.findIndex(function(c){return c.k===a.k;}) : -1]; })
+                    : answers.map(function(a,i){ return [i,a]; });
+  picks.forEach(function(p){ var q=questions[p[0]]; if(!q||p[1]==null||p[1]<0) return;
+    var sc=q.choices[p[1]].s; JKEYS.forEach(function(k){ if(sc[k]) hits[k]++; }); });
+  /* 비율은 나눗셈 대신 교차곱으로 비교한다 — 소수 오차로 동점을 놓치지 않게 */
+  const cmp=function(a,b){ return (js[b]*JMAX[a]-js[a]*JMAX[b]) || (js[b]-js[a]) || (hits[b]-hits[a]); };
+  const order=JKEYS.slice().sort(cmp);
+  const coTop=order.filter(function(k){ return cmp(k,order[0])===0; });
+  const fitPct=function(k){ return Math.round(js[k]/JMAX[k]*100); };
   const topJob = (pre && pre.top_job)
     ? [pre.top_job, (pre.top_job_score!=null ? pre.top_job_score : (js[pre.top_job]||0))]
-    : Object.entries(js).sort((a,b)=>b[1]-a[1])[0];
+    : [order[0], js[order[0]]];
   const total = (pre && pre.total!=null) ? pre.total : Object.values(js).reduce((a,b)=>a+b,0);
   const verdict = (pre && pre.verdict) ? pre.verdict : (total>=10?'PASS':total>=6?'DEFER':'FAIL');
   const ve=document.getElementById('ro-verdict');
@@ -990,6 +1011,14 @@ function showResult(pre){
   var _set=function(id,txt){var el=document.getElementById(id); if(el) el.textContent=txt;};
   /* 보류·부적합에는 '배정'이 없다 — 같은 직군도 추천으로 표기한다 */
   _set('ro-div-label', verdict==='PASS' ? 'ASSIGNED DIVISION' : 'RECOMMENDED DIVISION');
+  /* 동점이 끝까지 남으면 숨기지 않고 알린다. 한글은 모노 라벨의 넓은 자간(.3em)을 쓰면
+     글자가 흩어지므로 따로 감싼다 */
+  var _lab=document.getElementById('ro-div-label');
+  if(_lab && coTop.length>1){
+    var _co=document.createElement('span'); _co.className='ro-cofit';
+    _co.textContent='복수 직군 적합 · '+coTop.map(function(k){return JD[k].name.toUpperCase();}).join(' / ');
+    _lab.appendChild(_co);
+  }
   _set('ro-div-code', _jd.code || topJob[0]);
   _set('ro-div-name', (_jd.name||'').toUpperCase());
   /* [맞춤] 직업군 이름은 길이가 제각각이다(MEDIC 5자 ~ CONSTRUCT 9자). 고정 clamp 로는
@@ -998,16 +1027,16 @@ function showResult(pre){
   fitDivisionName();
   _set('ro-div-keys', (_jd.spec||'').split(',').map(function(x){return x.trim();}).join(' · '));
   _set('ro-fit-n', String(topJob[1]));
-  _set('ro-fit-d', '/ ' + (pre ? (pre.answered || questions.length)
-                               : answers.filter(function(a){return a!==undefined;}).length));
+  /* 분모는 '그 직군이 받을 수 있는 최고점' — 응답 문항 수가 아니다 */
+  _set('ro-fit-d', '/ ' + (JMAX[topJob[0]]||questions.length));
   var _de=document.getElementById('ro-drama');
   if(_de) _de.textContent = _jd.drama || '';
   const je=document.getElementById('ro-jobs');je.innerHTML='';
-  const maxJ=Math.max(...Object.values(js),1);
-  Object.entries(js).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{
-    const pct=Math.round((v/maxJ)*100);
-    /* 1위만 코랄-핑크로 강조하고 나머지는 채도를 낮춘다(위계) */
-    const top = (k===topJob[0]) ? ' is-top' : '';
+  /* 순위·막대·숫자 모두 같은 기준(최고점 대비 %)으로 — 숫자 순서와 줄 순서가 어긋나지 않게 */
+  order.forEach((k)=>{
+    const pct=fitPct(k), v=pct;
+    /* 1위(복수 적합이면 함께)만 코랄-핑크로 강조하고 나머지는 채도를 낮춘다(위계) */
+    const top = (k===topJob[0] || (coTop.length>1 && coTop.indexOf(k)>=0)) ? ' is-top' : '';
     je.innerHTML+=`<div class="ro-job-row${top}"><span class="rjl-code">${JD[k].code}</span><span class="rjl-name">${JD[k].name.toUpperCase()}</span><span class="rjl-spec">${JD[k].spec}</span><span class="ro-job-bar-wrap"><i class="ro-job-bar" style="width:0" data-w="${pct}%"></i></span><span class="ro-job-val">${String(v).padStart(2,'0')}</span></div>`;
   });
   const pe=document.getElementById('ro-psych');pe.innerHTML='';
@@ -1259,7 +1288,7 @@ function renderQrResult(row){
   if(!row) return;
   var sc = row.scores || {};
   try{
-    showResult({ job: sc.job, psych: sc.psych, verdict: sc.verdict, total: sc.total,
+    showResult({ job: sc.job, psych: sc.psych, verdict: sc.verdict, total: sc.total, answers: sc.answers,
                  top_job: sc.top_job || row.assigned_role, top_job_score: sc.top_job_score });
   }catch(e){ return; }
 

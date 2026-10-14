@@ -5044,3 +5044,6 @@ body.on-qr-result .pd-cursor-label{display:none !important}
 
 /* 시스템 카드 설명이 한글이 되면서 단어 중간에서 줄이 끊기지 않게 */
 .sc-desc{word-break:keep-all}
+
+/* 결과지 — 끝까지 동점인 직군(복수 직군 적합) 표시. 위 라벨과 한 줄, 한글이라 자간은 좁게 */
+#result-overlay .ro-cofit{margin-left:12px;font-family:var(--kr);letter-spacing:0;font-size:11px;color:#FF9A7A}

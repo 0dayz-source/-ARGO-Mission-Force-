@@ -42,15 +42,15 @@
 })();
 </script>
 
-<link rel="stylesheet" href="shared/pd-skin.css?v=1791959884">
-  <script src="shared/argo-date.js?v=1791959884"></script>
-  <script id="ripple-fx" src="shared/argo-ripple.js?v=1791959884"></script>
-  <script src="shared/argo-scramble.js?v=1791959884"></script>
-<link rel="stylesheet" href="shared/argo-operator.css?v=1791959884">
-<link rel="stylesheet" href="shared/argo-track.css?v=1791959884"><link rel="stylesheet" href="shared/argo-warn.css?v=1791959884">
+<link rel="stylesheet" href="shared/pd-skin.css?v=1791962000">
+  <script src="shared/argo-date.js?v=1791962000"></script>
+  <script id="ripple-fx" src="shared/argo-ripple.js?v=1791962000"></script>
+  <script src="shared/argo-scramble.js?v=1791962000"></script>
+<link rel="stylesheet" href="shared/argo-operator.css?v=1791962000">
+<link rel="stylesheet" href="shared/argo-track.css?v=1791962000"><link rel="stylesheet" href="shared/argo-warn.css?v=1791962000">
 </head>
 <body>
-<script src="shared/argo-nav.js?v=1791959884"></script>
+<script src="shared/argo-nav.js?v=1791962000"></script>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
     <!-- [VHS] 테이프가 살짝 늘어난 듯한 가로 왜곡. baseFrequency 를 세로로만 크게 줘서
@@ -109,7 +109,7 @@
         <span id="boothLbCap">FRAME —</span>
         <span class="booth-lb-act">
           <button class="booth-lb-set" id="boothLbSet" type="button">Genome에 보관</button>
-          <span class="booth-lb-hint">DNA 캡슐에 기록됩니다</span>
+          <span class="booth-lb-hint">후보자 기록 캡슐에 저장됩니다</span>
         </span>
       </div>
     </div>
@@ -437,7 +437,7 @@
   
 
   <!-- ============ GENOME ============ -->
-  <section class="pd-dna" data-theme="dark" data-particles="off" aria-label="Candidate genome capsule">
+  <section class="pd-dna" data-theme="dark" data-particles="off" aria-label="Candidate record capsule">
     <div class="pd-dna-gradientbg" id="dna-gradientbg" aria-hidden="true">
       <svg class="pd-dna-goo-defs"><defs><filter id="dnaGooFilter">
         <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur"/>
@@ -454,15 +454,15 @@
       </div>
     </div>
     <div class="pd-dna-head">
-      <div class="pd-dna-feed rv sf">GENOME SEQUENCE · LIVE</div>
-      <h2 class="pd-dna-title kin" data-vp="0.16">Candidate genome.</h2>
-      <p class="pd-dna-desc tg">등록된 생체 정보는 후보자 식별 코드와 함께<br>게놈 아카이브에 봉인됩니다.<br>열람은 선발 위원회 권한으로 제한됩니다.</p>
-      <span class="pd-dna-coord rv sf">SECT 07.5 · GENOME ARCHIVE · SEQUENCE LOCKED</span>
+      <div class="pd-dna-feed rv sf">CANDIDATE RECORD · LIVE</div>
+      <h2 class="pd-dna-title kin" data-vp="0.16">Candidate record.</h2>
+      <p class="pd-dna-desc tg">대표 사진은 CANDIDATE WALL에 공개됩니다.<br>심리 평가 기록은 후보자 식별 코드와 함께 봉인되며,<br>열람은 선발 위원회 권한으로 제한됩니다.</p>
+      <span class="pd-dna-coord rv sf">SECT 07.5 · CANDIDATE ARCHIVE · RECORD LOCKED</span>
       <!-- 이전 마지막 페이지 버튼(.glass-cta.filled 리퀴드 글래스)과 동일한 모습.
            SECT 07.5 줄 아래, 아스키 박스 하단 기준선에 맞춘다. -->
       <button class="pd-dna-retake glass-cta filled" type="button" data-magnetic data-cursor="RETAKE"
         onclick="window.__argoRetakeGenome ? window.__argoRetakeGenome() : document.getElementById('scan-section').scrollIntoView({behavior:'smooth',block:'start'})">
-        GENOME 재촬영
+        후보자 사진 재촬영
         <span class="ar" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></span>
       </button>
     </div>
@@ -476,7 +476,7 @@
       <div class="pd-dna-ascii" id="dnaAscii" aria-hidden="true"><pre id="dnaAsciiPre"></pre></div>
       <div class="dna-cap-sheen" aria-hidden="true"></div>
       <div class="dna-hud" aria-hidden="true">
-        <span class="dh tl">GENOME LOCKED</span>
+        <span class="dh tl">RECORD LOCKED</span>
         <span class="dh tr">LIVE SCAN</span>
         <span class="dh bl">SEQ 07.5</span>
       </div>
@@ -497,9 +497,9 @@
     <div class="pd-cta-inner sh-shift">
       <div class="pd-entry-label rv">SIGNAL RECEIVED FROM ARGO MAINFRAME<br>TERRAFORMING FIELD SUITABILITY CHECK ONLINE</div>
       <p class="pd-entry-type" data-typewriter="TFSC cognitive protocol initialized. Candidate signal detected. Begin your planetary adaptation assessment."></p>
-      <div class="pd-cta-eyebrow rv sf">TFSC-04 · CLEARANCE GRANTED</div>
+      <div class="pd-cta-eyebrow rv sf">TFSC-04 · ASSESSMENT ACCESS GRANTED</div>
       <h2 class="pd-cta-head" id="ctaHead">The second horizon is open.</h2>
-      <p class="pd-cta-desc tg">다음 단계는 인지 적합성 평가입니다. 응답은 즉시 후보자 기록에 반영되며, 중도 저장은 지원되지 않습니다.</p>
+      <p class="pd-cta-desc tg">다음 단계는 심리 소양 평가입니다. 응답은 즉시 후보자 기록에 반영되며, 중도 저장은 지원되지 않습니다.</p>
       <div class="pd-cta-actions rv">
         <!-- 메인페이지 START ASSESSMENT 와 동일한 구조 (lg-iri / lg-spec / lg-label) -->
         <button class="lg-btn lg-red" data-magnetic data-cursor="BEGIN"
@@ -2674,10 +2674,10 @@ void main(){ vec2 p = gl_PointCoord - 0.5; float l = length(p); if (l > 0.5) dis
 })();
 </script>
 
-<script src="shared/argo-warn.js?v=1791959884"></script><script src="shared/argo-track.js?v=1791959884"></script>
-<script src="shared/argo-db.js?v=1791959884"></script>
-<script src="shared/argo-foldtext.js?v=1791959884"></script>
-<script id="scan-fx" src="shared/argo-scan.js?v=1791959884"></script>
+<script src="shared/argo-warn.js?v=1791962000"></script><script src="shared/argo-track.js?v=1791962000"></script>
+<script src="shared/argo-db.js?v=1791962000"></script>
+<script src="shared/argo-foldtext.js?v=1791962000"></script>
+<script id="scan-fx" src="shared/argo-scan.js?v=1791962000"></script>
 
 <script src="shared/vendor/matter.min.js"></script>
 <script id="tele-fall-fx">
@@ -3330,12 +3330,12 @@ void main(){ vec2 p = gl_PointCoord - 0.5; float l = length(p); if (l > 0.5) dis
   var SNIPPETS=[
 "$ tfsc assess --begin\n> protocol  COGNITIVE-7\n  candidate  sealed\n  clearance  GRANTED",
 "if (adaptation > 0.82) {\n  return board.admit(c);\n}\nreturn queue.defer(c);",
-"[LAUNCH]  window T-38d\n[VESSEL]  ARGO-IV\n[SEATS]   1 of 1200\n[STATUS]  BOARDING",
+"[LAUNCH]  window T-38d\n[VESSEL]  ARGO-IV\n[SEATS]   1 of 1200\n[STATUS]  AWAITING ASSESSMENT",
 "await horizon.open({\n  candidate: sealed.id,\n  irreversible: true\n});",
 "> second horizon\n  gate 02 · unlocked\n  transfer  authorized\n  return    none",
 "SELECT verdict FROM board\n WHERE candidate = :id\n LIMIT 1;",
 "vec3 c = mix(core, rim, t);\nfragColor = vec4(c, 1.0);",
-"⟶ final sequence 06/06\n  psych ......... ok\n  biometric ..... ok\n  consent ....... ok",
+"⟶ final sequence 06/06\n  psych ......... pending\n  biometric ..... ok\n  consent ....... ok",
 "const depart = () => {\n  earth.release();\n  mars.receive(you);\n};"
   ];
   /* hero 와 다른 좌표 — 중앙 CTA 카피와 버튼을 피해 바깥쪽으로 돌린다 */
@@ -4311,7 +4311,7 @@ var NEB = (function(){
 
   var SNIPPETS=[
 "$ tfsc telemetry --stream\n> link established · SOL-0687\n  relay ORBIT-3 … ok\n  latency 12m40s",
-"const candidate = {\n  id: 'TFSC-04',\n  biometric: 'sealed',\n  genome: 'locked'\n};",
+"const candidate = {\n  id: 'TFSC-04',\n  biometric: 'sealed',\n  record: 'locked'\n};",
 "function evaluate(c) {\n  const s = score(c.cognitive);\n  if (s < THRESHOLD) return reject(c);\n  return admit(c);\n}",
 "[ATMOS]  0.6% Earth\n[THERM] -63C avg\n[ROT]    24.6 hrs\n[STATUS] IN PROGRESS",
 "await archive.seal({\n  frame: capture.latest,\n  hash: sha256(frame),\n  scope: 'committee-only'\n});",
@@ -4974,6 +4974,6 @@ void main(){
   },{threshold:[0,0.05,0.35,0.6]}).observe(stage);
 })();
 </script>
-<script src="shared/argo-operator.js?v=1791959884"></script>
+<script src="shared/argo-operator.js?v=1791962000"></script>
 </body>
 </html>

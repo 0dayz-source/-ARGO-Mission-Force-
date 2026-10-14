@@ -712,12 +712,12 @@ const questions=[
 ];
 const JL={CR:'건설 기술자',SV:'자원 생존가',ME:'의료·생명',GO:'행정 관리자',SC:'연구 과학자',CU:'문화 기록가'};
 const JD={
-  CR:{code:'CR',name:'Construct',spec:'건설, 토목, 기계',  drama:'아무것도 없는 곳에 첫 번째 벽을 세우는 사람'},
-  SV:{code:'SV',name:'Survival', spec:'자원, 식량, 위기대응',drama:'모두가 잠든 새벽, 혼자 기지를 지키는 사람'},
-  ME:{code:'ME',name:'Medic',    spec:'의료, 생명과학',    drama:'화성에서 태어난 아이의 첫 번째 의사'},
-  GO:{code:'GO',name:'Govern',   spec:'행정, 법, 커뮤니티 관리',drama:'화성의 첫 번째 법을 만드는 사람'},
-  SC:{code:'SC',name:'Science',  spec:'연구, 데이터, 공학', drama:'아직 이름 없는 것들에게 이름을 붙이는 사람'},
-  CU:{code:'CU',name:'Culture',  spec:'교육, 예술, 기록',  drama:'100년 후에도 남을 기억을 보존하는 사람'},
+  CR:{code:'CR',name:'Construct',spec:'건설, 토목, 기계',  drama:'아무것도 없는 곳에 첫 번째 벽을 세우는 사람\n당신이 놓은 기초 위에서 다음 세대가 숨을 쉰다'},
+  SV:{code:'SV',name:'Survival', spec:'자원, 식량, 위기대응',drama:'모두가 잠든 새벽, 혼자 기지를 지키는 사람\n산소와 물과 식량, 생존의 마지막 계산은 당신의 몫이다'},
+  ME:{code:'ME',name:'Medic',    spec:'의료, 생명과학',    drama:'화성에서 태어난 아이의 첫 번째 의사\n낮은 중력과 방사선 속에서 생명을 지켜내는 손'},
+  GO:{code:'GO',name:'Govern',   spec:'행정, 법, 커뮤니티 관리',drama:'화성의 첫 번째 법을 만드는 사람\n고립된 수백 명을 하나의 사회로 묶는 규칙을 설계한다'},
+  SC:{code:'SC',name:'Science',  spec:'연구, 데이터, 공학', drama:'아직 이름 없는 것들에게 이름을 붙이는 사람\n붉은 흙 속의 데이터가 당신의 손에서 처음 의미를 얻는다'},
+  CU:{code:'CU',name:'Culture',  spec:'교육, 예술, 기록',  drama:'100년 후에도 남을 기억을 보존하는 사람\n지구를 떠난 인류가 누구였는지 다음 세대에게 전한다'},
 };
 const PL={AUT:'자율 판단력',ISO:'고립 내성',NEU:'정서 안정성',COL:'집단 우선성',GEN:'미래 세대 헌신',IDE:'정체성 전환'};
 let answers=[],cq=0;
@@ -946,9 +946,11 @@ function fitDivisionName(){
   var el=document.getElementById('ro-div-name');
   if(!el||!el.parentElement) return;
   requestAnimationFrame(function(){
-    var box=el.parentElement.clientWidth;
+    /* 판정 배지는 넓은 화면에서만 이름 옆에 붙는다(640px 이하는 다음 줄로 내려간다) */
+    var phone=window.innerWidth<=640, v=document.getElementById('ro-verdict');
+    var box=el.parentElement.clientWidth-(!phone&&v?v.offsetWidth+18:0);
     if(!box) return;
-    var max=Math.min(118, Math.round(window.innerWidth*0.078)), min=26, size=max;
+    var max=phone?40:Math.min(118, Math.round(window.innerWidth*0.078)), min=phone?18:26, size=max;
     el.style.fontSize=size+'px';
     while(size>min && el.scrollWidth>box){ size-=1; el.style.fontSize=size+'px'; }
   });
@@ -986,6 +988,8 @@ function showResult(pre){
      배정 직군(코드·이름·키워드·한 줄)을 메인으로 올린다. */
   var _jd=JD[topJob[0]]||{code:'',name:'',spec:''};
   var _set=function(id,txt){var el=document.getElementById(id); if(el) el.textContent=txt;};
+  /* 보류·부적합에는 '배정'이 없다 — 같은 직군도 추천으로 표기한다 */
+  _set('ro-div-label', verdict==='PASS' ? 'ASSIGNED DIVISION' : 'RECOMMENDED DIVISION');
   _set('ro-div-code', _jd.code || topJob[0]);
   _set('ro-div-name', (_jd.name||'').toUpperCase());
   /* [맞춤] 직업군 이름은 길이가 제각각이다(MEDIC 5자 ~ CONSTRUCT 9자). 고정 clamp 로는
@@ -1014,7 +1018,7 @@ function showResult(pre){
       `<span class="ro-psych-gauge" aria-hidden="true"><i></i><i></i><i></i></span>`+
       `<span class="ro-psych-val">${star}</span><span class="ro-psych-desc">${PL[k]}</span></div>`;
   });
-  const notes={PASS:'TFSC 위원회는 귀하의 심리 프로파일을 검토한 결과, 화성 장기 거주 프로그램 참여 자격을 부여합니다. 다음 단계: 신체 적합도 평가 Phase 03.',DEFER:'추가 심리 상담 후 재평가가 권고됩니다. 일부 지표에서 경계치에 근접한 수치가 확인되었습니다.',FAIL:'현재 프로파일은 화성 장기 거주 기준에 미달합니다. 지구 기반 지원 역할 배치 또는 6개월 후 재평가를 권장합니다.'};
+  const notes={PASS:'TFSC 위원회는 귀하의 심리 프로파일을 검토한 결과, 화성 장기 거주 프로그램 참여 자격을 부여합니다. 귀하에게 위의 직군이 배정되었습니다.',DEFER:'추가 심리 상담 후 재평가가 권고됩니다. 일부 지표에서 경계치에 근접한 수치가 확인되었습니다.',FAIL:'현재 프로파일은 화성 장기 거주 기준에 미달합니다. 지구 기반 지원 역할 배치 또는 6개월 후 재평가를 권장합니다.'};
   document.getElementById('ro-note').textContent=notes[verdict];
   const s3el=document.getElementById('s3');
   if(s3el) s3el.classList.remove('active');
@@ -1412,13 +1416,15 @@ function backAssessment(){
   var url='11-planet-detail.html?at=cta';
   if(window.argoGoto) argoGoto(url); else location.href=url;
 }
+/* 카드 i 를 누르면 s(i+4) 상세로 간다 — 이름·설명은 그 심리 평가 지표 것이어야 한다
+   (예전엔 기지 설비 이름이 붙어 있어 누르면 다른 내용이 나왔다). 설명은 ARGO Index 와 같은 문장. */
 const sysDefs=[
-  {n:'Navigation Core',ic:'rgba(255,39,195,.92)',d:'Real-time relay across 14 beacons. Sub-light trajectory ±0.001%.',tag:'ACTIVE',tc:'var(--orange)',gc:'rgba(92,14,74,.5)',ico:`<path d="M16 3L29 16L16 29L3 16Z" fill="none" stroke="rgba(92,14,74,.9)" stroke-width="1.5"/><circle cx="16" cy="16" r="4" fill="rgba(92,14,74,.2)" stroke="rgba(92,14,74,.9)" stroke-width="1.5"/>`},
-  {n:'Quantum Mesh',ic:'rgba(255,45,130,.92)',d:'Entanglement comms. Instantaneous transfer at any separation.',tag:'SYNCED',tc:'var(--white-hot)',gc:'rgba(92,14,74,.4)',ico:`<circle cx="16" cy="8" r="3" stroke="rgba(92,14,74,.9)" stroke-width="1.5" fill="none"/><circle cx="8" cy="24" r="3" stroke="rgba(92,14,74,.9)" stroke-width="1.5" fill="none"/><circle cx="24" cy="24" r="3" stroke="rgba(92,14,74,.9)" stroke-width="1.5" fill="none"/><line x1="16" y1="11" x2="10" y2="21" stroke="rgba(92,14,74,.5)" stroke-width="1"/><line x1="16" y1="11" x2="22" y2="21" stroke="rgba(92,14,74,.5)" stroke-width="1"/><line x1="11" y1="24" x2="21" y2="24" stroke="rgba(92,14,74,.5)" stroke-width="1"/>`},
-  {n:'Bio-Registry',ic:'rgba(255,61,104,.92)',d:'2,400 genomic markers. Cognitive resilience index per candidate.',tag:'SCANNING',tc:'var(--orange)',gc:'rgba(92,14,74,.5)',ico:`<rect x="7" y="9" width="18" height="16" rx="1" stroke="rgba(92,14,74,.9)" stroke-width="1.5" fill="none"/><path d="M11 9V6H21V9" stroke="rgba(92,14,74,.9)" stroke-width="1.5" fill="none"/><line x1="10" y1="15" x2="22" y2="15" stroke="rgba(92,14,74,.5)" stroke-width="1"/><line x1="10" y1="19" x2="18" y2="19" stroke="rgba(92,14,74,.5)" stroke-width="1"/>`},
-  {n:'Biome Architect',ic:'rgba(255,107,102,.92)',d:'Atmospheric synthesis via 6.2B nanobot swarms per sector.',tag:'READY',tc:'var(--white-hot)',gc:'rgba(92,14,74,.35)',ico:`<path d="M16 4L28 11V21L16 28L4 21V11Z" fill="none" stroke="rgba(255,61,104,.9)" stroke-width="1.5"/><path d="M16 10L22 14V20L16 24L10 20V14Z" fill="rgba(255,61,104,.1)" stroke="rgba(255,61,104,.6)" stroke-width="1"/>`},
-  {n:'Orbital Grid',ic:'rgba(255,154,122,.92)',d:'Synchronous constellation for gravitational field manipulation.',tag:'ORBITING',tc:'var(--orange)',gc:'rgba(92,14,74,.4)',ico:`<circle cx="16" cy="16" r="9" fill="none" stroke="rgba(92,14,74,.9)" stroke-width="1.5"/><ellipse cx="16" cy="16" rx="9" ry="3.5" fill="none" stroke="rgba(92,14,74,.5)" stroke-width="1"/><circle cx="16" cy="16" r="2.5" fill="rgba(92,14,74,.3)"/>`},
-  {n:'Flux Monitor',ic:'rgba(255,194,163,.92)',d:'Solar prediction 94.3% accuracy, 48h window, auto-shielding.',tag:'LIVE',tc:'var(--white-hot)',gc:'rgba(92,14,74,.35)',ico:`<polyline points="4,22 10,14 16,18 22,10 28,6" fill="none" stroke="rgba(92,14,74,.9)" stroke-width="1.5"/><circle cx="10" cy="14" r="2.5" fill="rgba(92,14,74,.3)" stroke="rgba(92,14,74,.8)" stroke-width="1"/><circle cx="22" cy="10" r="2.5" fill="rgba(92,14,74,.3)" stroke="rgba(92,14,74,.8)" stroke-width="1"/>`},
+  {n:'Isolation Endurance',ic:'rgba(255,39,195,.92)',d:'지구의 즉각적인 지원 없이도 판단과 일상 기능을 유지할 수 있는지 봅니다.',tag:'ACTIVE',tc:'var(--orange)',gc:'rgba(92,14,74,.5)',ico:`<path d="M16 3L29 16L16 29L3 16Z" fill="none" stroke="rgba(92,14,74,.9)" stroke-width="1.5"/><circle cx="16" cy="16" r="4" fill="rgba(92,14,74,.2)" stroke="rgba(92,14,74,.9)" stroke-width="1.5"/>`},
+  {n:'Emotional Stability Threshold',ic:'rgba(255,45,130,.92)',d:'압박 아래에서 정서가 어디까지 내려앉는지, 그 바닥을 봅니다.',tag:'SYNCED',tc:'var(--white-hot)',gc:'rgba(92,14,74,.4)',ico:`<circle cx="16" cy="8" r="3" stroke="rgba(92,14,74,.9)" stroke-width="1.5" fill="none"/><circle cx="8" cy="24" r="3" stroke="rgba(92,14,74,.9)" stroke-width="1.5" fill="none"/><circle cx="24" cy="24" r="3" stroke="rgba(92,14,74,.9)" stroke-width="1.5" fill="none"/><line x1="16" y1="11" x2="10" y2="21" stroke="rgba(92,14,74,.5)" stroke-width="1"/><line x1="16" y1="11" x2="22" y2="21" stroke="rgba(92,14,74,.5)" stroke-width="1"/><line x1="11" y1="24" x2="21" y2="24" stroke="rgba(92,14,74,.5)" stroke-width="1"/>`},
+  {n:'Autonomous Decision Threshold',ic:'rgba(255,61,104,.92)',d:'지시를 기다릴 수 없을 때 스스로 결정을 내리는 지점을 봅니다.',tag:'SCANNING',tc:'var(--orange)',gc:'rgba(92,14,74,.5)',ico:`<rect x="7" y="9" width="18" height="16" rx="1" stroke="rgba(92,14,74,.9)" stroke-width="1.5" fill="none"/><path d="M11 9V6H21V9" stroke="rgba(92,14,74,.9)" stroke-width="1.5" fill="none"/><line x1="10" y1="15" x2="22" y2="15" stroke="rgba(92,14,74,.5)" stroke-width="1"/><line x1="10" y1="19" x2="18" y2="19" stroke="rgba(92,14,74,.5)" stroke-width="1"/>`},
+  {n:'Collective Priority Index',ic:'rgba(255,107,102,.92)',d:'개인과 정착지가 부딪칠 때 어느 쪽을 먼저 두는지 봅니다.',tag:'READY',tc:'var(--white-hot)',gc:'rgba(92,14,74,.35)',ico:`<path d="M16 4L28 11V21L16 28L4 21V11Z" fill="none" stroke="rgba(255,61,104,.9)" stroke-width="1.5"/><path d="M16 10L22 14V20L16 24L10 20V14Z" fill="rgba(255,61,104,.1)" stroke="rgba(255,61,104,.6)" stroke-width="1"/>`},
+  {n:'Identity Transition Tolerance',ic:'rgba(255,154,122,.92)',d:'기존 정체성과 새로운 공동체의 요구 사이에서 자신을 재구성할 수 있는지 봅니다.',tag:'ORBITING',tc:'var(--orange)',gc:'rgba(92,14,74,.4)',ico:`<circle cx="16" cy="16" r="9" fill="none" stroke="rgba(92,14,74,.9)" stroke-width="1.5"/><ellipse cx="16" cy="16" rx="9" ry="3.5" fill="none" stroke="rgba(92,14,74,.5)" stroke-width="1"/><circle cx="16" cy="16" r="2.5" fill="rgba(92,14,74,.3)"/>`},
+  {n:'Generative Commitment',ic:'rgba(255,194,163,.92)',d:'자기 대에 완성되지 않을 일에 얼마나 오래 매달릴 수 있는지 봅니다.',tag:'LIVE',tc:'var(--white-hot)',gc:'rgba(92,14,74,.35)',ico:`<polyline points="4,22 10,14 16,18 22,10 28,6" fill="none" stroke="rgba(92,14,74,.9)" stroke-width="1.5"/><circle cx="10" cy="14" r="2.5" fill="rgba(92,14,74,.3)" stroke="rgba(92,14,74,.8)" stroke-width="1"/><circle cx="22" cy="10" r="2.5" fill="rgba(92,14,74,.3)" stroke="rgba(92,14,74,.8)" stroke-width="1"/>`},
 ];
 /* 상태 배지는 상태마다 색이 다르다 — 가동/동기화/스캔/대기/궤도/실시간을 색으로 구분한다.
    아이콘 색은 난이도 순서(SYS·001 → 006)로 진한 → 연한 핑크 램프다(sysDefs.ic). */
@@ -2946,7 +2952,7 @@ function scrollDown(){
   else goScene(0);
 }
 
-initDetailGraphs();
+/* [성능] 예전엔 여기서도 한 번 더 불러 6개 그래프를 두 번 그렸다(로드 중 100ms × 2). 아래 한 곳에서만 부른다. */
 function initDetailGraphs(){
 function hash(n){ let x=Math.sin(n*127.1+311.7)*43758.5453; return x-Math.floor(x); }
   function vnoise(x,y){ // value noise 2D
@@ -3144,7 +3150,7 @@ const STEPS=60;
          data:sig(t=>0.82-t*0.22+Math.sin(t*Math.PI*4)*0.08+n(t,5)*0.06)},
       ]},
 { id:'gc_s5_spec',
-      title:'NEUROTICISM FLOOR · CANDIDATE PSYCHOMETRIC DISTRIBUTION',
+      title:'EMOTIONAL STABILITY THRESHOLD · CANDIDATE PSYCHOMETRIC DISTRIBUTION',
       frames:['NEU-0','NEU-10','NEU-20','NEU-30','NEU-40','NEU-50','NEU-60'],
       channels:[
         {label:'DISTRIBUTION',unit:'candidate density N=847K',color:'rgba(255,154,122,X)',spectrogram:true,
@@ -3195,7 +3201,7 @@ const STEPS=60;
          data:sig(t=>0.8-t*0.15+Math.sin(t*Math.PI*1.8)*0.1+n(t,5)*0.06)},
       ]},
 { id:'gc_s8_spec',
-      title:'IDENTITY DISPLACEMENT · PSYCHOLOGICAL TRANSITION ANALYSIS',
+      title:'IDENTITY TRANSITION · PSYCHOLOGICAL TRANSITION ANALYSIS',
       frames:['M+0','M+6','M+12','M+18','M+24','M+30','M+36'],
       channels:[
         {label:'EARTH ATTACH',unit:'homeland identity strength',color:'rgba(92,14,74,X)',

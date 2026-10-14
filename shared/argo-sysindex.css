@@ -341,3 +341,13 @@
 @media (prefers-reduced-motion: reduce){
   .si-back.lg-btn,.si-filter.lg-btn{transition:background-color .2s ease,color .2s ease}
 }
+
+/* ── 오른쪽 설명 그룹 (2026-10-14) ─────────────────────────────────
+   크레딧이 칼럼 바닥에 따로 떠 있어(absolute) 본문과 따로 놀았고, 노트북 높이에서는
+   PHASE 03 줄 위에 겹쳤다. 크레딧을 본문 바로 아래 흐름으로 돌려 한 덩어리로 묶고,
+   여유 높이만 위 3 : 아래 2 로 나눠 덩어리를 살짝 아래로 둔다. 고정 여백이면 노트북 높이에서
+   본문이 잘렸다 — 이 빈칸들은 공간이 모자라면 0 으로 줄어든다. */
+.si-right{justify-content:flex-start;padding-bottom:0}
+.si-right::before{content:"";flex:3 1 0;min-height:0}
+.si-right::after{content:"";flex:2 1 0;min-height:0}
+.si-credit{position:static;flex-shrink:0;margin-top:22px}

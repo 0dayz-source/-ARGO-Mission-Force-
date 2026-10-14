@@ -30,24 +30,27 @@
 <!-- tunnel-hero-fx: ES-module Three.js r0.143.0 for the hero background tunnel scene (kept
      separate from the classic r128 inline THREE global used elsewhere in this file — modules
      have their own scope, so the two do not collide). -->
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://unpkg.com/three@0.143.0/build/three.module.js",
-    "three/addons/": "https://unpkg.com/three@0.143.0/examples/jsm/"
-  }
-}
+<script>
+/* three.js(r143) 는 사이트 안(shared/vendor)에서 받는다 — 예전엔 unpkg CDN 이라 전시장 네트워크가
+   느리거나 끊기면 MARS 로딩이 십수 초 멈췄다(실측 17.7초). 단, file:// 로 직접 열면 브라우저가
+   로컬 모듈 import 를 막으므로 그때만 CDN 을 쓴다. import map 은 첫 module 스크립트보다 먼저 있어야 한다. */
+(function(){
+  var b = location.protocol === 'file:' ? 'https://unpkg.com/three@0.143.0/' : './shared/vendor/three@0.143.0/';   /* import map 은 ./ 로 시작해야 상대경로로 읽는다 */
+  var m = document.createElement('script'); m.type = 'importmap';
+  m.textContent = JSON.stringify({ imports: { 'three': b + 'build/three.module.js', 'three/addons/': b + 'examples/jsm/' } });
+  document.currentScript.after(m);
+})();
 </script>
 
-<link rel="stylesheet" href="shared/pd-skin.css?v=1791956874">
-  <script src="shared/argo-date.js?v=1791956874"></script>
-  <script id="ripple-fx" src="shared/argo-ripple.js?v=1791956874"></script>
-  <script src="shared/argo-scramble.js?v=1791956874"></script>
-<link rel="stylesheet" href="shared/argo-operator.css?v=1791956874">
-<link rel="stylesheet" href="shared/argo-track.css?v=1791956874"><link rel="stylesheet" href="shared/argo-warn.css?v=1791956874">
+<link rel="stylesheet" href="shared/pd-skin.css?v=1791959545">
+  <script src="shared/argo-date.js?v=1791959545"></script>
+  <script id="ripple-fx" src="shared/argo-ripple.js?v=1791959545"></script>
+  <script src="shared/argo-scramble.js?v=1791959545"></script>
+<link rel="stylesheet" href="shared/argo-operator.css?v=1791959545">
+<link rel="stylesheet" href="shared/argo-track.css?v=1791959545"><link rel="stylesheet" href="shared/argo-warn.css?v=1791959545">
 </head>
 <body>
-<script src="shared/argo-nav.js?v=1791956874"></script>
+<script src="shared/argo-nav.js?v=1791959545"></script>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
     <!-- [VHS] 테이프가 살짝 늘어난 듯한 가로 왜곡. baseFrequency 를 세로로만 크게 줘서
@@ -2671,10 +2674,10 @@ void main(){ vec2 p = gl_PointCoord - 0.5; float l = length(p); if (l > 0.5) dis
 })();
 </script>
 
-<script src="shared/argo-warn.js?v=1791956874"></script><script src="shared/argo-track.js?v=1791956874"></script>
-<script src="shared/argo-db.js?v=1791956874"></script>
-<script src="shared/argo-foldtext.js?v=1791956874"></script>
-<script id="scan-fx" src="shared/argo-scan.js?v=1791956874"></script>
+<script src="shared/argo-warn.js?v=1791959545"></script><script src="shared/argo-track.js?v=1791959545"></script>
+<script src="shared/argo-db.js?v=1791959545"></script>
+<script src="shared/argo-foldtext.js?v=1791959545"></script>
+<script id="scan-fx" src="shared/argo-scan.js?v=1791959545"></script>
 
 <script src="shared/vendor/matter.min.js"></script>
 <script id="tele-fall-fx">
@@ -4971,6 +4974,6 @@ void main(){
   },{threshold:[0,0.05,0.35,0.6]}).observe(stage);
 })();
 </script>
-<script src="shared/argo-operator.js?v=1791956874"></script>
+<script src="shared/argo-operator.js?v=1791959545"></script>
 </body>
 </html>

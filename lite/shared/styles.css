@@ -3889,6 +3889,8 @@ button,input,textarea,select{font-family:inherit}
 #result-overlay .ro-qr-cv{display:block;width:176px;height:176px;border-radius:6px;background:#D4FAFF;box-shadow:0 4px 14px rgba(0,0,0,.45)}
 #result-overlay .ro-qr-cap{display:flex;flex-direction:column;align-items:center;gap:4px;font-family:var(--mono)}
 #result-overlay .ro-qr-cap b{font-size:12px;letter-spacing:.3em;color:rgba(212,250,255,.72);font-weight:500}
+/* 한글 캡션 — 모노 .3em 자간은 한글에서 낱자가 흩어져 보인다. 한글 서체·좁은 자간으로, 크기·줄높이는 그대로 */
+#result-overlay .ro-qr-cap b{font-family:var(--kr);letter-spacing:.02em;white-space:nowrap;line-height:16px}
 #result-overlay .ro-qr-cap span{font-size:13px;letter-spacing:.14em;color:rgba(212,250,255,.92);font-variant-numeric:tabular-nums}
 
 /* ── ③ 직군 랭킹 : 얇은 구분선만, 점수는 우측 고정 ── */
@@ -5062,3 +5064,16 @@ body.on-qr-result .pd-cursor-label{display:none !important}
 /* 기본 커서 숨김 — 버튼(cursor:pointer)·입력창(cursor:text)에서 기본 커서가 원형 커서와 겹쳐 두 개로 보였다.
    마우스 기기에서만 전부 숨긴다(터치 기기는 영향 없음). */
 @media (pointer:fine){html,body,body *,body *::before,body *::after{cursor:none!important}}
+
+/* 선택 확인 — 고른 보기의 A/B/C 자리에 체크가 그려진다(자리 폭 그대로라 줄바꿈·높이 변화 없음).
+   app.js 가 0.45초 보여 준 뒤 다음 문항으로 넘긴다. */
+#s3 .aw-choice.selected .ac-key{color:transparent!important;-webkit-text-fill-color:transparent!important;text-shadow:none!important}
+#s3 .aw-choice.selected .ac-key::after{
+  content:"";position:absolute;left:50%;top:50%;width:6px;height:12px;
+  border:solid #FF3D68;border-width:0 2px 2px 0;
+  transform:translate(-50%,-62%) rotate(45deg);
+  filter:drop-shadow(0 0 6px rgba(255,61,104,.6));
+  animation:acCheck .22s cubic-bezier(.16,1,.3,1) both;
+}
+@keyframes acCheck{from{opacity:0;transform:translate(-50%,-62%) rotate(45deg) scale(.4)}to{opacity:1;transform:translate(-50%,-62%) rotate(45deg) scale(1)}}
+@media(prefers-reduced-motion:reduce){#s3 .aw-choice.selected .ac-key::after{animation:none}}

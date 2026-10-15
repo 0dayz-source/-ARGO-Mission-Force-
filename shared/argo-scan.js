@@ -215,41 +215,23 @@
   function isOpen(lm){ return ext(lm,8,6)&&ext(lm,12,10)&&ext(lm,16,14)&&ext(lm,20,18); }
   function dist(a,b){ var dx=a.x-b.x, dy=a.y-b.y; return Math.sqrt(dx*dx+dy*dy); }
 
-  /* --- 찰칵(카메라 프레임) 포즈 판정 ---
-     예전 판정은 lm[tip].y < lm[pip].y 로 "위로 폈는지"만 봐서, 손을 눕히거나 기울이는
-     실제 찰칵 포즈에서는 거의 인식이 안 됐다. 이제 손목에서의 거리로 판정한다 →
-     손이 어느 방향을 향하든(회전 불변) 동일하게 동작한다. */
+  /* 손가락 펴짐 판정 — lm[tip].y < lm[pip].y 처럼 "위로 폈는지"만 보면 손을 기울일 때 못 잡는다.
+     손목에서의 거리로 판정해 손이 어느 방향을 향하든(회전 불변) 동일하게 동작한다. */
   function fingerOut(lm,pip,tip){
     var w=lm[0];
     return dist(w,lm[tip]) > dist(w,lm[pip])*1.06;
   }
-  function isLShape(lm){
-    var indexOut = fingerOut(lm,6,8);
-    if(!indexOut) return false;
-    /* 중지·약지·새끼 중 2개만 접혀 있어도 인정 (엄격하게 3개 다 요구하면 잘 안 잡힌다) */
-    var folded=0;
-    if(!fingerOut(lm,10,12))folded++;
-    if(!fingerOut(lm,14,16))folded++;
-    if(!fingerOut(lm,18,20))folded++;
-    if(folded<2) return false;
-    /* 엄지가 검지 뿌리에서 벌어져 'ㄱ' 를 만드는가 (주먹의 접힌 엄지와 구분) */
+  /* 촬영 포즈 = 손바닥 펼치기. 네 손가락이 모두 펴지고(손목 거리 기준이라 손 방향 무관)
+     엄지가 검지 뿌리에서 벌어져 있으면 인정한다. 두 손이 잡히면 어느 한 손만 펼쳐도 된다. */
+  function isPalmOpen(lm){
+    if(!fingerOut(lm,6,8)||!fingerOut(lm,10,12)||!fingerOut(lm,14,16)||!fingerOut(lm,18,20)) return false;
     var palm = dist(lm[0],lm[9]) || 0.001;
     return (dist(lm[4],lm[5])/palm) > 0.45;
   }
-  function isCameraFrame(hands){
-    if(!hands||!hands.length)return false;
-    if(hands.length>=2){
-      /* 두 손이 잡히면: 둘 다 ㄱ자면 바로 인정. 한쪽만 ㄱ자여도 서로 가까우면 인정 */
-      var a=isLShape(hands[0]), b=isLShape(hands[1]);
-      if(a&&b) return true;
-      if(a||b){
-        var palm=(dist(hands[0][0],hands[0][9])+dist(hands[1][0],hands[1][9]))/2 || 0.001;
-        var near=Math.min(dist(hands[0][4],hands[1][4]), dist(hands[0][8],hands[1][8]));
-        return (near/palm) < 3.6;
-      }
-      return false;
-    }
-    return isLShape(hands[0]);
+  function isCapturePose(hands){
+    if(!hands) return false;
+    for(var k=0;k<hands.length;k++){ if(isPalmOpen(hands[k])) return true; }
+    return false;
   }
   function setPose(txt,armed){
     if(poseTxt&&txt!=null)poseTxt.textContent=txt;
@@ -267,7 +249,7 @@
     var card=el.closest('.sc-stat'); if(card)card.classList.toggle('ok',!!ok);
   }
 
-  var HOLD_MS=420;   /* 찰칵 포즈를 이만큼 유지하면 카운트다운 시작 */
+  var HOLD_MS=420;   /* 손바닥 포즈를 이만큼 유지하면 카운트다운 시작 */
   var poseLastSeen=0;
   function onResults(res){
     if(!active) return;
@@ -295,27 +277,27 @@
 
       if(!captured && !capturing){
         var now=performance.now();
-        if(isCameraFrame(hs)){
+        if(isCapturePose(hs)){
           if(!poseFirstAt) poseFirstAt=now;
           poseLastSeen=now;
           poseHeld=now-poseFirstAt;
           if(poseHeld>=HOLD_MS){
             poseFirstAt=0; poseHeld=0;
-            setHud('FRAME LOCKED · CAPTURE');
+            setHud('PALM LOCKED · CAPTURE');
             setPose('찰칵! 촬영합니다',true);
             var cc=landmarks[9]; if(cc){ emitRing((1-cc.x)*W,cc.y*H); burst((1-cc.x)*W,cc.y*H); }
             startCountdown();
           } else {
-            setHud('FRAME POSE '+Math.round(poseHeld/HOLD_MS*100)+'%');
+            setHud('PALM POSE '+Math.round(poseHeld/HOLD_MS*100)+'%');
             setPose('그대로! 잠깐만 유지하세요',true);
           }
         } else if(poseFirstAt && now-poseLastSeen < 350){
           /* 트래킹이 한두 프레임 튀어도 진행도를 날리지 않는다 (히스테리시스) */
-          setHud('FRAME POSE '+Math.round(poseHeld/HOLD_MS*100)+'%');
+          setHud('PALM POSE '+Math.round(poseHeld/HOLD_MS*100)+'%');
         } else {
           poseFirstAt=0; poseHeld=0;
           setHud('TRACKING');
-          setPose('손가락으로 사각 프레임(찰칵 포즈)을 만들어 보세요',false);
+          setPose('손바닥을 활짝 펼쳐 보세요',false);
         }
       }
     } else {
@@ -819,7 +801,7 @@
   function resetToLive(restartCamera){
     clearAutoReset();
     captured=false; capturing=false; poseFirstAt=0; poseHeld=0; capCodes=null;
-    setPose('손가락으로 사각 프레임(찰칵 포즈)을 만들어 보세요',false);
+    setPose('손바닥을 활짝 펼쳐 보세요',false);
     preview.classList.remove('show'); preview.setAttribute('aria-hidden','true');
     fallback.classList.remove('show');
     retakeBtn.hidden=true; shutterBtn.hidden=false; shutterBtn.disabled=false;

@@ -774,8 +774,10 @@ function updateOrbitDisplay(){
   /* 각 빌더의 인라인 핸들러가 answers[cq] 를 먼저 넣도록 한 틱 뒤에 동기화한다 */
   ce.addEventListener('click', function(e){
     if(!e.target.closest || !e.target.closest('.aw-choice'))return;
-    /* 선택 즉시 다음 문항으로 — 두 빌더 모두 여길 지나므로 한 곳에서 처리 */
-    setTimeout(nextQ, 0);
+    /* 선택 상태(체크)를 0.45초 보여 준 뒤 다음 문항으로 — "내가 누른 게 맞나?" 를 없앤다.
+       그 사이 다른 보기를 누르면 그 답으로 바뀌고 시간은 다시 잰다. 두 빌더 모두 여길 지난다. */
+    clearTimeout(_advT);
+    _advT = setTimeout(nextQ, 450);
   });
 })();
 
@@ -824,7 +826,7 @@ function renderQuestion(){
   const progTxtEl=document.getElementById('aw-prog-txt');
   if(progTxtEl) progTxtEl.textContent=`${answered} / 8 항목 응답됨`;
 }
-var _nextQBusy = false;
+var _nextQBusy = false, _advT = 0;
 function nextQ(){
   if(_nextQBusy) return;
   if(answers[cq]===undefined)return;
@@ -909,6 +911,7 @@ var _skipQBusy = false;
 /* 건너뛰기(+1)와 이전 문항(-1)은 같은 전환이다 — 방향만 다르다 */
 function moveQ(step){
   if(_skipQBusy) return;
+  clearTimeout(_advT);   /* 체크 표시 중에 이전/건너뛰기를 누르면 예약된 자동 전환을 취소 */
   var to=cq+step;
   if(to<0 || to>7) return;
   const panel=document.getElementById('aw-panel');

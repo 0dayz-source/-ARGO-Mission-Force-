@@ -5058,3 +5058,7 @@ body.on-qr-result .pd-cursor-label{display:none !important}
 
 /* 결과지 — 끝까지 동점인 직군(복수 직군 적합) 표시. 위 라벨과 한 줄, 한글이라 자간은 좁게 */
 #result-overlay .ro-cofit{margin-left:12px;font-family:var(--kr);letter-spacing:0;font-size:11px;color:#FF9A7A}
+
+/* 기본 커서 숨김 — 버튼(cursor:pointer)·입력창(cursor:text)에서 기본 커서가 원형 커서와 겹쳐 두 개로 보였다.
+   마우스 기기에서만 전부 숨긴다(터치 기기는 영향 없음). */
+@media (pointer:fine){html,body,body *,body *::before,body *::after{cursor:none!important}}

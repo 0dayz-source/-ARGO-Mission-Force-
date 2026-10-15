@@ -42,15 +42,15 @@
 })();
 </script>
 
-<link rel="stylesheet" href="shared/pd-skin.css?v=1792053782">
-  <script src="shared/argo-date.js?v=1792053782"></script>
-  <script id="ripple-fx" src="shared/argo-ripple.js?v=1792053782"></script>
-  <script src="shared/argo-scramble.js?v=1792053782"></script>
-<link rel="stylesheet" href="shared/argo-operator.css?v=1792053782">
-<link rel="stylesheet" href="shared/argo-track.css?v=1792053782"><link rel="stylesheet" href="shared/argo-warn.css?v=1792053782">
+<link rel="stylesheet" href="shared/pd-skin.css?v=1792065579">
+  <script src="shared/argo-date.js?v=1792065579"></script>
+  <script id="ripple-fx" src="shared/argo-ripple.js?v=1792065579"></script>
+  <script src="shared/argo-scramble.js?v=1792065579"></script>
+<link rel="stylesheet" href="shared/argo-operator.css?v=1792065579">
+<link rel="stylesheet" href="shared/argo-track.css?v=1792065579"><link rel="stylesheet" href="shared/argo-warn.css?v=1792065579">
 </head>
 <body>
-<script src="shared/argo-nav.js?v=1792053782"></script>
+<script src="shared/argo-nav.js?v=1792065579"></script>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
     <!-- [VHS] 테이프가 살짝 늘어난 듯한 가로 왜곡. baseFrequency 를 세로로만 크게 줘서
@@ -1773,8 +1773,12 @@
      원본: npx shadcn@latest add @react-bits/RippleDistortion-JS-CSS
      이식본은 shared/argo-ripple.js. 카드 3장이 각자 WebGL 컨텍스트를 쓰므로
      파동이 다 죽으면 스스로 rAF 를 놓도록 만들어 뒀다. */
+  var CAP_PTR={x:-1,y:-1,t:0}, CAP_PULSE=[];
   function initCapRipple(){
     if(!window.ArgoRipple) return;
+    addEventListener('pointermove',function(e){ CAP_PTR.x=e.clientX; CAP_PTR.y=e.clientY; CAP_PTR.t=Date.now(); },{passive:true});
+    /* 스크롤만으로 카드가 커서 밑에 들어오면 pointerenter 가 안 올 수 있다 — 스크롤 끝에 한 번 확인 */
+    addEventListener('scrollend',function(){ CAP_PULSE.forEach(function(f){ f(); }); },{passive:true});
     document.querySelectorAll('.pd-cap-card').forEach(function(card, i){
       var mount=card.querySelector('.pd-cap-ripple');
       if(!mount) return;
@@ -1796,8 +1800,23 @@
       if(api && api.setBlooms){
         card.addEventListener('pointerenter',function(){
           api.setBlooms(randomBlooms(), (Math.random()*10000)|0);
+          idlePulse();
         });
       }
+      /* 커서를 움직이지 않고 카드 위에 머물기만 해도(스크롤로 카드가 커서 밑에 온 경우 포함)
+         일렁임이 보이게 — 호버 중엔 마지막 커서 위치에 파동을 주기적으로 넣는다. */
+      var pulseT=0;
+      function idlePulse(){
+        if(pulseT||!api||!api.waveAt) return;
+        (function tick(){
+          if(!card.matches(':hover')){ pulseT=0; return; }
+          var r=card.getBoundingClientRect();
+          var inside=CAP_PTR.x>=r.left&&CAP_PTR.x<=r.right&&CAP_PTR.y>=r.top&&CAP_PTR.y<=r.bottom;
+          if(Date.now()-CAP_PTR.t>350) api.waveAt(inside?CAP_PTR.x:r.left+r.width/2, inside?CAP_PTR.y:r.top+r.height/2, 1.4);
+          pulseT=setTimeout(tick,650);
+        })();
+      }
+      CAP_PULSE.push(idlePulse);
     });
   }
 
@@ -2673,10 +2692,10 @@ void main(){ vec2 p = gl_PointCoord - 0.5; float l = length(p); if (l > 0.5) dis
 })();
 </script>
 
-<script src="shared/argo-warn.js?v=1792053782"></script><script src="shared/argo-track.js?v=1792053782"></script>
-<script src="shared/argo-db.js?v=1792053782"></script>
-<script src="shared/argo-foldtext.js?v=1792053782"></script>
-<script id="scan-fx" src="shared/argo-scan.js?v=1792053782"></script>
+<script src="shared/argo-warn.js?v=1792065579"></script><script src="shared/argo-track.js?v=1792065579"></script>
+<script src="shared/argo-db.js?v=1792065579"></script>
+<script src="shared/argo-foldtext.js?v=1792065579"></script>
+<script id="scan-fx" src="shared/argo-scan.js?v=1792065579"></script>
 
 <script src="shared/vendor/matter.min.js"></script>
 <script id="tele-fall-fx">
@@ -4978,6 +4997,6 @@ void main(){
   },{threshold:[0,0.05,0.35,0.6]}).observe(stage);
 })();
 </script>
-<script src="shared/argo-operator.js?v=1792053782"></script>
+<script src="shared/argo-operator.js?v=1792065579"></script>
 </body>
 </html>

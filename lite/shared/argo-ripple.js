@@ -634,6 +634,12 @@
         gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
         drawWaves(); drawComposite(); wake();
       },
+      /* 커서가 멈춘 채 호버 중일 때 바깥에서 파동을 하나씩 넣는다(11-planet-detail 의 cap 카드) */
+      waveAt: function (cx, cy, power) {
+        if (!enabled || reduce) return;
+        var pt = localPoint(cx, cy);
+        if (pt) setNewWave(pt[0], pt[1], power || 1);
+      },
       clearWaves: function () {
         for (var i = 0; i < MAX_WAVES; i++) { waves[i].opacity = 0; opacities[i] = 0; }
         prevX = 0; prevY = 0;

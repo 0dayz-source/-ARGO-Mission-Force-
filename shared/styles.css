@@ -5065,7 +5065,9 @@ body.on-qr-result .pd-cursor-label{display:none !important}
 
 /* 기본 커서 숨김 — 버튼(cursor:pointer)·입력창(cursor:text)에서 기본 커서가 원형 커서와 겹쳐 두 개로 보였다.
    마우스 기기에서만 전부 숨긴다(터치 기기는 영향 없음). */
-@media (pointer:fine){html,body,body *,body *::before,body *::after{cursor:none!important}}
+/* cursor:none 만으로는 맥 Chrome 이 씬 전환·창 포커스 복귀 뒤 기본 화살표를 다시 띄우는 경우가 있다 →
+   완전히 투명한 1px 이미지 커서를 우선 쓰고 none 은 폴백으로 둔다. 원형 커서가 켜지는 조건(마우스·모션 허용)과 같게 건다. */
+@media (pointer:fine) and (prefers-reduced-motion:no-preference){html,body,body *,body *::before,body *::after{cursor:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%271%27 height=%271%27/%3E") 0 0,none!important}}
 
 /* 선택 확인 — 고른 보기의 A/B/C 자리에 체크가 그려진다(자리 폭 그대로라 줄바꿈·높이 변화 없음).
    app.js 가 0.45초 보여 준 뒤 다음 문항으로 넘긴다. */

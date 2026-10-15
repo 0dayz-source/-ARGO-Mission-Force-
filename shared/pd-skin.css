@@ -101,8 +101,8 @@ html.theme-light .pd-vignette{opacity:0}      /* clean edge-to-edge white */
 .pd-grain,.pd-vignette,.pd-particles{transition:opacity .9s var(--io)}
 /* 버튼·입력창의 cursor:pointer/text 가 이 규칙을 이겨 기본 커서가 원형 커서와 함께 보였다 → !important 로 전부 숨긴다 */
 /* body.cur-on 은 스크립트가 붙이므로 그 전(로딩 중)에는 기본 커서가 보였다 → 원형 커서 조건과 같은 미디어쿼리로 처음부터 숨긴다.
-   cursor:none 만으로는 맥 Chrome 이 기본 화살표를 다시 띄우는 경우가 있어 투명 1px 이미지 커서를 우선 쓴다. */
-@media (pointer:fine) and (prefers-reduced-motion:no-preference){html,body,body *,body *::before,body *::after{cursor:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%271%27 height=%271%27/%3E") 0 0,none!important}}
+   투명 이미지 커서는 실기기 시험에서 기본 화살표를 띄워 cursor:none 을 쓴다. */
+@media (pointer:fine) and (prefers-reduced-motion:no-preference){html,body,body *,body *::before,body *::after{cursor:none!important}}
 
 /* ============================ LIQUID GLASS SYSTEM ============================ */
 .liquid-glass,.glass-card,.glass-chip,.glass-cta{

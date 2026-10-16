@@ -4220,6 +4220,9 @@ var NEB = (function(){
   }
 
   var dpr=Math.min(1.5,window.devicePixelRatio||1), proj=null, reNo=0;  /* [성능] 5만 점 가산 블렌딩 — 필레이트가 DPR 제곱으로 든다 */
+  /* 점 크기는 캔버스 픽셀 단위라, lite(DPR 1 고정)에선 기본판(1.5)보다 1.5배 크게 보였다.
+     실제 화면 기준 DPR 대비 비율로 줄여 화면상 크기를 기본판과 같게 맞춘다. 기본판은 1. */
+  var sizeK=dpr/Math.min(1.5,window.__realDPR||window.devicePixelRatio||1);
   function resize(){
     var w=cv.clientWidth||1, h=cv.clientHeight||1;
     cv.width=Math.round(w*dpr); cv.height=Math.round(h*dpr);
@@ -4244,7 +4247,7 @@ var NEB = (function(){
     gl.uniform1f(U.uNoiseScale,params.noiseScale);
     gl.uniform2f(U.uMouse,mouse[0],mouse[1]);
     gl.uniform1f(U.uPush,params.push);
-    gl.uniform1f(U.uSize,params.size);
+    gl.uniform1f(U.uSize,params.size*sizeK);
     gl.uniform3f(U.uWrap,WRAP[0],WRAP[1],WRAP[2]);
     /* 등장: 0.25s 뒤부터 2.8s 동안 0 → 1.
        [차분하게] 예전엔 여기서 1-(1-be)^3 (큐빅 ease-out) 을 걸고 셰이더에서 또 한 번

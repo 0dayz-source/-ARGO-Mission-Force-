@@ -250,24 +250,24 @@
     opts = opts || {};
     var m = matrix(text);
     if (!m || !canvas) return false;
-    /* [인식률] 여백은 표준대로 4칸. 캔버스는 화면 픽셀과 1:1 로 만들고 한 칸을 정수 픽셀로 찍는다 —
-       예전엔 n*scale 크기 캔버스를 CSS 로 늘려서 칸 폭이 들쭉날쭉해졌고, 폰 카메라가 모니터에서 잘 못 읽었다.
-       남는 픽셀은 바깥 여백으로 들어간다(CSS 크기는 그대로). */
-    var quiet = opts.quiet == null ? 4 : opts.quiet;
+    /* [인식률] 캔버스는 화면 픽셀과 1:1. 칸 경계를 정수 픽셀로 반올림해 찍는다(칸 폭 차이 최대 1px) —
+       예전엔 작은 캔버스를 CSS 로 늘려 칸 폭이 들쭉날쭉했다.
+       여백은 2칸 — 박스(밝은 배경) 안을 무늬가 최대한 채우게. CSS 크기는 그대로. */
+    var quiet = opts.quiet == null ? 2 : opts.quiet;
     var n = m.length + quiet * 2;
-    var dpr = Math.min(global.devicePixelRatio || 1, 3);
+    /* lite 는 devicePixelRatio 를 1 로 묶는다 — QR 까지 1배로 그리면 레티나에서 늘어나 흐려져 폰이 못 읽었다 */
+    var dpr = Math.min(global.__realDPR || global.devicePixelRatio || 1, 3);
     var cssSize = opts.size || canvas.clientWidth || 120;
-    var px = Math.round(cssSize * dpr);
-    var scale = Math.max(1, Math.floor(px / n));
-    var off = Math.floor((px - m.length * scale) / 2);
+    var px = Math.round(cssSize * dpr), s = px / n;
     canvas.width = px; canvas.height = px;
     canvas.style.width = cssSize + 'px'; canvas.style.height = cssSize + 'px';
     var ctx = canvas.getContext('2d');
     ctx.fillStyle = opts.bg || '#ffffff';
     ctx.fillRect(0, 0, px, px);
     ctx.fillStyle = opts.fg || '#0a0a0c';
+    function e(i) { return Math.round((i + quiet) * s); }
     for (var r = 0; r < m.length; r++) for (var c = 0; c < m.length; c++) {
-      if (m[r][c]) ctx.fillRect(off + c * scale, off + r * scale, scale, scale);
+      if (m[r][c]) ctx.fillRect(e(c), e(r), e(c + 1) - e(c), e(r + 1) - e(r));
     }
     return true;
   }

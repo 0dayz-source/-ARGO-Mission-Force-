@@ -4837,6 +4837,7 @@ body.on-qr-result{overflow-x:hidden}
 body.on-qr-result #origin-overlay,
 body.on-qr-result #argo-operator,
 body.on-qr-result .op-root,
+body.on-qr-result .hc,           /* 화면 네 귀퉁이의 핑크 HUD 선 */
 body.on-qr-result #cur,
 body.on-qr-result #cur-r,
 body.on-qr-result .pd-cursor,

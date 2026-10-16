@@ -1294,6 +1294,10 @@ function closeResult(){document.getElementById('result-overlay').classList.remov
        닫으면서 방명록(s2)으로 보낸다. 휴대폰으로 연 사람에게는 둘 다 맞지 않는다
      · 배경을 눌러도 닫히지 않게 한다(닫으면 빈 메인만 남는다)
      · 언제 본 결과인지 completed_at 을 적는다 */
+/* 작중 시점(2068) — 연도만 바꾸고 월·일·시각은 실제 한국 시간(shared/argo-date.js 와 같은 규칙) */
+function missionLocale(d, style){
+  return d.toLocaleString('ko-KR', { dateStyle:style, timeStyle:'short', timeZone:'Asia/Seoul' }).replace(/^\d+/, '2068');
+}
 function renderQrResult(row){
   if(!row) return;
   var sc = row.scores || {};
@@ -1337,7 +1341,7 @@ function renderQrResult(row){
     when.className = 'ro-note';
     var d = row.completed_at ? new Date(row.completed_at) : null;
     when.textContent = d && !isNaN(d)
-      ? '평가 완료 · ' + d.toLocaleString('ko-KR', { dateStyle:'long', timeStyle:'short' })
+      ? '평가 완료 · ' + missionLocale(d, 'long')
       : '';
     acts.appendChild(when);
   }
@@ -1381,7 +1385,7 @@ function renderResponseLog(log, row){
   var dt=document.getElementById('ro-rc-date');
   if(dt && row && row.completed_at){
     var d=new Date(row.completed_at);
-    if(!isNaN(d)) dt.textContent=d.toLocaleString('ko-KR',{dateStyle:'short',timeStyle:'short'});
+    if(!isNaN(d)) dt.textContent=window.ArgoDate ? ArgoDate.stamp(d.getTime()).replace('  ',' ') : missionLocale(d, 'short');
   }
   sec.hidden=false;
 }

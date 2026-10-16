@@ -5,6 +5,7 @@
 (function () {
   var cap = +new URLSearchParams(location.search).get('dpr') || 1;
   var real = window.devicePixelRatio || 1;
+  window.__realDPR = real;   /* QR 처럼 작고 선명해야 하는 캔버스는 실제 값을 쓴다(shared/argo-qr.js) */
   try {
     Object.defineProperty(window, 'devicePixelRatio', {
       configurable: true,

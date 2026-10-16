@@ -4223,7 +4223,7 @@ var NEB = (function(){
   /* 점 크기는 캔버스 픽셀 단위라, lite(DPR 1 고정)에선 기본판(1.5)보다 1.5배 크게 보였다.
      실제 화면 기준 DPR 대비 비율로 줄여 화면상 크기를 기본판과 같게 맞춘다. 기본판은 1. */
   var sizeK=dpr/Math.min(1.5,window.__realDPR||window.devicePixelRatio||1);
-  if(window.__realDPR) sizeK*=0.97;   /* lite 전용 — 저해상도에서 큰 점이 깨져 보여 더 작게 */
+  if(window.__realDPR) sizeK*=0.99;   /* lite 전용 — 저해상도에서 큰 점이 깨져 보여 더 작게 */
   function resize(){
     var w=cv.clientWidth||1, h=cv.clientHeight||1;
     cv.width=Math.round(w*dpr); cv.height=Math.round(h*dpr);

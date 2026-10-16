@@ -175,7 +175,9 @@
       else if (z === 8) m[7][8] = bitv;
       else m[14 - z][8] = bitv;
 
-      if (z < 8) m[size - 1 - z][8] = bitv;
+      /* 두 번째 사본: 세로 7칸 + 가로 8칸. 예전엔 세로 8칸으로 넣어 다크 모듈(size-8,8)을 덮어쓰고
+         가로 첫 칸(8,size-8)은 비워 뒀다 — 오류 보정 너그러운 판독기만 읽었다. */
+      if (z < 7) m[size - 1 - z][8] = bitv;
       else m[8][size - 15 + z] = bitv;
     }
     return m;

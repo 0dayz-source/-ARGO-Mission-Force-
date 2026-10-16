@@ -1095,7 +1095,13 @@ function showResult(pre){
     var sid=_trResultId||'';
     if(!sid){ try{ sid = window.ArgoDB ? ArgoDB.sid() : (localStorage.getItem('argo_sid')||''); }catch(e){} }
     if(!sid) sid='local-'+Math.random().toString(36).slice(2,10);
-    var url=location.origin+location.pathname+'?result='+encodeURIComponent(sid);
+    /* 폰이 열 수 있는 공개 주소를 담는다 — 로컬 파일(file://)·localhost 로 띄운 키오스크면
+       QR 에 이 Mac 안의 경로가 들어가 폰에서 열리지 않았다. index.html 은 빼서 QR 을 덜 촘촘하게. */
+    var PUB='https://0dayz-source.github.io/-ARGO-Mission-Force-/';
+    var base=/\.github\.io$/.test(location.hostname)
+      ? location.origin+location.pathname.replace(/index\.html$/,'')
+      : PUB+(/\/lite\//.test(location.pathname)?'lite/':'');
+    var url=base+'?result='+encodeURIComponent(sid);
     var ok=ArgoQR.draw(cv, url, {size:176, fg:'#0a0a0c', bg:'#D4FAFF'});
     try{ if(window.ArgoTrack&&ok) ArgoTrack.track('result_qr_shown',{page:'result'}); }catch(e){}
     var code = sid.slice(0,8).toUpperCase();

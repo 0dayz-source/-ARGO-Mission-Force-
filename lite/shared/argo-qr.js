@@ -248,12 +248,16 @@
     opts = opts || {};
     var m = matrix(text);
     if (!m || !canvas) return false;
-    var quiet = opts.quiet == null ? 2 : opts.quiet;
+    /* [인식률] 여백은 표준대로 4칸. 캔버스는 화면 픽셀과 1:1 로 만들고 한 칸을 정수 픽셀로 찍는다 —
+       예전엔 n*scale 크기 캔버스를 CSS 로 늘려서 칸 폭이 들쭉날쭉해졌고, 폰 카메라가 모니터에서 잘 못 읽었다.
+       남는 픽셀은 바깥 여백으로 들어간다(CSS 크기는 그대로). */
+    var quiet = opts.quiet == null ? 4 : opts.quiet;
     var n = m.length + quiet * 2;
     var dpr = Math.min(global.devicePixelRatio || 1, 3);
     var cssSize = opts.size || canvas.clientWidth || 120;
-    var scale = Math.max(1, Math.floor((cssSize * dpr) / n));
-    var px = n * scale;
+    var px = Math.round(cssSize * dpr);
+    var scale = Math.max(1, Math.floor(px / n));
+    var off = Math.floor((px - m.length * scale) / 2);
     canvas.width = px; canvas.height = px;
     canvas.style.width = cssSize + 'px'; canvas.style.height = cssSize + 'px';
     var ctx = canvas.getContext('2d');
@@ -261,7 +265,7 @@
     ctx.fillRect(0, 0, px, px);
     ctx.fillStyle = opts.fg || '#0a0a0c';
     for (var r = 0; r < m.length; r++) for (var c = 0; c < m.length; c++) {
-      if (m[r][c]) ctx.fillRect((c + quiet) * scale, (r + quiet) * scale, scale, scale);
+      if (m[r][c]) ctx.fillRect(off + c * scale, off + r * scale, scale, scale);
     }
     return true;
   }

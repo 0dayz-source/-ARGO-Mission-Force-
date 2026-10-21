@@ -42,15 +42,15 @@
 })();
 </script>
 
-<link rel="stylesheet" href="shared/pd-skin.css?v=1792128017">
-  <script src="shared/argo-date.js?v=1792128017"></script>
-  <script id="ripple-fx" src="shared/argo-ripple.js?v=1792128017"></script>
-  <script src="shared/argo-scramble.js?v=1792128017"></script>
-<link rel="stylesheet" href="shared/argo-operator.css?v=1792128017">
-<link rel="stylesheet" href="shared/argo-track.css?v=1792128017"><link rel="stylesheet" href="shared/argo-warn.css?v=1792128017">
+<link rel="stylesheet" href="shared/pd-skin.css?v=1792565894">
+  <script src="shared/argo-date.js?v=1792565894"></script>
+  <script id="ripple-fx" src="shared/argo-ripple.js?v=1792565894"></script>
+  <script src="shared/argo-scramble.js?v=1792565894"></script>
+<link rel="stylesheet" href="shared/argo-operator.css?v=1792565894">
+<link rel="stylesheet" href="shared/argo-track.css?v=1792565894"><link rel="stylesheet" href="shared/argo-warn.css?v=1792565894">
 </head>
 <body>
-<script src="shared/argo-nav.js?v=1792128017"></script>
+<script src="shared/argo-nav.js?v=1792565894"></script>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
     <!-- [VHS] 테이프가 살짝 늘어난 듯한 가로 왜곡. baseFrequency 를 세로로만 크게 줘서
@@ -2692,10 +2692,10 @@ void main(){ vec2 p = gl_PointCoord - 0.5; float l = length(p); if (l > 0.5) dis
 })();
 </script>
 
-<script src="shared/argo-warn.js?v=1792128017"></script><script src="shared/argo-track.js?v=1792128017"></script>
-<script src="shared/argo-db.js?v=1792128017"></script>
-<script src="shared/argo-foldtext.js?v=1792128017"></script>
-<script id="scan-fx" src="shared/argo-scan.js?v=1792128017"></script>
+<script src="shared/argo-warn.js?v=1792565894"></script><script src="shared/argo-track.js?v=1792565894"></script>
+<script src="shared/argo-db.js?v=1792565894"></script>
+<script src="shared/argo-foldtext.js?v=1792565894"></script>
+<script id="scan-fx" src="shared/argo-scan.js?v=1792565894"></script>
 
 <script src="shared/vendor/matter.min.js"></script>
 <script id="tele-fall-fx">
@@ -4220,6 +4220,10 @@ var NEB = (function(){
   }
 
   var dpr=Math.min(1.5,window.devicePixelRatio||1), proj=null, reNo=0;  /* [성능] 5만 점 가산 블렌딩 — 필레이트가 DPR 제곱으로 든다 */
+  /* 점 크기는 캔버스 픽셀 단위라, lite(DPR 1 고정)에선 기본판(1.5)보다 1.5배 크게 보였다.
+     실제 화면 기준 DPR 대비 비율로 줄여 화면상 크기를 기본판과 같게 맞춘다. 기본판은 1. */
+  var sizeK=dpr/Math.min(1.5,window.__realDPR||window.devicePixelRatio||1);
+  if(window.__realDPR) sizeK*=0.99;   /* lite 전용 — 저해상도에서 큰 점이 깨져 보여 더 작게 */
   function resize(){
     var w=cv.clientWidth||1, h=cv.clientHeight||1;
     cv.width=Math.round(w*dpr); cv.height=Math.round(h*dpr);
@@ -4244,7 +4248,7 @@ var NEB = (function(){
     gl.uniform1f(U.uNoiseScale,params.noiseScale);
     gl.uniform2f(U.uMouse,mouse[0],mouse[1]);
     gl.uniform1f(U.uPush,params.push);
-    gl.uniform1f(U.uSize,params.size);
+    gl.uniform1f(U.uSize,params.size*sizeK);
     gl.uniform3f(U.uWrap,WRAP[0],WRAP[1],WRAP[2]);
     /* 등장: 0.25s 뒤부터 2.8s 동안 0 → 1.
        [차분하게] 예전엔 여기서 1-(1-be)^3 (큐빅 ease-out) 을 걸고 셰이더에서 또 한 번
@@ -4997,6 +5001,6 @@ void main(){
   },{threshold:[0,0.05,0.35,0.6]}).observe(stage);
 })();
 </script>
-<script src="shared/argo-operator.js?v=1792128017"></script>
+<script src="shared/argo-operator.js?v=1792565894"></script>
 </body>
 </html>

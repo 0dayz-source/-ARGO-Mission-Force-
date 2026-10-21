@@ -758,6 +758,7 @@
         api.onQrResult && api.onQrResult(r);
       })
       .catch(function (e) {
+        document.body.classList.remove('on-qr-result');   /* 결과를 못 받으면 빈 화면 대신 메인을 보인다(이전 동작) */
         track('technical_error', { error_type: 'qr_result_load_failed', error_message: String(e && e.message).slice(0, 120) });
       });
   }

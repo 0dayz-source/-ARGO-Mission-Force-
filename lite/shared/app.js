@@ -774,10 +774,11 @@ function updateOrbitDisplay(){
   /* 각 빌더의 인라인 핸들러가 answers[cq] 를 먼저 넣도록 한 틱 뒤에 동기화한다 */
   ce.addEventListener('click', function(e){
     if(!e.target.closest || !e.target.closest('.aw-choice'))return;
-    /* 선택 상태(체크)를 0.45초 보여 준 뒤 다음 문항으로 — "내가 누른 게 맞나?" 를 없앤다.
+    /* 선택 상태(체크)를 0.25초 보여 준 뒤 다음 문항으로 — "내가 누른 게 맞나?" 를 없앤다.
+       (0.45초는 체크 뒤 전환까지 합쳐 1초 가까이 걸려 길게 느껴졌다)
        그 사이 다른 보기를 누르면 그 답으로 바뀌고 시간은 다시 잰다. 두 빌더 모두 여길 지난다. */
     clearTimeout(_advT);
-    _advT = setTimeout(nextQ, 450);
+    _advT = setTimeout(nextQ, 250);
   });
 })();
 
@@ -842,19 +843,23 @@ function nextQ(){
     el.style.animationDelay=(i*0.04)+"s";
     el.classList.add("choice-disappear");
   });
+  /* [끊김] 글자 효과를 setInterval(24ms·16ms) 대신 rAF 로 돌린다 — 화면 프레임과 박자가 어긋나
+     뚝뚝 끊겼고, 나가는 노이즈가 0.26초에 멈춘 채 교체(0.32초)까지 얼어 있었다.
+     이제 노이즈는 교체 순간까지 계속 돌고, 새 문항은 시간 기준으로 앞 글자부터 확정된다. */
   var orig=qtEl?qtEl.textContent:"";
-  var fi=0;
-  var noiseOut=setInterval(function(){
-    if(!qtEl){clearInterval(noiseOut);return;}
-    var html=orig.split("").map(function(ch){
+  var noise=function(txt,from){
+    return txt.split("").map(function(ch,i){
+      if(i<from)return ch;
       if(ch===" "||ch==="\n")return ch;
       return "<span class=\"sc-char\">"+rnd()+"</span>";
     }).join("");
-    qtEl.innerHTML=html;
-    if(++fi>10)clearInterval(noiseOut);
-  },24);
+  };
+  /* 루프 id 는 qtEl._scrambleRAF 에 둔다 — 이전 문항 등으로 ArgoScramble.text 가 끼어들면 이걸 취소한다 */
+  if(qtEl){ cancelAnimationFrame(qtEl._scrambleRAF);
+    (function out(){ qtEl.innerHTML=noise(orig,0); qtEl._scrambleRAF=requestAnimationFrame(out); })(); }
   setTimeout(function(){
    try{
+    if(qtEl) cancelAnimationFrame(qtEl._scrambleRAF);
     cq++;
     if(ceEl){ceEl.innerHTML="";ceEl.classList.remove("has-sel");}
     if(cq >= questions.length){ showResult(); return; }
@@ -862,18 +867,14 @@ function nextQ(){
     updateOrbitDisplay();
     if(qnEl)qnEl.textContent=q.n+" / 008";
     var target=q.q;
-    var r=0;
-    var scramIn=setInterval(function(){
-      r+=2.5;
-      if(!qtEl){clearInterval(scramIn);return;}
-      var html=target.split("").map(function(ch,i){
-        if(i<r)return ch;
-        if(ch===" "||ch==="\n")return ch;
-        return "<span class=\"sc-char\">"+rnd()+"</span>";
-      }).join("");
-      qtEl.innerHTML=html;
-      if(r>=target.length){clearInterval(scramIn);qtEl.textContent=target;}
-    },16);
+    var inDur=Math.min(520,Math.max(280,target.length*9)), t0=performance.now();
+    (function inn(now){
+      if(!qtEl)return;
+      var k=Math.min(1,(now-t0)/inDur);
+      if(k>=1){ qtEl.textContent=target; qtEl._scrambleRAF=null; return; }
+      qtEl.innerHTML=noise(target,Math.floor(k*target.length));
+      qtEl._scrambleRAF=requestAnimationFrame(inn);
+    })(t0);
     q.choices.forEach(function(ch,i){
       var div=document.createElement("div");
       div.className="aw-choice choice-appear";
@@ -897,7 +898,7 @@ function nextQ(){
     });
     syncQNav();
    }finally{ _nextQBusy = false; }
-  },460);   /* choiceOut(.45s) 이 끝난 뒤 교체 — 예전 280ms 는 중간에 잘렸다 */
+  },320);   /* choiceOut(.3s, styles.css) 이 끝난 뒤 교체 — 둘을 같이 바꿀 것 */
 }
 /* 첫 문항에서는 돌아갈 곳이, 마지막 문항에서는 갈 곳이 없다 — 자리는 두고 보이지만
    않게 한다(display:none 이면 그 문항만 질문 위치가 튄다) */

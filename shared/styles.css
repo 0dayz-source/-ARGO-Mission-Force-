@@ -4621,6 +4621,9 @@ button,input,textarea,select{font-family:inherit}
   outline-offset:2px;
   border-radius:2px;
 }
+/* QR 결과지 카드는 스크린리더용으로 focus() 만 받는 문서다(누르는 요소가 아니다).
+   iOS Safari 는 스크립트 focus 에도 :focus-visible 을 켜서 카드 둘레에 핑크 테두리가 떴다. */
+#result-overlay .ro-card:focus{outline:none}
 /* ⑥ 터치 : 탭 지연 제거 + 의도적인 하이라이트 */
 :where(button,.lg-btn,.rp-pill,.si-filter,.aw-choice,.sys-card,.gb-submit,.term-back){
   touch-action:manipulation;

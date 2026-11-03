@@ -31,7 +31,7 @@
      ▶ 전시 시작 전에 반드시 'live' 로 바꾸고 python3 src/build.py 를 돌릴 것.
        그때 쌓인 시험용 사진은 브라우저 콘솔에서 ArgoScanClearTest() 로 지운다.
      ═══════════════════════════════════════════════════════════════════════ */
-  var MODE = 'test';
+  var MODE = 'live';
 
   var CONFIG = {
     supabaseUrl:    'https://qscaoyfkvmszyavqffwh.supabase.co',

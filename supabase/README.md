@@ -7,24 +7,19 @@
 
 ---
 
-## ⚠️ 지금은 시험 운전(test) 모드다
+## ✅ 지금은 전시(live) 모드다 — 2026-11-03 전환
 
-`shared/argo-track.js` 맨 위 `var MODE = 'test';` 때문에 지금 쌓이는 기록은 전부 임시다.
+`shared/argo-track.js` 맨 위 `var MODE = 'live';` — 진짜 관람객 기록이다.
 
-- 서버 기록의 `kiosk_id` 가 **`KIOSK-01-TEST`** 로 들어간다
-- 촬영한 사진 레코드에 `test:true` 가 붙는다 (사진 자체는 서버에 안 올라간다)
-
-DB 를 뽑을 때 시험 기록을 빼려면 한 줄이면 된다:
+- 서버 기록의 `kiosk_id` 는 **`KIOSK-01`**
+- 2026-11-03 이전 시험 기록은 `KIOSK-01-TEST` 로 남아 있다. DB 를 뽑을 때 한 줄로 뺀다:
 
 ```sql
 select * from sessions where kiosk_id not like '%-TEST';
 select * from events   where kiosk_id not like '%-TEST';
 ```
 
-**전시 시작 전에 할 일**
-1. `shared/argo-track.js` 의 `var MODE = 'test';` → `'live'`
-2. `python3 src/build.py` 후 커밋·푸시
-3. 키오스크 브라우저 콘솔에서 `ArgoScanClearTest()` — 시험 중 찍은 사진만 지운다
+다시 시험이 필요하면 `MODE` 를 `'test'` 로 바꾸고 `python3 src/build.py` 후 커밋·푸시.
 
 ---
 

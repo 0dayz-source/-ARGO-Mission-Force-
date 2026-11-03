@@ -108,6 +108,26 @@ def build_lite():
     assert src.count(old) == 1, "app.js: 렌더러 생성 줄이 바뀌었다 — build_lite 를 고칠 것"
     app.write_text(src.replace(old, old.replace("true", "false")), encoding="utf-8")
 
+    # MARS(11-planet-detail) 저사양 — 캔버스 해상도 0.75배 + 파티클 수 절반 이하 + MSAA/그림자맵 끔.
+    # 그림자를 드리우는 오브젝트가 없어 shadowMap 은 꺼도 화면이 같다. 현장 조정은 ?dpr= 그대로.
+    mars = lite / "11-planet-detail.html"
+    src = mars.read_text(encoding="utf-8")
+    for old, new, n in [
+        ('<script src="shared/argo-dpr.js">', '<script>window.__DPR_CAP=0.75</script><script src="shared/argo-dpr.js">', 1),
+        ("var R = 1.7, starCount = 90000;", "var R = 1.7, starCount = 30000;", 1),
+        ("var P={ n:92000,", "var P={ n:46000,", 1),
+        ("const count = 50000, radius = 2.5;", "const count = 20000, radius = 2.5;", 1),
+        ("var SEPARATION_X=190, SEPARATION_Y=150, AMOUNTX=210, AMOUNTY=60;",
+         "var SEPARATION_X=380, SEPARATION_Y=150, AMOUNTX=105, AMOUNTY=60;", 1),
+        ("new THREE.WebGL1Renderer({ canvas: canvas, antialias:true })", "new THREE.WebGL1Renderer({ canvas: canvas, antialias:false })", 1),
+        ("new THREE.WebGLRenderer({alpha:true, antialias:true})", "new THREE.WebGLRenderer({alpha:true, antialias:false})", 1),
+        ("new THREE.WebGL1Renderer({ canvas, antialias:true, alpha:false })", "new THREE.WebGL1Renderer({ canvas, antialias:false, alpha:false })", 1),
+        ("renderer.shadowMap.enabled = true;", "renderer.shadowMap.enabled = false;", 2),
+    ]:
+        assert src.count(old) == n, f"MARS lite: '{old}' 가 {n}번이 아니다 — build_lite 를 고칠 것"
+        src = src.replace(old, new)
+    mars.write_text(src, encoding="utf-8")
+
 
 def stamp_version():
     """shared/ 안에서 가장 최근 수정시각으로 ?v= 를 새로 찍는다.

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8"><script src="shared/argo-dpr.js"></script>
+<meta charset="UTF-8"><script>window.__DPR_CAP=0.75</script><script src="shared/argo-dpr.js"></script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%2032%2032%22%3E%3Crect%20width=%2232%22%20height=%2232%22%20rx=%227%22%20fill=%22%230A0A0C%22/%3E%3Ccircle%20cx=%2216%22%20cy=%2216%22%20r=%227%22%20fill=%22%23FF2D82%22/%3E%3Ccircle%20cx=%2216%22%20cy=%2216%22%20r=%2211.5%22%20fill=%22none%22%20stroke=%22%23FF9A7A%22%20stroke-width=%221.5%22%20opacity=%22.6%22/%3E%3C/svg%3E">
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#0A0A0C">
@@ -42,15 +42,15 @@
 })();
 </script>
 
-<link rel="stylesheet" href="shared/pd-skin.css?v=1793678185">
-  <script src="shared/argo-date.js?v=1793678185"></script>
-  <script id="ripple-fx" src="shared/argo-ripple.js?v=1793678185"></script>
-  <script src="shared/argo-scramble.js?v=1793678185"></script>
-<link rel="stylesheet" href="shared/argo-operator.css?v=1793678185">
-<link rel="stylesheet" href="shared/argo-track.css?v=1793678185"><link rel="stylesheet" href="shared/argo-warn.css?v=1793678185">
+<link rel="stylesheet" href="shared/pd-skin.css?v=1793688894">
+  <script src="shared/argo-date.js?v=1793688894"></script>
+  <script id="ripple-fx" src="shared/argo-ripple.js?v=1793688894"></script>
+  <script src="shared/argo-scramble.js?v=1793688894"></script>
+<link rel="stylesheet" href="shared/argo-operator.css?v=1793688894">
+<link rel="stylesheet" href="shared/argo-track.css?v=1793688894"><link rel="stylesheet" href="shared/argo-warn.css?v=1793688894">
 </head>
 <body>
-<script src="shared/argo-nav.js?v=1793678185"></script>
+<script src="shared/argo-nav.js?v=1793688894"></script>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
     <!-- [VHS] 테이프가 살짝 늘어난 듯한 가로 왜곡. baseFrequency 를 세로로만 크게 줘서
@@ -2200,9 +2200,9 @@ import { CopyShader } from 'three/addons/shaders/CopyShader.js';
      UnrealBloom 은 밉 단계마다 타깃을 또 만들기 때문에 이 씬 하나가 GPU 수백 MB 를 먹었다.
      1.5 로 자르면 픽셀 수가 56% 로 줄고, 블룸은 원래 뿌예서 차이가 안 보인다. */
   var PD_DPR = Math.min(window.devicePixelRatio || 1, 1.5);
-  var renderer = new THREE.WebGL1Renderer({ canvas: canvas, antialias:true });
+  var renderer = new THREE.WebGL1Renderer({ canvas: canvas, antialias:false });
   renderer.setPixelRatio(PD_DPR);
-  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.enabled = false;
   renderer.shadowMap.type = THREE.VSMShadowMap;
 
   var scene = new THREE.Scene();
@@ -2283,7 +2283,7 @@ void main() {
   new ResizeObserver(onResize).observe(sectionEl);
 
   /* ---------------- galaxy field geometry ---------------- */
-  var R = 1.7, starCount = 90000;
+  var R = 1.7, starCount = 30000;
   function buildGalaxyGeometry(){
     var N = starCount;
     var positions = new Float32Array(N*3), shells = new Float32Array(N), sizes = new Float32Array(N), ids = new Float32Array(N);
@@ -2534,7 +2534,7 @@ void main(){ vec2 p = gl_PointCoord - 0.5; float l = length(p); if (l > 0.5) dis
   if(!mount||!section)return;
   var reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
 
-  var SEPARATION_X=190, SEPARATION_Y=150, AMOUNTX=210, AMOUNTY=60;
+  var SEPARATION_X=380, SEPARATION_Y=150, AMOUNTX=105, AMOUNTY=60;
 
   var scene=new THREE.Scene();
   var FOG_COLOR=0x0a0a0c;
@@ -2544,7 +2544,7 @@ void main(){ vec2 p = gl_PointCoord - 0.5; float l = length(p); if (l > 0.5) dis
   var camera=new THREE.PerspectiveCamera(60, W/H, 1, 10000);
   camera.position.set(0,355,1220);
 
-  var renderer=new THREE.WebGLRenderer({alpha:true, antialias:true});
+  var renderer=new THREE.WebGLRenderer({alpha:true, antialias:false});
   renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));  /* [성능] 전면 6.8MP 캔버스 + MSAA 였다 — 1.5 로 자른다 */
   renderer.setSize(W,H);
   renderer.setClearColor(FOG_COLOR, 0);
@@ -2692,10 +2692,10 @@ void main(){ vec2 p = gl_PointCoord - 0.5; float l = length(p); if (l > 0.5) dis
 })();
 </script>
 
-<script src="shared/argo-warn.js?v=1793678185"></script><script src="shared/argo-track.js?v=1793678185"></script>
-<script src="shared/argo-db.js?v=1793678185"></script>
-<script src="shared/argo-foldtext.js?v=1793678185"></script>
-<script id="scan-fx" src="shared/argo-scan.js?v=1793678185"></script>
+<script src="shared/argo-warn.js?v=1793688894"></script><script src="shared/argo-track.js?v=1793688894"></script>
+<script src="shared/argo-db.js?v=1793688894"></script>
+<script src="shared/argo-foldtext.js?v=1793688894"></script>
+<script id="scan-fx" src="shared/argo-scan.js?v=1793688894"></script>
 
 <script src="shared/vendor/matter.min.js"></script>
 <script id="tele-fall-fx">
@@ -4268,7 +4268,7 @@ var NEB = (function(){
   /* hero-lab2 에서 직접 맞추신 값 (NEBULA LAB v2 슬라이더 그대로) */
   /* X 폭을 넓힌 만큼 개수를 올려 가운데 밀도를 유지한다 */
   /* [렉] 입자 수 115,000 → 92,000 (0.8배, 요청). 밀도가 아니라 개수가 GPU 비용을 정한다. */
-  var P={ n:92000, noiseScale:0.20, noiseSpeed:0.02, push:3.0, size:2.17, mint:0.22 };
+  var P={ n:46000, noiseScale:0.20, noiseSpeed:0.02, push:3.0, size:2.17, mint:0.22 };
   var hero=document.querySelector('.pd-hero');
   var bg=document.getElementById('heroBg');
   var tx=0, ty=0, mouse=[0,0], raf=0, visible=false, t0=performance.now(), lastOp=-1;
@@ -4484,9 +4484,9 @@ import { CopyShader } from 'three/addons/shaders/CopyShader.js';
 
   /* [성능] 히어로 씬과 같은 이유로 DPR 상한. 여기도 컴포저 3개 + UnrealBloom 2개다. */
   const PD_DPR = Math.min(window.devicePixelRatio || 1, 1.5);
-  const renderer = new THREE.WebGL1Renderer({ canvas, antialias:true, alpha:false });
+  const renderer = new THREE.WebGL1Renderer({ canvas, antialias:false, alpha:false });
   renderer.setPixelRatio(PD_DPR);
-  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.enabled = false;
   renderer.shadowMap.type = THREE.VSMShadowMap;
 
   const scene = new THREE.Scene();
@@ -4502,7 +4502,7 @@ import { CopyShader } from 'three/addons/shaders/CopyShader.js';
   scene.add(camera);
 
   /* ---------------- storm point cloud ---------------- */
-  const count = 50000, radius = 2.5;
+  const count = 20000, radius = 2.5;
   const positions = new Float32Array(count*3);
   const scales    = new Float32Array(count);
   const noises    = new Float32Array(count);
@@ -5001,6 +5001,6 @@ void main(){
   },{threshold:[0,0.05,0.35,0.6]}).observe(stage);
 })();
 </script>
-<script src="shared/argo-operator.js?v=1793678185"></script>
+<script src="shared/argo-operator.js?v=1793688894"></script>
 </body>
 </html>

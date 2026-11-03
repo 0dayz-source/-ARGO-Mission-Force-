@@ -3,7 +3,7 @@
    모든 캔버스·셰이더가 devicePixelRatio 를 읽어 크기를 정하므로, 여기서 한 번만 줄인다.
    현장 조정: 주소 뒤에 ?dpr=1.5 (더 선명하게) / ?dpr=0.75 (더 가볍게) */
 (function () {
-  var cap = +new URLSearchParams(location.search).get('dpr') || 1;
+  var cap = +new URLSearchParams(location.search).get('dpr') || window.__DPR_CAP || 1;   /* 페이지별 기본값(MARS 는 0.75) */
   var real = window.devicePixelRatio || 1;
   window.__realDPR = real;   /* QR 처럼 작고 선명해야 하는 캔버스는 실제 값을 쓴다(shared/argo-qr.js) */
   try {

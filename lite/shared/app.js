@@ -2868,6 +2868,7 @@ function initRadar(){
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
+  let gbNextT = null;
   window.submitGuestbook = function(){
     const nameEl = document.getElementById('gb-name');
     const msgEl  = document.getElementById('gb-msg');
@@ -2905,6 +2906,11 @@ function initRadar(){
     gbSent();                              /* 완료 피드백 — 라벨이 잠깐 바뀐다 */
     gbCount();
     gbBeam();                              /* 콘솔 → 아카이브로 신호가 흐른다 */
+    /* 등록하면 완료 피드백을 보여 준 뒤 CANDIDATE GALLERY(photo-wall)로 넘어간다.
+       그 사이 BACK 등으로 방명록 씬을 떠났으면 넘어가지 않는다. */
+    clearTimeout(gbNextT);
+    const gbScene = cs;
+    gbNextT = setTimeout(() => { if(cs === gbScene && window.goWebcam) goWebcam(); }, 2200);
     /* [추적] 방명록 등록. 원문은 guestbook_entries 에 그대로 보존되고 분류는 pending 으로 남는다. */
     try{
       if(window.ArgoTrack){

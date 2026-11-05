@@ -189,9 +189,15 @@
 
   /* 첫 안내의 SKIP 은 평가로 바로 건너뛰는 게 아니라 이 페이지의 마지막 화면(.pd-cta)으로
      내려간다 — 거기서 NEXT 로 평가에 들어가면 된다(요청). */
-  function toLastSection() {
-    var el = document.querySelector('.pd-cta');
-    if (!el) { toAssessment(); return; }
+  function toLastSection() { scrollToEl(document.querySelector('.pd-cta')) || toAssessment(); }
+  /* 촬영 다음 구간(.pd-scan 바로 뒤 섹션)으로 내려간다 */
+  function toAfterCapture() {
+    var sec = document.querySelector('.pd-scan'), next = sec && sec.nextElementSibling;
+    while (next && next.tagName !== 'SECTION') next = next.nextElementSibling;
+    scrollToEl(next);
+  }
+  function scrollToEl(el) {
+    if (!el) return false;
     /* 이 페이지는 휠을 가로채는 커스텀 관성 스크롤을 쓴다. scrollIntoView 만으로는
        중간에 멈추는 경우가 있어, 좌표를 직접 구해 스크롤하고 끝에서 한 번 더 못박는다. */
     var y = el.getBoundingClientRect().top + (window.pageYOffset || document.documentElement.scrollTop || 0);
@@ -199,9 +205,10 @@
     if (y > max) y = max;
     /* 이 페이지의 커스텀 관성 스크롤러가 있으면 반드시 그쪽으로 넘긴다 —
        window.scrollTo 로 움직이면 스크롤러의 target 이 옛 위치라 되돌아온다. */
-    if (typeof window.__argoScrollTo === 'function') { window.__argoScrollTo(y); return; }
+    if (typeof window.__argoScrollTo === 'function') { window.__argoScrollTo(y); return true; }
     try { window.scrollTo({ top: y, behavior: 'smooth' }); }
     catch (e) { window.scrollTo(0, y); }
+    return true;
   }
 
 
@@ -228,10 +235,11 @@
       },
       capture: {
         text: '신원 이미지가 확인되었습니다.\n' +
-              '기록은 후보자 아카이브에 보관됩니다.',
+              '기록은 후보자 아카이브에 보관됩니다.\n' +
+              '다음 기록으로 이동합니다.',
         actions: [
           /* 첫 말풍선(protocol)만 코랄을 쓴다 — 나머지는 투명 */
-          { label: 'CONTINUE', kind: 'ghost', act: function () { api.dismiss(); } }
+          { label: 'CONTINUE ↓', kind: 'ghost', act: function () { api.dismiss(); toAfterCapture(); } }
         ]
       },
       done: {
@@ -416,9 +424,19 @@
 
     /* 웹캠 구간은 '실제로 촬영했을 때' 만 말을 건다 */
     var shotTaken = false;
+    /* 촬영 뒤 어떻게 넘어가는지 몰라 멈춰 있는 관람객이 많았다 —
+       말풍선을 다 읽을 시간(타자 + AUTO_NEXT_MS)을 주고 다음 구간으로 스스로 내려간다.
+       그 사이 직접 스크롤해 구간을 벗어났거나 CONTINUE 를 눌렀으면 하지 않는다. */
+    var AUTO_NEXT_MS = 2200, autoNextT = null;
     addEventListener('argo:capture', function () {
       shotTaken = true;
       resolve(true);            /* 촬영 직후 바로 반영 */
+      clearTimeout(autoNextT);
+      var len = MSG.capture.text.length;
+      autoNextT = setTimeout(function () {
+        if (current !== 'capture' || dismissed === 'capture' || activeZone() !== ZONES[1]) return;
+        api.dismiss(); toAfterCapture();
+      }, 260 + len * CH_MS + AUTO_NEXT_MS);
     });
 
     var current = null, manual = false, dismissed = null;

@@ -710,13 +710,17 @@
   /* ── 방명록 ─────────────────────────────────────────────────────────────── */
   /* 원문(message)을 그대로 보존한다. 분류는 Edge Function 이 나중에 채우고,
      AI 설정이 없어도 저장은 정상 완료되며 classification_status 는 pending 으로 남는다. */
-  function saveGuestbook(message) {
+  var gbNamed = false;
+  function saveGuestbook(message, name) {
     var s = act(null);
     var row = {
       guestbook_id: uuid(), session_id: s.session_id, result_id: s.result_id,
       message: message, submitted_at: nowISO(),
       classification_status: 'pending', classification_version: null, manual_reviewed: false
     };
+    /* author_name 칸은 supabase/4-public-guestbook.sql 로 생긴다. 그 SQL 이 적용됐다는 게
+       확인된 뒤(public_guestbook 이 응답)에만 보낸다 — 칸이 없는데 보내면 INSERT 가 계속 실패한다. */
+    if (gbNamed && name) row.author_name = String(name).slice(0, 40);
     /* 원문은 IndexedDB 큐에만 두고 24시간 뒤 만료 삭제한다(localStorage 로 흘리지 않는다).
        저장에 성공하면 즉시 삭제된다. guestbook_id 가 고유 재전송 키다. */
     return writePut('guestbook_entries', row.guestbook_id, row, GUESTBOOK_TTL).then(function () {
@@ -783,6 +787,11 @@
     ensureCandidate: ensureCandidate,
     saveResult: saveResult,
     saveGuestbook: saveGuestbook,
+    /* 공개 방명록 — 이름·본문·시각만(supabase/4-public-guestbook.sql). 실패하면 null */
+    listGuestbook: function () {
+      return rpc('public_guestbook', {}).then(function (rows) { gbNamed = Array.isArray(rows); return rows; },
+                                             function () { return null; });
+    },
     /* 오류 */
     error: function (type, msg) {
       track('technical_error', { error_type: type, error_message: String(msg || '').slice(0, 120) });

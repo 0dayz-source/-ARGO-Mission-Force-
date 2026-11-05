@@ -2795,11 +2795,19 @@ function initRadar(){
   /* 키에 저장 순번(i)을 넣는다. 시각이 분 단위라 같은 분에 ANONYMOUS 가 같은 말을
      남기면 이름|시각|본문 이 겹쳐 두 글이 한 노드로 합쳐졌다(=한 개가 사라진다).
      글은 push 로만 쌓이므로 순번은 다시 렌더해도 변하지 않는다 → 노드 재사용도 그대로. */
-  function entryKey(e, i){ return i+'|'+(e.name||'')+'|'+(e.time||'')+'|'+(e.msg||'').slice(0,40); }
+  /* DB 공개 방명록 — 다른 컴퓨터에서도 전시장 글이 보이게 한다. 저장하지 않고 화면에만 섞는다. */
+  let dbEntries = [];
+  function allEntries(){
+    const local = loadEntries();
+    const seen = new Set(local.map(e => (e && e.msg) || ''));
+    return dbEntries.filter(e => !seen.has(e.msg)).concat(local.map((e, i) => Object.assign({ _li: i }, e)))
+      .sort((a, b) => (a._t || 0) - (b._t || 0));
+  }
+  function entryKey(e, i){ return (e._id ? 'D'+e._id : 'L'+e._li)+'|'+(e.name||'')+'|'+(e.time||'')+'|'+(e.msg||'').slice(0,40); }
   function renderEntries(){
     /* 시드(ARGO-OS) 메시지는 아카이브 상단 고정 배너로 따로 뺐다 — 목록에서는 제외해
        다른 사람이 써도 그 문구가 아래로 밀리지 않는다. 저장 데이터는 그대로 둔다. */
-    const entries = loadEntries().filter(e => !(e && e.name === 'CMDR. ARGO-OS'));
+    const entries = allEntries().filter(e => !(e && e.name === 'CMDR. ARGO-OS'));
     const container = document.getElementById('gb-entries');
     const empty = document.getElementById('gb-empty');
     if(!container) return;
@@ -2887,7 +2895,7 @@ function initRadar(){
     /* 작중 시점(2068) + 한국 시간. 예전엔 now.getFullYear() 라 실제 연도(2026)가 찍혔다. */
     const time = window.ArgoDate ? ArgoDate.stamp(Date.now()).replace('  ',' ') : '';
     const entries = loadEntries();
-    const entry = { name: name || 'ANONYMOUS', msg, time };
+    const entry = { name: name || 'ANONYMOUS', msg, time, _t: Date.now() };
     entries.push(entry);
     saveEntries(entries);
     nameEl.value = ''; msgEl.value = '';
@@ -2901,7 +2909,7 @@ function initRadar(){
     try{
       if(window.ArgoTrack){
         ArgoTrack.act('guestbook_submitted',{page:'guestbook',message_length:msg.length});
-        ArgoTrack.saveGuestbook(msg);
+        ArgoTrack.saveGuestbook(msg, name);
       }
     }catch(e){}
 
@@ -2962,16 +2970,15 @@ function initRadar(){
   });
 
   function syncFromDB(){
-    if(!window.ArgoDB) return;
-    ArgoDB.fetchGuestbook().then(function(dbEntries){
-      if(!dbEntries) return; // offline / not configured -> keep local
-      var merged = dbEntries.slice();
-      loadEntries().forEach(function(l){
-        if(l===SEED_ENTRY) return;
-        var dup = merged.some(function(d){ return d.name===l.name && d.msg===l.msg && d.time===l.time; });
-        if(!dup) merged.push(l);
+    if(!window.ArgoTrack || !ArgoTrack.listGuestbook) return;
+    ArgoTrack.listGuestbook().then(function(rows){
+      if(!Array.isArray(rows)) return;   // 오프라인 — 로컬만 보인다
+      dbEntries = rows.map(function(r){
+        var t = Date.parse(r.submitted_at) || 0;
+        return { _id: r.guestbook_id, name: r.author_name || 'ANONYMOUS', msg: r.message,
+                 time: window.ArgoDate ? ArgoDate.stamp(t).replace('  ',' ') : '', _t: t };
       });
-      if(merged.length){ saveEntries(merged); renderEntries(); }
+      renderEntries();
     });
   }
   window.__gbSyncFromDB = syncFromDB;
@@ -2981,7 +2988,7 @@ function initRadar(){
       if(e.key==='Enter'){ e.preventDefault(); document.getElementById('gb-msg').focus(); }
     });
     renderEntries();
-    if(window.ArgoDB && ArgoDB.whenReady) ArgoDB.whenReady.then(function(){ syncFromDB(); });
+    syncFromDB();
   });
 })();
 function scrollDown(){
